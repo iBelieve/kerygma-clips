@@ -1,0 +1,48 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/php
+{
+    "name": "Proseuche",
+    // Use an image or Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+    "dockerFile": "Dockerfile",
+
+    // Features to add to the dev container. More info: https://containers.dev/features.
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {
+            "nodeGypDependencies": true,
+            "version": "lts",
+            "pnpmVersion": "none",
+            "nvmVersion": "latest"
+        }
+    },
+
+    // Configure tool-specific properties.
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "Anthropic.claude-code",
+                "bradlc.vscode-tailwindcss",
+                "laravel.vscode-laravel",
+                "esbenp.prettier-vscode"
+            ]
+        }
+    },
+
+    // Use 'forwardPorts' to make a list of ports inside the container available locally.
+    "forwardPorts": [],
+
+    // Mount the workspace folder
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind",
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+
+    // Mount the .claude folder to persist authentication
+    "mounts": [
+        "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/.claude.json,target=/home/vscode/.claude.json,type=bind,consistency=cached"
+    ]
+
+    // Use 'postCreateCommand' to run commands after the container is created.
+    // "postCreateCommand": "sudo chmod a+x \"$(pwd)\" && sudo rm -rf /var/www/html && sudo ln -s \"$(pwd)\" /var/www/html"
+
+    // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+    // "remoteUser": "root"
+}

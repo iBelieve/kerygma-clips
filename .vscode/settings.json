@@ -1,0 +1,4 @@
+{
+    "Laravel.phpCommand": "/usr/local/bin/php",
+    "php.suggest.basic": false
+}
