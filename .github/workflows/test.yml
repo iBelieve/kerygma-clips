@@ -29,6 +29,24 @@ jobs:
       - name: Check formatting with Pint
         run: composer format:check
 
+  analyze:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run Larastan
+        run: composer analyze
+
   format_frontend:
     name: Format Frontend
     runs-on: ubuntu-latest
