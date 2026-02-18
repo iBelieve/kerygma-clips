@@ -11,6 +11,7 @@ This is a Laravel 12 application with Filament (admin panel) integration. The pr
 - SQLite database (default)
 - Pest for testing
 - Vite with Tailwind CSS 4 for frontend assets
+- Larastan (PHPStan) for static analysis
 - Laravel Pint for PHP code styling
 - Prettier for JavaScript/CSS formatting
 
@@ -54,15 +55,19 @@ test('example', function () {
 });
 ```
 
-### Code Quality
+### Static Analysis
 ```bash
-# PHP code styling with Laravel Pint
-./vendor/bin/pint          # Fix all PHP files
-./vendor/bin/pint --test   # Check without fixing
+composer analyze           # Run Larastan (PHPStan) static analysis
+```
 
-# JavaScript/CSS formatting with Prettier
-npm run format             # Format all files
-npm run format:check       # Check formatting without fixing
+The project uses **Larastan** (level 5) with the Livewire plugin for static analysis. Configuration is in `phpstan.neon`.
+
+### Code Formatting
+```bash
+composer format            # Fix all PHP files with Laravel Pint
+composer format:check      # Check PHP formatting without fixing
+npm run format             # Format JS/CSS files with Prettier
+npm run format:check       # Check JS/CSS formatting without fixing
 ```
 
 ### Database
