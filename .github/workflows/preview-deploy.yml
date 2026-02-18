@@ -1,0 +1,83 @@
+name: Preview Deploy
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+env:
+  DOKKU_HOST: dev.mspencer.io
+  APP_NAME_PREFIX: mluther-clips
+  BASE_DOMAIN: mspencer.io
+
+jobs:
+  deploy-preview:
+    name: Deploy to Preview Environment
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.action != 'closed'
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          version: latest
+          tags: tag:ci
+          ping: ${{ env.DOKKU_HOST }}
+
+      - name: Deploy preview
+        uses: ibelieve/dokku-preview-action@v1
+        with:
+          action: deploy
+          dokku-host: ${{ env.DOKKU_HOST }}
+          app-name-prefix: ${{ env.APP_NAME_PREFIX }}
+          base-domain: ${{ env.BASE_DOMAIN }}
+          release-command: "php artisan migrate:fresh --force --seed"
+
+  destroy-preview:
+    name: Destroy Preview Environment
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.action == 'closed'
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          version: latest
+          tags: tag:ci
+          ping: ${{ env.DOKKU_HOST }}
+
+      - name: Destroy preview
+        uses: ibelieve/dokku-preview-action@v1
+        with:
+          action: destroy
+          dokku-host: ${{ env.DOKKU_HOST }}
+          app-name-prefix: ${{ env.APP_NAME_PREFIX }}

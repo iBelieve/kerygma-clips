@@ -139,7 +139,7 @@ resources/
 
 ### Database
 
-- Default: SQLite (`database/database.sqlite`)
+- Default: SQLite (`storage/app/database.sqlite`)
 - Migrations: [database/migrations/](database/migrations/)
 - Factories: [database/factories/](database/factories/)
 - Seeders: [database/seeders/](database/seeders/)

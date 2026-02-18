@@ -1,0 +1,15 @@
+{
+	frankenphp
+	order php_server before file_server
+    admin off
+
+    servers {
+        trusted_proxies cloudflare
+    }
+}
+
+:{$PORT} {
+    root * /app/public
+	encode zstd gzip
+	php_server
+}
