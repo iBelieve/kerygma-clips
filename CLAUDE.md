@@ -5,7 +5,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 This is a Laravel 12 application with Filament (admin panel) integration. The project uses:
-
 - PHP 8.2+
 - Laravel Framework 12.x
 - Filament 4.5+ for admin panel UI
@@ -18,14 +17,12 @@ This is a Laravel 12 application with Filament (admin panel) integration. The pr
 ## Development Commands
 
 ### Initial Setup
-
 ```bash
 composer setup
 # Runs: composer install, creates .env, generates key, runs migrations, npm install, npm run build
 ```
 
 ### Development Server
-
 ```bash
 composer dev
 # Starts all development services concurrently:
@@ -36,7 +33,6 @@ composer dev
 ```
 
 Alternatively, run services individually:
-
 ```bash
 php artisan serve          # Start Laravel server
 npm run dev                # Start Vite dev server
@@ -45,7 +41,6 @@ php artisan pail           # View logs in real-time
 ```
 
 ### Testing
-
 ```bash
 composer test              # Run full test suite (clears config first)
 php artisan test           # Run tests directly
@@ -53,7 +48,6 @@ php artisan test --filter ExampleTest  # Run specific test
 ```
 
 The project uses **Pest** (not PHPUnit) for testing. Test files use Pest syntax:
-
 ```php
 test('example', function () {
     expect(true)->toBeTrue();
@@ -61,7 +55,6 @@ test('example', function () {
 ```
 
 ### Code Quality
-
 ```bash
 # PHP code styling with Laravel Pint
 ./vendor/bin/pint          # Fix all PHP files
@@ -73,7 +66,6 @@ npm run format:check       # Check formatting without fixing
 ```
 
 ### Database
-
 ```bash
 php artisan migrate        # Run migrations
 php artisan migrate:fresh  # Drop all tables and re-run migrations
@@ -82,7 +74,6 @@ php artisan migrate:fresh --seed  # Fresh migrations + seed
 ```
 
 ### Asset Building
-
 ```bash
 npm run build              # Build for production
 npm run dev                # Development with hot reload
@@ -95,7 +86,6 @@ npm run dev                # Development with hot reload
 The application uses **Filament** as its primary admin panel framework, configured at the root path (`/`).
 
 **Panel Configuration**: [app/Providers/Filament/AppPanelProvider.php](app/Providers/Filament/AppPanelProvider.php)
-
 - Default panel ID: `app`
 - Path: `/` (root)
 - Authentication: Login required with session management
@@ -103,7 +93,6 @@ The application uses **Filament** as its primary admin panel framework, configur
 - Auto-discovers Resources, Pages, and Widgets in `app/Filament/` directories
 
 **Filament Directory Structure**:
-
 ```
 app/Filament/
 ├── Resources/     # CRUD interfaces for Eloquent models
@@ -112,7 +101,6 @@ app/Filament/
 ```
 
 When creating Filament resources:
-
 ```bash
 php artisan make:filament-resource ModelName
 ```
@@ -120,26 +108,21 @@ php artisan make:filament-resource ModelName
 ### Application Structure
 
 **Models**: [app/Models/](app/Models/)
-
 - Standard Eloquent models
 - User model included by default
 
 **Controllers**: [app/Http/Controllers/](app/Http/Controllers/)
-
 - Standard Laravel controllers (though most admin logic lives in Filament)
 
 **Service Providers**: [app/Providers/](app/Providers/)
-
 - [AppServiceProvider.php](app/Providers/AppServiceProvider.php) - Application services
 - [Filament/AppPanelProvider.php](app/Providers/Filament/AppPanelProvider.php) - Filament panel config
 
 **Routes**: [routes/](routes/)
-
 - [web.php](routes/web.php) - Web routes (minimal, Filament handles admin routes)
 - [console.php](routes/console.php) - Artisan console routes
 
 **Frontend Assets**: [resources/](resources/)
-
 ```
 resources/
 ├── css/
@@ -159,7 +142,6 @@ resources/
 ### Testing
 
 Tests use **Pest** framework:
-
 - Feature tests: [tests/Feature/](tests/Feature/)
 - Unit tests: [tests/Unit/](tests/Unit/)
 - Configuration: [tests/Pest.php](tests/Pest.php)
@@ -170,7 +152,6 @@ Custom Pest expectations can be added in [tests/Pest.php](tests/Pest.php).
 ### Frontend Build
 
 Vite configuration: [vite.config.js](vite.config.js)
-
 - Entry points: `resources/css/app.css`, `resources/js/app.js`
 - Uses Tailwind CSS 4 via Vite plugin
 - Dev server on `127.0.0.1`
@@ -179,7 +160,6 @@ Vite configuration: [vite.config.js](vite.config.js)
 ## Environment Configuration
 
 Copy `.env.example` to `.env` and configure:
-
 - `APP_NAME`: Application name
 - `APP_ENV`: `local`, `production`, etc.
 - `APP_KEY`: Generate with `php artisan key:generate`
@@ -204,16 +184,13 @@ php artisan view:clear        # Clear compiled views
 ## Code Style
 
 **PHP**: Uses Laravel Pint with default Laravel preset
-
 - 4 spaces for indentation
 - PSR-12 compatible
 
 **JavaScript/CSS**: Uses Prettier
-
 - Configuration inherits from project defaults
 - Run `npm run format` before committing frontend changes
 
 **EditorConfig**: [.editorconfig](.editorconfig)
-
 - 4 spaces for PHP, 2 spaces for YAML
 - UTF-8 encoding, LF line endings
