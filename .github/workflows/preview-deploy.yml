@@ -14,7 +14,7 @@ concurrency:
 
 env:
   DOKKU_HOST: dev.mspencer.io
-  APP_NAME_PREFIX: mluther-clips
+  APP_NAME_PREFIX: kerygma-clips
   BASE_DOMAIN: mspencer.io
 
 jobs:

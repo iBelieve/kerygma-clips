@@ -16,7 +16,7 @@ jobs:
 
     environment:
       name: production
-      url: https://mluther-clips.mspencer.io
+      url: https://kerygma-clips.mspencer.io
 
     steps:
       - name: Checkout code
@@ -34,7 +34,7 @@ jobs:
           ping: dev.mspencer.io
 
       - name: Add Dokku remote
-        run: git remote add dokku dokku@dev.mspencer.io:mluther-clips
+        run: git remote add dokku dokku@dev.mspencer.io:kerygma-clips
 
       - name: Push to Dokku
         run: git push dokku master --force
