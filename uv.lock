@@ -1071,7 +1071,7 @@ wheels = [
 ]
 
 [[package]]
-name = "mluther-clips"
+name = "kerygma"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

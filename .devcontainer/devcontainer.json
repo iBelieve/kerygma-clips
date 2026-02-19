@@ -49,7 +49,7 @@
 
     "containerEnv": {
         "TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD": "true",
-        "HF_HOME": "/workspaces/mluther-clips/.hf-cache"
+        "HF_HOME": "/workspaces/kerygma/.hf-cache"
     }
 
     // Use 'postCreateCommand' to run commands after the container is created.
