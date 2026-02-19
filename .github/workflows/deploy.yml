@@ -16,7 +16,7 @@ jobs:
 
     environment:
       name: production
-      url: https://kerygma-clips.mspencer.io
+      url: https://kerygma.mspencer.io
 
     steps:
       - name: Checkout code
