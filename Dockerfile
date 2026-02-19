@@ -53,6 +53,19 @@ COPY --link --from=composer /app/vendor vendor
 
 RUN npm run build
 
+##### Python Dependencies #####
+
+FROM python:3.12-slim-trixie AS python
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+
+WORKDIR /app
+
+COPY --link pyproject.toml uv.lock ./
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-project
+
 ##### PHP #####
 
 FROM dunglas/frankenphp:builder-php8.5-trixie AS builder
@@ -74,7 +87,7 @@ RUN CGO_ENABLED=1 \
 
 FROM dunglas/frankenphp:php8.5-trixie AS runner
 
-RUN apt-get update && apt-get install -y mupdf-tools && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ffmpeg mupdf-tools python3 && rm -rf /var/lib/apt/lists/*
 
 RUN install-php-extensions \
     imagick \
@@ -95,6 +108,10 @@ COPY --link public public
 COPY --link --from=node /app/public /app/public
 COPY --link resources/views resources/views
 COPY --link entrypoint.sh /app/entrypoint.sh
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+COPY --from=python /app/.venv /app/.venv
+COPY --link pyproject.toml uv.lock /app/
 
 RUN php artisan storage:link
 

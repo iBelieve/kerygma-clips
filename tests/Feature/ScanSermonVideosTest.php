@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TranscriptStatus;
 use App\Models\SermonVideo;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -28,7 +29,7 @@ test('it creates a sermon video entry for a valid video file', function () {
     $video = SermonVideo::first();
     expect($video->raw_video_path)->toBe('2025-12-10 18-53-50.m4v');
     expect($video->title)->toBeNull();
-    expect($video->transcript_status)->toBe('pending');
+    expect($video->transcript_status)->toBe(TranscriptStatus::Pending);
     expect($video->date->format('Y-m-d H:i:s'))->toBe('2025-12-10 18:53:50');
 });
 
