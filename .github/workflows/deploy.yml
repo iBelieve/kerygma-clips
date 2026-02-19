@@ -34,7 +34,7 @@ jobs:
           ping: dev.mspencer.io
 
       - name: Add Dokku remote
-        run: git remote add dokku dokku@dev.mspencer.io:kerygma-clips
+        run: git remote add dokku dokku@dev.mspencer.io:kerygma
 
       - name: Push to Dokku
         run: git push dokku master --force
