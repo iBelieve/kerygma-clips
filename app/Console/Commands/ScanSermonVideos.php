@@ -42,7 +42,9 @@ class ScanSermonVideos extends Command
         });
 
         if (empty($videoFiles)) {
-            $this->info('No video files found on the sermon_videos disk.');
+            if ($this->output->isVerbose()) {
+                $this->warn('No video files found on the sermon_videos disk.');
+            }
 
             return self::SUCCESS;
         }
@@ -65,6 +67,9 @@ class ScanSermonVideos extends Command
 
             $lastModified = Carbon::createFromTimestamp($disk->lastModified($file));
             if ($lastModified->gt($now->copy()->subMinutes(self::MIN_AGE_MINUTES))) {
+                if ($this->output->isVerbose()) {
+                    $this->info("Skipping recently modified file: {$file}");
+                }
                 $skipped++;
 
                 continue;
@@ -72,7 +77,9 @@ class ScanSermonVideos extends Command
 
             $date = $this->parseDateFromFilename($file);
             if ($date === null) {
-                $this->warn("Unable to parse date from filename: {$file}");
+                if ($this->output->isVerbose()) {
+                    $this->warn("Unable to parse date from filename: {$file}");
+                }
                 $skipped++;
 
                 continue;
