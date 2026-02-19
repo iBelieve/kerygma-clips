@@ -72,6 +72,7 @@ class ScanSermonVideos extends Command
 
             $date = $this->parseDateFromFilename($file);
             if ($date === null) {
+                $this->warn("Unable to parse date from filename: {$file}");
                 $skipped++;
 
                 continue;
@@ -82,6 +83,7 @@ class ScanSermonVideos extends Command
                 'date' => $date,
             ]);
 
+            $this->info("Created sermon video for {$file} with date {$date->toDateTimeString()}");
             $created++;
         }
 
