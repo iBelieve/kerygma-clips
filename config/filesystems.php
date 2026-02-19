@@ -38,6 +38,13 @@ return [
             'report' => false,
         ],
 
+        'sermon_videos' => [
+            'driver' => 'local',
+            'root' => env('SERMON_VIDEOS_DIR', storage_path('sermon_videos')),
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
