@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\SermonVideo;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ScanSermonVideos extends Command
@@ -42,9 +43,7 @@ class ScanSermonVideos extends Command
         });
 
         if (empty($videoFiles)) {
-            if ($this->output->isVerbose()) {
-                $this->warn('No video files found on the sermon_videos disk.');
-            }
+            $this->warn('No video files found on the sermon_videos disk.');
 
             return self::SUCCESS;
         }
@@ -67,9 +66,7 @@ class ScanSermonVideos extends Command
 
             $lastModified = Carbon::createFromTimestamp($disk->lastModified($file));
             if ($lastModified->gt($now->copy()->subMinutes(self::MIN_AGE_MINUTES))) {
-                if ($this->output->isVerbose()) {
-                    $this->info("Skipping recently modified file: {$file}");
-                }
+                $this->info("Skipping recently modified file: {$file}");
                 $skipped++;
 
                 continue;
@@ -77,9 +74,7 @@ class ScanSermonVideos extends Command
 
             $date = $this->parseDateFromFilename($file);
             if ($date === null) {
-                if ($this->output->isVerbose()) {
-                    $this->warn("Unable to parse date from filename: {$file}");
-                }
+                $this->warn("Unable to parse date from filename: {$file}");
                 $skipped++;
 
                 continue;
@@ -90,6 +85,7 @@ class ScanSermonVideos extends Command
                 'date' => $date,
             ]);
 
+            Log::info("Created sermon video for {$file} with date {$date->toDateTimeString()}");
             $this->info("Created sermon video for {$file} with date {$date->toDateTimeString()}");
             $created++;
         }

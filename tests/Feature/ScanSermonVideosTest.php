@@ -85,8 +85,8 @@ test('it processes multiple video files in a single run', function () {
     expect(SermonVideo::count())->toBe(3);
 });
 
-test('it reports no video files found when disk is empty and verbose', function () {
-    $this->artisan('app:scan-sermon-videos --verbose')
+test('it reports no video files found when disk is empty', function () {
+    $this->artisan('app:scan-sermon-videos')
         ->expectsOutput('No video files found on the sermon_videos disk.')
         ->assertSuccessful();
 });
