@@ -1,0 +1,8 @@
+{
+    "cron": [
+        {
+            "command": "php artisan schedule:run",
+            "schedule": "* * * * *"
+        }
+    ]
+}
