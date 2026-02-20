@@ -64,8 +64,8 @@ WORKDIR /app
 COPY --link pyproject.toml uv.lock ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project && \
-    uv venv --relocatable .venv
+    uv venv --relocatable .venv && \
+    uv sync --frozen --no-dev --no-install-project
 
 ##### PHP #####
 
