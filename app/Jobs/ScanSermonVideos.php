@@ -102,8 +102,10 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
                 'duration' => $duration,
             ]);
 
-            Log::info("Created sermon video for {$file} with date {$date->toDateTimeString()}"
-                .($duration !== null ? " (duration: {$duration}s)" : ' (duration unknown)'));
+            Log::info("Created sermon video for {$file}", [
+                'date' => $date->toDateTimeString(),
+                'duration' => $duration,
+            ]);
 
             $created++;
         }

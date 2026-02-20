@@ -19,14 +19,15 @@ class SermonVideosTable
 
                 TextColumn::make('title')
                     ->label('Title')
-                    ->placeholder('(untitled)')
+                    ->placeholder("\u{2014}")
                     ->searchable(),
 
                 TextColumn::make('duration')
                     ->label('Duration')
-                    ->formatStateUsing(function (?int $state): string {
+                    ->placeholder("\u{2014}")
+                    ->formatStateUsing(function (?int $state): ?string {
                         if ($state === null) {
-                            return '--';
+                            return null;
                         }
 
                         $hours = intdiv($state, 3600);

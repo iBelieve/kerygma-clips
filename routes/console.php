@@ -8,7 +8,6 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('app:scan-sermon-videos')
+Schedule::job(new App\Jobs\ScanSermonVideos)
     ->hourly()
-    ->withoutOverlapping()
-    ->runInBackground();
+    ->withoutOverlapping();
