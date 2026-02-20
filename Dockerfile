@@ -55,16 +55,25 @@ RUN npm run build
 
 ##### Python Dependencies #####
 
-FROM ghcr.io/astral-sh/uv:python3.13-trixie AS python
+FROM ghcr.io/astral-sh/uv:latest AS uv
 
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
+FROM debian:trixie-slim AS python
+
+COPY --from=uv /uv /usr/local/bin/uv
+
+ENV UV_PYTHON_INSTALL_DIR=/python
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+ENV UV_PYTHON_PREFERENCE=only-managed
+
+RUN uv python install 3.13
 
 WORKDIR /app
 
-COPY --link pyproject.toml uv.lock ./
+COPY --link pyproject.toml uv.lock .python-version ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project
+    uv sync --locked --no-dev --no-install-project
 
 ##### PHP #####
 
@@ -87,7 +96,10 @@ RUN CGO_ENABLED=1 \
 
 FROM dunglas/frankenphp:php8.5-trixie AS runner
 
-RUN apt-get update && apt-get install -y ffmpeg mupdf-tools python3.13 libpython3.13 && rm -rf /var/lib/apt/lists/*
+ENV UV_PYTHON_INSTALL_DIR=/python
+ENV PATH="/app/.venv/bin:$PATH"
+
+RUN apt-get update && apt-get install -y mupdf-tools ffmpeg && rm -rf /var/lib/apt/lists/*
 
 RUN install-php-extensions \
     imagick \
@@ -101,16 +113,18 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" && \
 
 COPY --from=builder /usr/local/bin/frankenphp /usr/local/bin/frankenphp
 
+COPY --from=uv /uv /usr/local/bin/uv
+COPY --from=python /python /python
+COPY --from=python /app/.venv /app/.venv
+
 COPY --link Caddyfile /etc/caddy/Caddyfile
 
 COPY --link --from=composer /app /app
 COPY --link public public
 COPY --link --from=node /app/public /app/public
 COPY --link resources/views resources/views
+COPY --link pyproject.toml uv.lock .python-version ./
 COPY --link entrypoint.sh /app/entrypoint.sh
-
-COPY --from=python /app/.venv /app/.venv
-ENV PATH="/app/.venv/bin:$PATH"
 
 RUN php artisan storage:link
 
