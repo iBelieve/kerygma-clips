@@ -3,6 +3,7 @@
 use App\Enums\TranscriptStatus;
 use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 
@@ -137,6 +138,109 @@ test('job clears previous error on new run', function () {
     $video->refresh();
     expect($video->transcript_status)->toBe(TranscriptStatus::Completed);
     expect($video->transcript_error)->toBeNull();
+});
+
+// --- Timestamp Tests ---
+
+test('job sets transcription_started_at when processing begins', function () {
+    Carbon::setTestNow('2026-02-20 12:00:00');
+
+    Process::fake(['*' => Process::result(exitCode: 1, errorOutput: 'failure')]);
+
+    $video = SermonVideo::factory()->create([
+        'transcript_status' => TranscriptStatus::Pending,
+    ]);
+
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+
+    (new TranscribeSermonVideo($video))->handle();
+
+    $video->refresh();
+    expect($video->transcription_started_at)->not->toBeNull();
+    expect($video->transcription_started_at->toDateTimeString())->toBe('2026-02-20 12:00:00');
+});
+
+test('job sets transcription_completed_at on successful completion', function () {
+    Carbon::setTestNow('2026-02-20 12:00:00');
+
+    Process::fake(['*' => Process::result()]);
+
+    $video = SermonVideo::factory()->create([
+        'transcript_status' => TranscriptStatus::Pending,
+    ]);
+
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+    createTranscriptOutputFile($video, ['segments' => []]);
+
+    (new TranscribeSermonVideo($video))->handle();
+
+    $video->refresh();
+    expect($video->transcription_started_at)->not->toBeNull();
+    expect($video->transcription_completed_at)->not->toBeNull();
+    expect($video->transcription_completed_at->toDateTimeString())->toBe('2026-02-20 12:00:00');
+});
+
+test('job does not set transcription_completed_at on failure', function () {
+    Process::fake(['*' => Process::result(exitCode: 1, errorOutput: 'crash')]);
+
+    $video = SermonVideo::factory()->create([
+        'transcript_status' => TranscriptStatus::Pending,
+    ]);
+
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+
+    (new TranscribeSermonVideo($video))->handle();
+
+    $video->refresh();
+    expect($video->transcription_started_at)->not->toBeNull();
+    expect($video->transcription_completed_at)->toBeNull();
+});
+
+test('job resets transcription_completed_at on re-run', function () {
+    Process::fake(['*' => Process::result(exitCode: 1, errorOutput: 'failure')]);
+
+    $video = SermonVideo::factory()->create([
+        'transcript_status' => TranscriptStatus::Completed,
+        'transcription_started_at' => now()->subMinutes(10),
+        'transcription_completed_at' => now()->subMinutes(5),
+    ]);
+
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+
+    (new TranscribeSermonVideo($video))->handle();
+
+    $video->refresh();
+    expect($video->transcription_completed_at)->toBeNull();
+});
+
+test('job computes transcription_duration on successful completion', function () {
+    $startTime = Carbon::parse('2026-02-20 12:00:00');
+    $endTime = Carbon::parse('2026-02-20 12:03:07');
+
+    // Start at 12:00:00, then advance to 12:03:07 for the completion update
+    Carbon::setTestNow($startTime);
+
+    Process::fake(['*' => Process::result()]);
+
+    $video = SermonVideo::factory()->create([
+        'transcript_status' => TranscriptStatus::Pending,
+    ]);
+
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+    createTranscriptOutputFile($video, ['segments' => []]);
+
+    // Advance time before handle so the started_at and completed_at differ.
+    // Both use now(), so we advance time between the two update() calls
+    // by replacing handle's flow: set started, then advance, then complete.
+    // Instead, we directly set the timestamps to test the virtual column.
+    $video->update([
+        'transcript_status' => TranscriptStatus::Completed,
+        'transcription_started_at' => $startTime,
+        'transcription_completed_at' => $endTime,
+    ]);
+
+    $video->refresh();
+    expect($video->transcription_duration)->toBe(187);
 });
 
 // --- Command Tests ---

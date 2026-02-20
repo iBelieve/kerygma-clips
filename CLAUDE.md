@@ -190,6 +190,10 @@ php artisan config:clear      # Clear config cache
 php artisan view:clear        # Clear compiled views
 ```
 
+## Conventions
+
+- **Immutable timestamps**: Always use `immutable_datetime` (or `immutable_date`) casts for datetime model attributes. This ensures all date properties return `CarbonImmutable` instances, preventing accidental mutation of date values.
+
 ## Code Style
 
 **PHP**: Uses Laravel Pint with default Laravel preset
