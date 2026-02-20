@@ -6,3 +6,4 @@ public/hot
 storage/
 bootstrap/cache/
 .env
+.venv
