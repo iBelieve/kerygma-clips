@@ -87,7 +87,7 @@ RUN CGO_ENABLED=1 \
 
 FROM dunglas/frankenphp:php8.5-trixie AS runner
 
-RUN apt-get update && apt-get install -y ffmpeg mupdf-tools && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ffmpeg mupdf-tools python3.13 libpython3.13 && rm -rf /var/lib/apt/lists/*
 
 RUN install-php-extensions \
     imagick \
@@ -109,8 +109,6 @@ COPY --link --from=node /app/public /app/public
 COPY --link resources/views resources/views
 COPY --link entrypoint.sh /app/entrypoint.sh
 
-COPY --from=python /usr/local/bin/python3 /usr/local/bin/python3
-COPY --from=python /usr/local/lib/python3.13 /usr/local/lib/python3.13
 COPY --from=python /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 

@@ -9,5 +9,7 @@ RUN install-php-extensions \
     zip
 
 RUN apt-get update \
-    && apt-get install -y sqlite3 ffmpeg \
+    && apt-get install -y sqlite3 ffmpeg python3.13 python3.13-venv libpython3.13 \
     && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
