@@ -57,7 +57,6 @@ class TranscribeSermonVideo implements ShouldBeUnique, ShouldQueue
             $result = Process::path(base_path())
                 ->timeout(3600)
                 ->run([
-                    'uv', 'run',
                     'whisperx',
                     $absolutePath,
                     '--model', 'large-v3',

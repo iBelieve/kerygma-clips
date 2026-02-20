@@ -55,17 +55,15 @@ RUN npm run build
 
 ##### Python Dependencies #####
 
-FROM python:3.13-slim-trixie AS python
+FROM ghcr.io/astral-sh/uv:python3.13-trixie AS python
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
 
 WORKDIR /app
 
 COPY --link pyproject.toml uv.lock ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    ln -sf /usr/local/bin/python3 /usr/bin/python3 && \
-    uv venv --python /usr/bin/python3 .venv && \
     uv sync --frozen --no-dev --no-install-project
 
 ##### PHP #####
@@ -89,7 +87,7 @@ RUN CGO_ENABLED=1 \
 
 FROM dunglas/frankenphp:php8.5-trixie AS runner
 
-RUN apt-get update && apt-get install -y ffmpeg mupdf-tools python3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ffmpeg mupdf-tools && rm -rf /var/lib/apt/lists/*
 
 RUN install-php-extensions \
     imagick \
@@ -111,9 +109,10 @@ COPY --link --from=node /app/public /app/public
 COPY --link resources/views resources/views
 COPY --link entrypoint.sh /app/entrypoint.sh
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+COPY --from=python /usr/local/bin/python3 /usr/local/bin/python3
+COPY --from=python /usr/local/lib/python3.13 /usr/local/lib/python3.13
 COPY --from=python /app/.venv /app/.venv
-COPY --link pyproject.toml uv.lock /app/
+ENV PATH="/app/.venv/bin:$PATH"
 
 RUN php artisan storage:link
 
