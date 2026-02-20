@@ -18,6 +18,8 @@ class ViewSermonVideo extends ViewRecord
 
     protected string $view = 'filament.resources.sermon-videos.view-sermon-video';
 
+    public int $gapThreshold = 5;
+
     public function getTitle(): string|Htmlable
     {
         return $this->getRecord()->title
@@ -36,5 +38,19 @@ class ViewSermonVideo extends ViewRecord
         }
 
         return sprintf('%02d:%02d', $minutes, $secs);
+    }
+
+    public function formatGap(float $seconds): string
+    {
+        $totalSeconds = (int) round($seconds);
+
+        if ($totalSeconds >= 60) {
+            $minutes = intdiv($totalSeconds, 60);
+            $secs = $totalSeconds % 60;
+
+            return sprintf('%dm %02ds gap', $minutes, $secs);
+        }
+
+        return sprintf('%ds gap', $totalSeconds);
     }
 }
