@@ -3,6 +3,10 @@
 namespace App\Filament\Resources\SermonVideos\Tables;
 
 use App\Enums\TranscriptStatus;
+use App\Jobs\TranscribeSermonVideo;
+use App\Models\SermonVideo;
+use Filament\Notifications\Notification;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -58,6 +62,23 @@ class SermonVideosTable
                     ->since()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->recordActions([
+                Action::make('transcribe')
+                    ->label('Transcribe')
+                    ->icon('heroicon-o-language')
+                    ->color('primary')
+                    ->visible(fn (SermonVideo $record): bool => $record->transcript_status !== TranscriptStatus::Completed)
+                    ->requiresConfirmation()
+                    ->action(function (SermonVideo $record) {
+                        TranscribeSermonVideo::dispatch($record);
+
+                        Notification::make()
+                            ->title('Transcription queued')
+                            ->body("Transcription has been dispatched for sermon video #{$record->id}.")
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->defaultSort('date', 'desc')
             ->paginated([10]);
