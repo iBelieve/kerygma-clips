@@ -190,6 +190,36 @@ php artisan config:clear      # Clear config cache
 php artisan view:clear        # Clear compiled views
 ```
 
+## PHPDoc Conventions
+
+### Filament Page Record Types
+
+When a Filament resource page (e.g. `ViewRecord`, `EditRecord`) needs typed access to `$this->getRecord()`, add a `@method` annotation to the class docblock rather than using `@var` with a local variable assignment:
+
+```php
+// Good: @method annotation on the class
+/**
+ * @extends ViewRecord<SermonVideo>
+ *
+ * @method SermonVideo getRecord()
+ */
+class ViewSermonVideo extends ViewRecord
+{
+    public function getHeading(): string|Htmlable
+    {
+        return $this->getRecord()->title;
+    }
+}
+
+// Bad: @var with local variable
+public function getHeading(): string|Htmlable
+{
+    /** @var SermonVideo $record */
+    $record = $this->getRecord();
+    return $record->title;
+}
+```
+
 ## Code Style
 
 **PHP**: Uses Laravel Pint with default Laravel preset
