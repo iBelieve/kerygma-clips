@@ -18,7 +18,7 @@ class ViewSermonVideo extends ViewRecord
 
     protected string $view = 'filament.resources.sermon-videos.view-sermon-video';
 
-    public function getHeading(): string|Htmlable
+    public function getTitle(): string|Htmlable
     {
         return $this->getRecord()->title
             ?? $this->getRecord()->date->timezone('America/Chicago')->format('M j, Y g:i A');

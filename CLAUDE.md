@@ -205,18 +205,36 @@ When a Filament resource page (e.g. `ViewRecord`, `EditRecord`) needs typed acce
  */
 class ViewSermonVideo extends ViewRecord
 {
-    public function getHeading(): string|Htmlable
+    public function getTitle(): string|Htmlable
     {
         return $this->getRecord()->title;
     }
 }
 
 // Bad: @var with local variable
-public function getHeading(): string|Htmlable
+public function getTitle(): string|Htmlable
 {
     /** @var SermonVideo $record */
     $record = $this->getRecord();
     return $record->title;
+}
+```
+
+### Filament Page Titles
+
+When customizing the title of a Filament resource page, override `getTitle()` rather than `getHeading()`. `getTitle()` sets the browser tab title and the on-page heading defaults to it, so overriding `getTitle()` updates both. Overriding only `getHeading()` leaves the browser tab with the generic Filament default.
+
+```php
+// Good: override getTitle() — sets both browser tab and page heading
+public function getTitle(): string|Htmlable
+{
+    return $this->getRecord()->title;
+}
+
+// Bad: override getHeading() — only sets the page heading, not the browser tab
+public function getHeading(): string|Htmlable
+{
+    return $this->getRecord()->title;
 }
 ```
 
