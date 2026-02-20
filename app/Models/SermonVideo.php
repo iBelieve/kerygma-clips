@@ -10,10 +10,12 @@ class SermonVideo extends Model
         'title',
         'raw_video_path',
         'transcript_status',
+        'duration',
         'date',
     ];
 
     protected $casts = [
         'date' => 'datetime',
+        'duration' => 'integer',
     ];
 }

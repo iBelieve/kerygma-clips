@@ -41,7 +41,9 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function createOldVideoFile(string $filename): void
 {
-    // ..
+    Illuminate\Support\Facades\Storage::disk('sermon_videos')->put($filename, 'fake-content');
+    $path = Illuminate\Support\Facades\Storage::disk('sermon_videos')->path($filename);
+    touch($path, Illuminate\Support\Carbon::now()->subMinutes(10)->timestamp);
 }

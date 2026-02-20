@@ -2,7 +2,7 @@
     "cron": [
         {
             "command": "php artisan schedule:run",
-            "schedule": "* * * * *"
+            "schedule": "0 * * * *"
         }
     ]
 }

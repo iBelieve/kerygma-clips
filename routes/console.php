@@ -8,7 +8,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('app:scan-sermon-videos')
-    ->everyMinute()
-    ->withoutOverlapping()
-    ->runInBackground();
+Schedule::job(new App\Jobs\ScanSermonVideos)
+    ->hourly();

@@ -74,7 +74,7 @@ RUN CGO_ENABLED=1 \
 
 FROM dunglas/frankenphp:php8.5-trixie AS runner
 
-RUN apt-get update && apt-get install -y mupdf-tools && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y mupdf-tools ffmpeg && rm -rf /var/lib/apt/lists/*
 
 RUN install-php-extensions \
     imagick \
