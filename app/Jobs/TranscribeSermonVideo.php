@@ -43,6 +43,8 @@ class TranscribeSermonVideo implements ShouldBeUnique, ShouldQueue
         $this->sermonVideo->update([
             'transcript_status' => TranscriptStatus::Processing,
             'transcript_error' => null,
+            'transcription_started_at' => now(),
+            'transcription_completed_at' => null,
         ]);
 
         $disk = Storage::disk('sermon_videos');
@@ -94,6 +96,7 @@ class TranscribeSermonVideo implements ShouldBeUnique, ShouldQueue
             $this->sermonVideo->update([
                 'transcript_status' => TranscriptStatus::Completed,
                 'transcript' => $transcript,
+                'transcription_completed_at' => now(),
             ]);
         } catch (\Throwable $e) {
             $this->sermonVideo->update([
