@@ -25,7 +25,7 @@ class ListSermonVideos extends Command
             ['ID', 'Date', 'File', 'Transcript Status'],
             $videos->map(fn (SermonVideo $video) => [
                 $video->id,
-                $video->date->format('Y-m-d H:i'),
+                $video->date->timezone('America/Chicago')->format('Y-m-d H:i'),
                 $video->raw_video_path,
                 $video->transcript_status->value,
             ]),
