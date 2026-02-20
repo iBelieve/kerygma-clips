@@ -44,12 +44,12 @@
                                 @endif
                             @endif
                             <tr class="transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">
-                                <td class="whitespace-nowrap py-2 pe-3 ps-4 align-baseline text-sm text-end tabular-nums text-gray-500 sm:ps-6 dark:text-gray-400"
+                                <td class="whitespace-nowrap py-1 pe-3 ps-4 align-baseline text-xs text-end tabular-nums text-gray-500 sm:ps-6 dark:text-gray-400"
                                     style="font-variant-numeric: tabular-nums;"
                                 >
                                     {{ $this->formatTimestamp($segment['start'], $lastStart) }}
                                 </td>
-                                <td class="w-full py-2 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white">
+                                <td class="w-full py-1 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white">
                                     {{ trim($segment['text']) }}
                                 </td>
                             </tr>
