@@ -108,6 +108,15 @@ test('it dispatches transcription job for new sermon video', function () {
     });
 });
 
+test('it does not dispatch transcription job when transcribe is false', function () {
+    createOldVideoFile('2025-12-10 18-53-50.mp4');
+
+    ScanSermonVideos::dispatchSync(transcribe: false);
+
+    expect(SermonVideo::count())->toBe(1);
+    Queue::assertNotPushed(TranscribeSermonVideo::class);
+});
+
 test('it handles empty disk with no video files', function () {
     ScanSermonVideos::dispatchSync();
 

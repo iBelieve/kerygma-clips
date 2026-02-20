@@ -14,7 +14,10 @@ class ScanSermonVideos extends Command
     public function handle(): int
     {
         $this->info('Running scan...');
-        ScanSermonVideosJob::dispatchSync(verbose: true);
+        ScanSermonVideosJob::dispatchSync(
+            verbose: true,
+            transcribe: $this->option('transcribe'),
+        );
         $this->info('Done.');
 
         return self::SUCCESS;
