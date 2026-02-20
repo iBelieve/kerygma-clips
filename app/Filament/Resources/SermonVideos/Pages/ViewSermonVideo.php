@@ -69,14 +69,14 @@ class ViewSermonVideo extends ViewRecord
         return $last !== false ? $last['start'] : 0.0;
     }
 
-    public function formatTimestamp(float $seconds, float $lastStart): string
+    public function formatTimestamp(float $seconds): string
     {
         $totalSeconds = (int) $seconds;
         $hours = intdiv($totalSeconds, 3600);
         $minutes = intdiv($totalSeconds % 3600, 60);
         $secs = $totalSeconds % 60;
 
-        if ($lastStart >= 3600) {
+        if ($this->lastSegmentStart >= 3600) {
             return sprintf('%d:%02d:%02d', $hours, $minutes, $secs);
         }
 

@@ -37,7 +37,7 @@
                                     <td class="whitespace-nowrap py-1 pe-3 ps-4 align-baseline text-xs text-end tabular-nums text-gray-500 sm:ps-6 dark:text-gray-400"
                                         style="font-variant-numeric: tabular-nums;"
                                     >
-                                        {{ $this->formatTimestamp($row['start'], $this->lastSegmentStart) }}
+                                        {{ $this->formatTimestamp($row['start']) }}
                                     </td>
                                     <td class="w-full py-1 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white">
                                         {{ $row['text'] }}
