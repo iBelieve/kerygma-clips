@@ -16,6 +16,7 @@ class SermonVideo extends Model
         'transcript_status',
         'transcript',
         'transcript_error',
+        'duration',
         'date',
     ];
 
@@ -23,5 +24,6 @@ class SermonVideo extends Model
         'date' => 'datetime',
         'transcript_status' => TranscriptStatus::class,
         'transcript' => 'array',
+        'duration' => 'integer',
     ];
 }

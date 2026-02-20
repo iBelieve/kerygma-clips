@@ -54,13 +54,13 @@ jobs:
             {STORAGE_DIR}:/app/storage
             /data/syncthing/mluther-videos/Sermons:/app/sermon-videos:ro
             /var/lib/dokku/data/storage/hf-cache:/app/hf-cache
-          process-scaling: |
-            worker=1
-            transcription=1
           env-vars: |
             SERMON_VIDEOS_DIR=/app/sermon-videos
             HF_HOME=/app/hf-cache
             TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=true
+          process-scaling: |
+            worker=1
+            transcription=1
 
   destroy-preview:
     name: Destroy Preview Environment

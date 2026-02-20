@@ -105,9 +105,13 @@ app/Filament/
 └── Widgets/       # Dashboard widgets
 ```
 
-When creating Filament resources:
+When creating Filament resources, pages, or other components, always use Filament's artisan commands first, then modify the generated files as needed. This ensures we follow Filament's latest conventions and best practices.
+
 ```bash
-php artisan make:filament-resource ModelName
+php artisan make:filament-resource ModelName          # Create a resource
+php artisan make:filament-resource ModelName --generate  # Create with auto-generated form/table
+php artisan make:filament-page PageName               # Create a custom page
+php artisan make:filament-widget WidgetName           # Create a widget
 ```
 
 ### Application Structure
