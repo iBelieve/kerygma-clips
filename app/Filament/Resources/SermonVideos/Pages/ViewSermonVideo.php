@@ -6,6 +6,7 @@ use App\Filament\Resources\SermonVideos\SermonVideoResource;
 use App\Models\SermonVideo;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\Support\Htmlable;
+use Livewire\Attributes\Computed;
 
 /**
  * @extends ViewRecord<SermonVideo>
@@ -24,6 +25,48 @@ class ViewSermonVideo extends ViewRecord
     {
         return $this->getRecord()->title
             ?? $this->getRecord()->date->timezone('America/Chicago')->format('M j, Y g:i A');
+    }
+
+    /**
+     * @return list<array{type: 'segment', start: float, text: string}|array{type: 'gap', label: string}>
+     */
+    #[Computed]
+    public function transcriptRows(): array
+    {
+        $segments = $this->getRecord()->transcript['segments'] ?? [];
+        $rows = [];
+        $previousEnd = null;
+
+        foreach ($segments as $segment) {
+            if ($previousEnd !== null) {
+                $gap = $segment['start'] - $previousEnd;
+                if ($gap > $this->gapThreshold) {
+                    $rows[] = [
+                        'type' => 'gap',
+                        'label' => $this->formatGap($gap),
+                    ];
+                }
+            }
+
+            $rows[] = [
+                'type' => 'segment',
+                'start' => $segment['start'],
+                'text' => trim($segment['text']),
+            ];
+
+            $previousEnd = $segment['end'];
+        }
+
+        return $rows;
+    }
+
+    #[Computed]
+    public function lastSegmentStart(): float
+    {
+        $segments = $this->getRecord()->transcript['segments'] ?? [];
+        $last = end($segments);
+
+        return $last !== false ? $last['start'] : 0.0;
     }
 
     public function formatTimestamp(float $seconds, float $lastStart): string

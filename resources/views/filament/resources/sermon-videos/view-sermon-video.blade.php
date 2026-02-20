@@ -1,11 +1,5 @@
 <x-filament-panels::page>
-    @php
-        $transcript = $this->getRecord()->transcript;
-        $segments = $transcript['segments'] ?? [];
-        $lastStart = end($segments)['start'] ?? 0;
-    @endphp
-
-    @if (count($segments))
+    @if (count($this->transcriptRows))
         <div class="flex items-center gap-3">
             <label for="gapThreshold" class="whitespace-nowrap text-sm font-medium text-gray-950 dark:text-white">
                 Gap threshold
@@ -25,35 +19,31 @@
             <div class="overflow-x-auto py-3">
                 <table class="w-full">
                     <tbody>
-                        @php $previousEnd = null; @endphp
-                        @foreach ($segments as $segment)
-                            @if ($previousEnd !== null)
-                                @php $gap = $segment['start'] - $previousEnd; @endphp
-                                @if ($gap > $this->gapThreshold)
-                                    <tr>
-                                        <td colspan="2" class="px-4 sm:px-6">
-                                            <div class="flex items-center gap-3 py-2">
-                                                <div class="flex-1 border-t border-dashed border-gray-300 dark:border-gray-600"></div>
-                                                <span class="shrink-0 text-xs font-medium text-gray-400 dark:text-gray-500">
-                                                    {{ $this->formatGap($gap) }}
-                                                </span>
-                                                <div class="flex-1 border-t border-dashed border-gray-300 dark:border-gray-600"></div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endif
+                        @foreach ($this->transcriptRows as $row)
+                            @if ($row['type'] === 'gap')
+                                <tr>
+                                    <td colspan="2" class="px-4 sm:px-6">
+                                        <div class="flex items-center gap-3 py-2">
+                                            <div class="flex-1 border-t border-dashed border-gray-300 dark:border-gray-600"></div>
+                                            <span class="shrink-0 text-xs font-medium text-gray-400 dark:text-gray-500">
+                                                {{ $row['label'] }}
+                                            </span>
+                                            <div class="flex-1 border-t border-dashed border-gray-300 dark:border-gray-600"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @else
+                                <tr class="transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">
+                                    <td class="whitespace-nowrap py-1 pe-3 ps-4 align-baseline text-xs text-end tabular-nums text-gray-500 sm:ps-6 dark:text-gray-400"
+                                        style="font-variant-numeric: tabular-nums;"
+                                    >
+                                        {{ $this->formatTimestamp($row['start'], $this->lastSegmentStart) }}
+                                    </td>
+                                    <td class="w-full py-1 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white">
+                                        {{ $row['text'] }}
+                                    </td>
+                                </tr>
                             @endif
-                            <tr class="transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">
-                                <td class="whitespace-nowrap py-1 pe-3 ps-4 align-baseline text-xs text-end tabular-nums text-gray-500 sm:ps-6 dark:text-gray-400"
-                                    style="font-variant-numeric: tabular-nums;"
-                                >
-                                    {{ $this->formatTimestamp($segment['start'], $lastStart) }}
-                                </td>
-                                <td class="w-full py-1 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white">
-                                    {{ trim($segment['text']) }}
-                                </td>
-                            </tr>
-                            @php $previousEnd = $segment['end']; @endphp
                         @endforeach
                     </tbody>
                 </table>
