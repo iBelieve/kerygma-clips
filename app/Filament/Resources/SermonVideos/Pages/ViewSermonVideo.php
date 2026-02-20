@@ -18,7 +18,7 @@ class ViewSermonVideo extends ViewRecord
 
     protected string $view = 'filament.resources.sermon-videos.view-sermon-video';
 
-    public int $gapThreshold = 5;
+    public int $gapThreshold = 2;
 
     public function getTitle(): string|Htmlable
     {
@@ -48,9 +48,9 @@ class ViewSermonVideo extends ViewRecord
             $minutes = intdiv($totalSeconds, 60);
             $secs = $totalSeconds % 60;
 
-            return sprintf('%dm %02ds gap', $minutes, $secs);
+            return sprintf('%dm %02ds pause', $minutes, $secs);
         }
 
-        return sprintf('%ds gap', $totalSeconds);
+        return sprintf('%ds pause', $totalSeconds);
     }
 }
