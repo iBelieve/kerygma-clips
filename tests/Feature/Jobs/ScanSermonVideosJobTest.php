@@ -1,14 +1,18 @@
 <?php
 
+use App\Enums\TranscriptStatus;
 use App\Jobs\ScanSermonVideos;
+use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
 use App\Services\VideoProbe;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('sermon_videos');
+    Queue::fake();
 
     $this->mock(VideoProbe::class, function ($mock) {
         $mock->shouldReceive('getDurationInSeconds')
@@ -26,7 +30,7 @@ test('it creates a sermon video entry for a valid video file', function () {
     $video = SermonVideo::first();
     expect($video->raw_video_path)->toBe('2025-12-10 18-53-50.m4v');
     expect($video->title)->toBeNull();
-    expect($video->transcript_status)->toBe('pending');
+    expect($video->transcript_status)->toBe(TranscriptStatus::Pending);
     expect($video->date->format('Y-m-d H:i:s'))->toBe('2025-12-11 00:53:50');
     expect($video->duration)->toBe(3600);
 });
@@ -92,6 +96,25 @@ test('it creates sermon video with null duration when ffprobe fails', function (
     $video = SermonVideo::first();
     expect($video)->not->toBeNull();
     expect($video->duration)->toBeNull();
+});
+
+test('it dispatches transcription job for new sermon video', function () {
+    createOldVideoFile('2025-12-10 18-53-50.mp4');
+
+    ScanSermonVideos::dispatchSync();
+
+    Queue::assertPushed(TranscribeSermonVideo::class, function ($job) {
+        return $job->sermonVideo->raw_video_path === '2025-12-10 18-53-50.mp4';
+    });
+});
+
+test('it does not dispatch transcription job when transcribe is false', function () {
+    createOldVideoFile('2025-12-10 18-53-50.mp4');
+
+    ScanSermonVideos::dispatchSync(transcribe: false);
+
+    expect(SermonVideo::count())->toBe(1);
+    Queue::assertNotPushed(TranscribeSermonVideo::class);
 });
 
 test('it handles empty disk with no video files', function () {

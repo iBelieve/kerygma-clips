@@ -36,6 +36,7 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
 
     public function __construct(
         public bool $verbose = false,
+        public bool $transcribe = true,
     ) {}
 
     public function handle(VideoProbe $videoProbe): void
@@ -96,11 +97,15 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
             $absolutePath = $disk->path($file);
             $duration = $videoProbe->getDurationInSeconds($absolutePath);
 
-            SermonVideo::create([
+            $sermonVideo = SermonVideo::create([
                 'raw_video_path' => $file,
                 'date' => $date->utc(),
                 'duration' => $duration,
             ]);
+
+            if ($this->transcribe) {
+                TranscribeSermonVideo::dispatch($sermonVideo);
+            }
 
             Log::info("Created sermon video for {$file}", [
                 'date' => $date->toDateTimeString(),

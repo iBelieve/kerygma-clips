@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SermonVideos\Tables;
 
+use App\Enums\TranscriptStatus;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -45,12 +46,11 @@ class SermonVideosTable
                 TextColumn::make('transcript_status')
                     ->label('Transcript')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'warning',
-                        'processing' => 'info',
-                        'completed' => 'success',
-                        'failed' => 'danger',
-                        default => 'gray',
+                    ->color(fn (TranscriptStatus $state): string => match ($state) {
+                        TranscriptStatus::Pending => 'warning',
+                        TranscriptStatus::Processing => 'info',
+                        TranscriptStatus::Completed => 'success',
+                        TranscriptStatus::Failed => 'danger',
                     }),
 
                 TextColumn::make('created_at')
