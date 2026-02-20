@@ -86,10 +86,11 @@ class ScanSermonVideos extends Command
                 'date' => $date,
             ]);
 
-            TranscribeSermonVideo::dispatch($sermonVideo);
-
             Log::info("Created sermon video for {$file} with date {$date->toDateTimeString()}");
             $this->info("Created sermon video for {$file} with date {$date->toDateTimeString()}");
+
+            TranscribeSermonVideo::dispatch($sermonVideo);
+
             $created++;
         }
 
