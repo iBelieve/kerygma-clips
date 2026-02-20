@@ -51,9 +51,12 @@ jobs:
           base-domain: ${{ env.BASE_DOMAIN }}
           release-command: "php artisan migrate:fresh --force --seed"
           storage-mounts: |
+            {STORAGE_DIR}:/app/storage
             /data/syncthing/mluther-videos/Sermons:/app/sermon-videos:ro
+            /var/lib/dokku/data/storage/hf-cache:/app/hf-cache
           env-vars: |
             SERMON_VIDEOS_DIR=/app/sermon-videos
+            HF_HOME=/app/hf-cache
 
   destroy-preview:
     name: Destroy Preview Environment
