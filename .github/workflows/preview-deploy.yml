@@ -57,6 +57,7 @@ jobs:
           env-vars: |
             SERMON_VIDEOS_DIR=/app/sermon-videos
             HF_HOME=/app/hf-cache
+            TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=true
 
   destroy-preview:
     name: Destroy Preview Environment
