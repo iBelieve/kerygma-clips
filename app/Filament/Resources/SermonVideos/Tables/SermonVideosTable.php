@@ -5,8 +5,8 @@ namespace App\Filament\Resources\SermonVideos\Tables;
 use App\Enums\TranscriptStatus;
 use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
-use Filament\Notifications\Notification;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -75,7 +75,7 @@ class SermonVideosTable
 
                         Notification::make()
                             ->title('Transcription queued')
-                            ->body("Transcription has been dispatched for sermon video #{$record->id}.")
+                            ->body('Transcription has been dispatched.')
                             ->success()
                             ->send();
                     }),
