@@ -9,5 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::job(new App\Jobs\ScanSermonVideos)
-    ->hourly()
-    ->withoutOverlapping();
+    ->hourly();
