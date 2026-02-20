@@ -50,6 +50,8 @@ jobs:
           app-name-prefix: ${{ env.APP_NAME_PREFIX }}
           base-domain: ${{ env.BASE_DOMAIN }}
           release-command: "php artisan migrate:fresh --force --seed"
+          storage-mounts: "/data/syncthing/mluther-videos/Sermons:/app/sermon-videos:ro"
+          env-vars: "SERMON_VIDEOS_DIR=/app/sermon-videos"
 
   destroy-preview:
     name: Destroy Preview Environment
