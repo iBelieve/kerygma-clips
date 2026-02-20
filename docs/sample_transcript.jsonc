@@ -1,0 +1,29 @@
+{
+  "segments": [
+    {
+      "start": 0.031,
+      "end": 8.124,
+      "text": " Grace and mercy and peace are yours, from God our Father, and from our Lord and our Savior, Jesus Christ.",
+      "words": [
+        { "word": "Grace", "start": 0.031, "end": 0.311, "score": 0.901 },
+        { "word": "and", "start": 0.832, "end": 0.952, "score": 0.657 }
+        /* ... more words here */
+      ]
+    },
+    {
+      "start": 9.306,
+      "end": 9.626,
+      "text": "Amen.",
+      "words": [
+        { "word": "Amen.", "start": 9.306, "end": 9.626, "score": 0.931 }
+      ]
+    }
+    /* ... more segments here */
+  ],
+  "word_segments": [
+    { "word": "Grace", "start": 0.031, "end": 0.311, "score": 0.901 },
+    { "word": "and", "start": 0.832, "end": 0.952, "score": 0.657 }
+    /* ... more word segments here */
+  ],
+  "language": "en"
+}

@@ -7,3 +7,4 @@ storage/
 bootstrap/cache/
 .env
 .venv
+docs/sample_transcript.jsonc

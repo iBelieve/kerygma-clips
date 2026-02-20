@@ -6,6 +6,9 @@ use App\Enums\TranscriptStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * To understand what the `transcript` field looks like, see `docs/sample_transcript.jsonc`.
+ */
 class SermonVideo extends Model
 {
     use HasFactory;
