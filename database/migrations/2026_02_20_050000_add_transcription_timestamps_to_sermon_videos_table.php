@@ -17,7 +17,7 @@ return new class extends Migration
         // because SQLite does not support adding multiple columns in a single statement.
         Schema::table('sermon_videos', function (Blueprint $table) {
             $table->integer('transcription_duration')->nullable()->virtualAs(
-                'CAST((julianday(transcription_completed_at) - julianday(transcription_started_at)) * 86400 AS INTEGER)'
+                'CAST(ROUND((julianday(transcription_completed_at) - julianday(transcription_started_at)) * 86400) AS INTEGER)'
             );
         });
     }
