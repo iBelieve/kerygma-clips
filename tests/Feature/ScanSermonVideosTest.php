@@ -92,7 +92,7 @@ test('it processes multiple video files in a single run', function () {
 test('it dispatches transcription job for new sermon video', function () {
     createOldVideoFile('2025-12-10 18-53-50.mp4');
 
-    $this->artisan('app:scan-sermon-videos')
+    $this->artisan('app:scan-sermon-videos --transcribe')
         ->assertSuccessful();
 
     Queue::assertPushed(TranscribeSermonVideo::class, function ($job) {
