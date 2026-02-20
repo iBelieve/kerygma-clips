@@ -3,13 +3,9 @@
 namespace App\Models;
 
 use App\Enums\TranscriptStatus;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * @property-read ?int $transcription_duration
- */
 class SermonVideo extends Model
 {
     use HasFactory;
@@ -27,22 +23,12 @@ class SermonVideo extends Model
     ];
 
     protected $casts = [
-        'date' => 'datetime',
+        'date' => 'immutable_datetime',
         'transcript_status' => TranscriptStatus::class,
         'transcript' => 'array',
         'duration' => 'integer',
-        'transcription_started_at' => 'datetime',
-        'transcription_completed_at' => 'datetime',
+        'transcription_started_at' => 'immutable_datetime',
+        'transcription_completed_at' => 'immutable_datetime',
+        'transcription_duration' => 'integer',
     ];
-
-    protected function transcriptionDuration(): Attribute
-    {
-        return Attribute::get(function (): ?int {
-            if ($this->transcription_started_at === null || $this->transcription_completed_at === null) {
-                return null;
-            }
-
-            return (int) $this->transcription_started_at->diffInSeconds($this->transcription_completed_at);
-        });
-    }
 }
