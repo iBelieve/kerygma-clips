@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ScanSermonVideos extends Command
 {
-    protected $signature = 'app:scan-sermon-videos';
+    protected $signature = 'app:scan-sermon-videos {--transcribe : Dispatch transcription jobs for newly created sermon videos}';
 
     protected $description = 'Scan the sermon_videos disk for new video files and create SermonVideo entries';
 
@@ -89,7 +89,9 @@ class ScanSermonVideos extends Command
             Log::info("Created sermon video for {$file} with date {$date->toDateTimeString()}");
             $this->info("Created sermon video for {$file} with date {$date->toDateTimeString()}");
 
-            TranscribeSermonVideo::dispatch($sermonVideo);
+            if ($this->option('transcribe')) {
+                TranscribeSermonVideo::dispatch($sermonVideo);
+            }
 
             $created++;
         }
