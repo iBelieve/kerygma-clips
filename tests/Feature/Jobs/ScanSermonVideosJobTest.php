@@ -27,7 +27,7 @@ test('it creates a sermon video entry for a valid video file', function () {
     expect($video->raw_video_path)->toBe('2025-12-10 18-53-50.m4v');
     expect($video->title)->toBeNull();
     expect($video->transcript_status)->toBe('pending');
-    expect($video->date->format('Y-m-d H:i:s'))->toBe('2025-12-10 18:53:50');
+    expect($video->date->format('Y-m-d H:i:s'))->toBe('2025-12-11 00:53:50');
     expect($video->duration)->toBe(3600);
 });
 

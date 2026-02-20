@@ -14,6 +14,7 @@ class SermonVideosTable
                 TextColumn::make('date')
                     ->label('Date & Time')
                     ->dateTime('M j, Y g:i A')
+                    ->timezone('America/Chicago')
                     ->sortable(),
 
                 TextColumn::make('title')

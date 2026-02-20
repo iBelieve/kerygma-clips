@@ -98,7 +98,7 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
 
             SermonVideo::create([
                 'raw_video_path' => $file,
-                'date' => $date,
+                'date' => $date->utc(),
                 'duration' => $duration,
             ]);
 
