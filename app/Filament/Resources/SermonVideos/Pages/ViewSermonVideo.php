@@ -35,6 +35,6 @@ class ViewSermonVideo extends ViewRecord
             return sprintf('%d:%02d:%02d', $hours, $minutes, $secs);
         }
 
-        return sprintf('%d:%02d', $minutes, $secs);
+        return sprintf('%02d:%02d', $minutes, $secs);
     }
 }
