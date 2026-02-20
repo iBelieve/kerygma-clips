@@ -19,10 +19,6 @@ class ListSermonVideos extends ListRecords
                 ->label('Scan for Videos')
                 ->icon('heroicon-o-arrow-path')
                 ->color('primary')
-                ->requiresConfirmation()
-                ->modalHeading('Scan for New Videos')
-                ->modalDescription('This will scan the sermon videos folder for new video files. The scan runs in the background.')
-                ->modalSubmitActionLabel('Start Scan')
                 ->action(function () {
                     ScanSermonVideos::dispatch(verbose: true);
 
