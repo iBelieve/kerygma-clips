@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -80,10 +81,12 @@ class ScanSermonVideos extends Command
                 continue;
             }
 
-            SermonVideo::create([
+            $sermonVideo = SermonVideo::create([
                 'raw_video_path' => $file,
                 'date' => $date,
             ]);
+
+            TranscribeSermonVideo::dispatch($sermonVideo);
 
             Log::info("Created sermon video for {$file} with date {$date->toDateTimeString()}");
             $this->info("Created sermon video for {$file} with date {$date->toDateTimeString()}");

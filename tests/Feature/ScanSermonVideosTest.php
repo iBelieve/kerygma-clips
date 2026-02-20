@@ -1,14 +1,17 @@
 <?php
 
 use App\Enums\TranscriptStatus;
+use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('sermon_videos');
+    Queue::fake();
 });
 
 function createOldVideoFile(string $filename): void
@@ -84,6 +87,17 @@ test('it processes multiple video files in a single run', function () {
         ->assertSuccessful();
 
     expect(SermonVideo::count())->toBe(3);
+});
+
+test('it dispatches transcription job for new sermon video', function () {
+    createOldVideoFile('2025-12-10 18-53-50.mp4');
+
+    $this->artisan('app:scan-sermon-videos')
+        ->assertSuccessful();
+
+    Queue::assertPushed(TranscribeSermonVideo::class, function ($job) {
+        return $job->sermonVideo->raw_video_path === '2025-12-10 18-53-50.mp4';
+    });
 });
 
 test('it reports no video files found when disk is empty', function () {

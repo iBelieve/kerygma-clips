@@ -4,7 +4,6 @@ use App\Enums\TranscriptStatus;
 use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
 use Illuminate\Support\Facades\Process;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -142,19 +141,22 @@ test('job clears previous error on new run', function () {
 
 // --- Command Tests ---
 
-test('command dispatches job for valid sermon video', function () {
-    Queue::fake();
+test('command runs transcription synchronously', function () {
+    Process::fake(['*' => Process::result()]);
 
     $video = SermonVideo::factory()->create([
         'transcript_status' => TranscriptStatus::Pending,
     ]);
 
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+    createTranscriptOutputFile($video, ['segments' => [['text' => 'Test transcript', 'start' => 0.0, 'end' => 1.0]]]);
+
     $this->artisan('app:transcribe-sermon-video', ['id' => $video->id])
         ->assertSuccessful();
 
-    Queue::assertPushed(TranscribeSermonVideo::class, function ($job) use ($video) {
-        return $job->sermonVideo->id === $video->id;
-    });
+    $video->refresh();
+    expect($video->transcript_status)->toBe(TranscriptStatus::Completed);
+    expect($video->transcript)->toBeArray();
 });
 
 test('command fails for non-existent sermon video', function () {
@@ -171,25 +173,7 @@ test('command fails for sermon video already being processed', function () {
         ->assertFailed();
 });
 
-test('command runs synchronously with --sync flag', function () {
-    Process::fake(['*' => Process::result()]);
-
-    $video = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Pending,
-    ]);
-
-    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
-    createTranscriptOutputFile($video, ['segments' => [['text' => 'Sync test', 'start' => 0.0, 'end' => 1.0]]]);
-
-    $this->artisan('app:transcribe-sermon-video', ['id' => $video->id, '--sync' => true])
-        ->assertSuccessful();
-
-    $video->refresh();
-    expect($video->transcript_status)->toBe(TranscriptStatus::Completed);
-    expect($video->transcript)->toBeArray();
-});
-
-test('command reports failure when sync transcription fails', function () {
+test('command reports failure when transcription fails', function () {
     Process::fake(['*' => Process::result(
         exitCode: 1,
         errorOutput: 'Model not found',
@@ -201,7 +185,7 @@ test('command reports failure when sync transcription fails', function () {
 
     Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
 
-    $this->artisan('app:transcribe-sermon-video', ['id' => $video->id, '--sync' => true])
+    $this->artisan('app:transcribe-sermon-video', ['id' => $video->id])
         ->assertFailed();
 
     $video->refresh();

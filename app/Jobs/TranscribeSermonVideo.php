@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Enums\TranscriptStatus;
 use App\Models\SermonVideo;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -12,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 
-class TranscribeSermonVideo implements ShouldQueue
+class TranscribeSermonVideo implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -30,6 +31,11 @@ class TranscribeSermonVideo implements ShouldQueue
         public SermonVideo $sermonVideo
     ) {
         $this->onQueue('transcription');
+    }
+
+    public function uniqueId(): int
+    {
+        return $this->sermonVideo->id;
     }
 
     public function handle(): void
@@ -54,10 +60,13 @@ class TranscribeSermonVideo implements ShouldQueue
                     'uv', 'run',
                     'whisperx',
                     $absolutePath,
-                    '--model', 'small',
+                    '--model', 'large-v3',
                     '--output_format', 'json',
                     '--output_dir', $outputDir,
                     '--language', 'en',
+                    // Use int8 quantization for CPU-only inference. This significantly
+                    // reduces memory usage and speeds up transcription compared to
+                    // float32/float16, which require a GPU to run efficiently.
                     '--compute_type', 'int8',
                 ]);
 
