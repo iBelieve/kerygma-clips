@@ -55,6 +55,22 @@ class SermonVideosTable
                         TranscriptStatus::Processing => 'info',
                         TranscriptStatus::Completed => 'success',
                         TranscriptStatus::Failed => 'danger',
+                    })
+                    ->tooltip(function (SermonVideo $record): ?string {
+                        if ($record->transcript_status !== TranscriptStatus::Completed) {
+                            return null;
+                        }
+
+                        $duration = $record->transcription_duration;
+
+                        if ($duration === null) {
+                            return null;
+                        }
+
+                        $minutes = intdiv($duration, 60);
+                        $seconds = $duration % 60;
+
+                        return sprintf('Transcription completed in %dm %02ds', $minutes, $seconds);
                     }),
 
                 TextColumn::make('created_at')

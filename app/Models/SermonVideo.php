@@ -19,14 +19,19 @@ class SermonVideo extends Model
         'transcript_status',
         'transcript',
         'transcript_error',
+        'transcription_started_at',
+        'transcription_completed_at',
         'duration',
         'date',
     ];
 
     protected $casts = [
-        'date' => 'datetime',
+        'date' => 'immutable_datetime',
         'transcript_status' => TranscriptStatus::class,
         'transcript' => 'array',
         'duration' => 'integer',
+        'transcription_started_at' => 'immutable_datetime',
+        'transcription_completed_at' => 'immutable_datetime',
+        'transcription_duration' => 'integer',
     ];
 }
