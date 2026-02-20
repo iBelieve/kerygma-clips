@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\SermonVideos;
 
 use App\Filament\Resources\SermonVideos\Pages\ListSermonVideos;
+use App\Filament\Resources\SermonVideos\Pages\ViewSermonVideo;
 use App\Filament\Resources\SermonVideos\Tables\SermonVideosTable;
 use App\Models\SermonVideo;
 use BackedEnum;
@@ -25,6 +26,7 @@ class SermonVideoResource extends Resource
     {
         return [
             'index' => ListSermonVideos::route('/'),
+            'view' => ViewSermonVideo::route('/{record}'),
         ];
     }
 

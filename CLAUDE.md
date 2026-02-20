@@ -194,6 +194,54 @@ php artisan view:clear        # Clear compiled views
 
 - **Immutable timestamps**: Always use `immutable_datetime` (or `immutable_date`) casts for datetime model attributes. This ensures all date properties return `CarbonImmutable` instances, preventing accidental mutation of date values.
 
+## PHPDoc Conventions
+
+### Filament Page Record Types
+
+When a Filament resource page (e.g. `ViewRecord`, `EditRecord`) needs typed access to `$this->getRecord()`, add a `@method` annotation to the class docblock rather than using `@var` with a local variable assignment:
+
+```php
+// Good: @method annotation on the class
+/**
+ * @extends ViewRecord<SermonVideo>
+ *
+ * @method SermonVideo getRecord()
+ */
+class ViewSermonVideo extends ViewRecord
+{
+    public function getTitle(): string|Htmlable
+    {
+        return $this->getRecord()->title;
+    }
+}
+
+// Bad: @var with local variable
+public function getTitle(): string|Htmlable
+{
+    /** @var SermonVideo $record */
+    $record = $this->getRecord();
+    return $record->title;
+}
+```
+
+### Filament Page Titles
+
+When customizing the title of a Filament resource page, override `getTitle()` rather than `getHeading()`. `getTitle()` sets the browser tab title and the on-page heading defaults to it, so overriding `getTitle()` updates both. Overriding only `getHeading()` leaves the browser tab with the generic Filament default.
+
+```php
+// Good: override getTitle() — sets both browser tab and page heading
+public function getTitle(): string|Htmlable
+{
+    return $this->getRecord()->title;
+}
+
+// Bad: override getHeading() — only sets the page heading, not the browser tab
+public function getHeading(): string|Htmlable
+{
+    return $this->getRecord()->title;
+}
+```
+
 ## Code Style
 
 **PHP**: Uses Laravel Pint with default Laravel preset
