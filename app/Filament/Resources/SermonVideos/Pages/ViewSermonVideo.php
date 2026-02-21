@@ -6,6 +6,7 @@ use App\Filament\Resources\SermonVideos\SermonVideoResource;
 use App\Models\SermonVideo;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Computed;
 
 /**
@@ -28,7 +29,7 @@ class ViewSermonVideo extends ViewRecord
     }
 
     /**
-     * @return list<array{type: 'segment', start: float, end: float, segmentIndex: int, highlightEnd: int, text: string}|array{type: 'gap', label: string, prevSegmentIndex: int, nextSegmentIndex: int}>
+     * @return list<array{type: 'segment', start: float, end: float, segmentIndex: int, highlightEnd: int, text: string, inClip: bool}|array{type: 'gap', label: string, prevSegmentIndex: int, nextSegmentIndex: int, inClip: bool}>
      */
     #[Computed]
     public function transcriptRows(): array
@@ -38,18 +39,28 @@ class ViewSermonVideo extends ViewRecord
         $segmentIndices = [];
         $previousEnd = null;
 
+        // Load clip ranges for this sermon video
+        $clips = $this->getRecord()->sermonClips()
+            ->orderBy('start_segment_index')
+            ->get(['start_segment_index', 'end_segment_index']);
+
         foreach ($segments as $index => $segment) {
             if ($previousEnd !== null) {
                 $gap = $segment['start'] - $previousEnd;
                 if ($gap > $this->gapThreshold) {
+                    $gapInClip = $clips->contains(fn ($clip) => ($index - 1) >= $clip->start_segment_index && $index <= $clip->end_segment_index);
+
                     $rows[] = [
                         'type' => 'gap',
                         'label' => $this->formatGap($gap),
                         'prevSegmentIndex' => $index - 1,
                         'nextSegmentIndex' => $index,
+                        'inClip' => $gapInClip,
                     ];
                 }
             }
+
+            $inClip = $clips->contains(fn ($clip) => $index >= $clip->start_segment_index && $index <= $clip->end_segment_index);
 
             $rowIndex = count($rows);
             $rows[] = [
@@ -59,6 +70,7 @@ class ViewSermonVideo extends ViewRecord
                 'segmentIndex' => $index,
                 'highlightEnd' => $index,
                 'text' => trim($segment['text']),
+                'inClip' => $inClip,
             ];
             $segmentIndices[] = $rowIndex;
 
@@ -90,10 +102,68 @@ class ViewSermonVideo extends ViewRecord
                 $lastHighlight--;
             }
 
+            // Shrink back past any trailing clip segments so the
+            // highlight never ends right before a gap into a clip
+            while ($lastHighlight > $row['segmentIndex'] && $rows[$segmentIndices[$lastHighlight]]['inClip']) {
+                $lastHighlight--;
+            }
+
             $rows[$segmentIndices[$i]]['highlightEnd'] = $lastHighlight;
         }
 
         return $rows;
+    }
+
+    public function createClip(int $startSegmentIndex, int $endSegmentIndex): void
+    {
+        // Ensure start <= end
+        if ($startSegmentIndex > $endSegmentIndex) {
+            Log::warning('createClip called with start > end, swapping', [
+                'sermon_video_id' => $this->getRecord()->id,
+                'start_segment_index' => $startSegmentIndex,
+                'end_segment_index' => $endSegmentIndex,
+            ]);
+            [$startSegmentIndex, $endSegmentIndex] = [$endSegmentIndex, $startSegmentIndex];
+        }
+
+        // Reject if start is within an existing clip
+        $startInClip = $this->getRecord()->sermonClips()
+            ->where('start_segment_index', '<=', $startSegmentIndex)
+            ->where('end_segment_index', '>=', $startSegmentIndex)
+            ->exists();
+
+        if ($startInClip) {
+            Log::error('createClip called with start inside an existing clip', [
+                'sermon_video_id' => $this->getRecord()->id,
+                'start_segment_index' => $startSegmentIndex,
+                'end_segment_index' => $endSegmentIndex,
+            ]);
+
+            return;
+        }
+
+        // Truncate end if it would overlap into a following clip
+        $nextClipStart = $this->getRecord()->sermonClips()
+            ->where('start_segment_index', '>', $startSegmentIndex)
+            ->where('start_segment_index', '<=', $endSegmentIndex)
+            ->min('start_segment_index');
+
+        if ($nextClipStart !== null) {
+            Log::warning('createClip truncating end to avoid overlapping a following clip', [
+                'sermon_video_id' => $this->getRecord()->id,
+                'start_segment_index' => $startSegmentIndex,
+                'original_end_segment_index' => $endSegmentIndex,
+                'truncated_end_segment_index' => $nextClipStart - 1,
+            ]);
+            $endSegmentIndex = $nextClipStart - 1;
+        }
+
+        $this->getRecord()->sermonClips()->create([
+            'start_segment_index' => $startSegmentIndex,
+            'end_segment_index' => $endSegmentIndex,
+        ]);
+
+        unset($this->transcriptRows);
     }
 
     #[Computed]

@@ -27,8 +27,12 @@
                             @foreach ($this->transcriptRows as $row)
                                 @if ($row['type'] === 'gap')
                                     <tr
-                                        x-bind:class="highlightStart !== null && {{ $row['prevSegmentIndex'] }} >= highlightStart && {{ $row['nextSegmentIndex'] }} <= highlightEnd ? 'bg-orange-100 dark:bg-orange-500/10' : ''"
-                                        class="transition duration-75"
+                                        @if ($row['inClip'])
+                                            class="bg-emerald-100 transition duration-75 dark:bg-emerald-500/10"
+                                        @else
+                                            x-bind:class="highlightStart !== null && {{ $row['prevSegmentIndex'] }} >= highlightStart && {{ $row['nextSegmentIndex'] }} <= highlightEnd ? 'bg-orange-100 dark:bg-orange-500/10' : ''"
+                                            class="transition duration-75"
+                                        @endif
                                     >
                                         <td colspan="2" class="px-4 sm:px-6">
                                             <div class="flex items-center gap-3 py-2">
@@ -42,9 +46,14 @@
                                     </tr>
                                 @else
                                     <tr
-                                        x-on:mouseenter="highlightStart = {{ $row['segmentIndex'] }}; highlightEnd = {{ $row['highlightEnd'] }}"
-                                        x-bind:class="highlightStart !== null && {{ $row['segmentIndex'] }} >= highlightStart && {{ $row['segmentIndex'] }} <= highlightEnd ? 'bg-orange-100 dark:bg-orange-500/10' : ''"
-                                        class="transition duration-75"
+                                        @if ($row['inClip'])
+                                            x-on:mouseenter="highlightStart = null; highlightEnd = null"
+                                        @else
+                                            x-on:mouseenter="highlightStart = {{ $row['segmentIndex'] }}; highlightEnd = {{ $row['highlightEnd'] }}"
+                                            x-on:click="$wire.createClip({{ $row['segmentIndex'] }}, {{ $row['highlightEnd'] }})"
+                                            x-bind:class="highlightStart !== null && {{ $row['segmentIndex'] }} >= highlightStart && {{ $row['segmentIndex'] }} <= highlightEnd ? 'bg-orange-100 dark:bg-orange-500/10' : ''"
+                                        @endif
+                                        class="{{ $row['inClip'] ? 'bg-emerald-100 dark:bg-emerald-500/10' : 'cursor-pointer' }} transition duration-75"
                                     >
                                         <td class="whitespace-nowrap py-1 pe-3 ps-4 align-baseline text-xs text-end tabular-nums text-gray-500 sm:ps-6 dark:text-gray-400"
                                             style="font-variant-numeric: tabular-nums;"
