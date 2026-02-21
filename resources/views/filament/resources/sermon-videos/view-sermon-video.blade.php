@@ -26,7 +26,10 @@
                         <tbody>
                             @foreach ($this->transcriptRows as $row)
                                 @if ($row['type'] === 'gap')
-                                    <tr>
+                                    <tr
+                                        x-bind:class="highlightStart !== null && {{ $row['prevSegmentIndex'] }} >= highlightStart && {{ $row['nextSegmentIndex'] }} <= highlightEnd ? 'bg-orange-100 dark:bg-orange-500/10' : ''"
+                                        class="transition duration-75"
+                                    >
                                         <td colspan="2" class="px-4 sm:px-6">
                                             <div class="flex items-center gap-3 py-2">
                                                 <div class="flex-1 border-t border-dashed border-gray-300 dark:border-gray-600"></div>
