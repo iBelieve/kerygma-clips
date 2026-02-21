@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use Filament\Support\Assets\AlpineComponent;
+use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Support\ServiceProvider;
 
@@ -22,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         FilamentAsset::register([
-            AlpineComponent::make('view-transcript', __DIR__.'/../../resources/js/components/view-transcript.js'),
+            Js::make('view-transcript', resource_path('js/components/view-transcript.js')),
         ]);
     }
 }

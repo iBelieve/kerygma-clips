@@ -1,5 +1,5 @@
-export default function viewTranscript() {
-    return {
+document.addEventListener("alpine:init", () => {
+    Alpine.data("viewTranscript", () => ({
         highlightStart: null,
         highlightEnd: null,
 
@@ -28,5 +28,5 @@ export default function viewTranscript() {
                 nextSegmentIndex <= this.highlightEnd
             );
         },
-    };
-}
+    }));
+});
