@@ -28,7 +28,7 @@ class ViewSermonVideo extends ViewRecord
     }
 
     /**
-     * @return list<array{type: 'segment', start: float, end: float, segmentIndex: int, highlightEnd: int, text: string}|array{type: 'gap', label: string}>
+     * @return list<array{type: 'segment', start: float, end: float, segmentIndex: int, highlightEnd: int, text: string, inClip: bool}|array{type: 'gap', label: string}>
      */
     #[Computed]
     public function transcriptRows(): array
@@ -37,6 +37,11 @@ class ViewSermonVideo extends ViewRecord
         $rows = [];
         $segmentIndices = [];
         $previousEnd = null;
+
+        // Load clip ranges for this sermon video
+        $clips = $this->getRecord()->sermonClips()
+            ->orderBy('start_segment_index')
+            ->get(['start_segment_index', 'end_segment_index']);
 
         foreach ($segments as $index => $segment) {
             if ($previousEnd !== null) {
@@ -49,6 +54,8 @@ class ViewSermonVideo extends ViewRecord
                 }
             }
 
+            $inClip = $clips->contains(fn ($clip) => $index >= $clip->start_segment_index && $index <= $clip->end_segment_index);
+
             $rowIndex = count($rows);
             $rows[] = [
                 'type' => 'segment',
@@ -57,6 +64,7 @@ class ViewSermonVideo extends ViewRecord
                 'segmentIndex' => $index,
                 'highlightEnd' => $index,
                 'text' => trim($segment['text']),
+                'inClip' => $inClip,
             ];
             $segmentIndices[] = $rowIndex;
 
@@ -92,6 +100,39 @@ class ViewSermonVideo extends ViewRecord
         }
 
         return $rows;
+    }
+
+    public function createClip(int $startSegmentIndex, int $endSegmentIndex): void
+    {
+        // Ensure start <= end
+        if ($startSegmentIndex > $endSegmentIndex) {
+            [$startSegmentIndex, $endSegmentIndex] = [$endSegmentIndex, $startSegmentIndex];
+        }
+
+        $existingClips = $this->getRecord()->sermonClips()
+            ->orderBy('start_segment_index')
+            ->get(['start_segment_index', 'end_segment_index']);
+
+        // Reject if start is within an existing clip
+        foreach ($existingClips as $clip) {
+            if ($startSegmentIndex >= $clip->start_segment_index && $startSegmentIndex <= $clip->end_segment_index) {
+                return;
+            }
+        }
+
+        // Truncate end if it would overlap into a following clip
+        foreach ($existingClips as $clip) {
+            if ($clip->start_segment_index > $startSegmentIndex && $clip->start_segment_index <= $endSegmentIndex) {
+                $endSegmentIndex = $clip->start_segment_index - 1;
+            }
+        }
+
+        $this->getRecord()->sermonClips()->create([
+            'start_segment_index' => $startSegmentIndex,
+            'end_segment_index' => $endSegmentIndex,
+        ]);
+
+        unset($this->transcriptRows);
     }
 
     #[Computed]

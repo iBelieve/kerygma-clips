@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\TranscriptStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * To understand what the `transcript` field looks like, see `docs/sample_transcript.jsonc`.
@@ -24,6 +25,14 @@ class SermonVideo extends Model
         'duration',
         'date',
     ];
+
+    /**
+     * @return HasMany<SermonClip, $this>
+     */
+    public function sermonClips(): HasMany
+    {
+        return $this->hasMany(SermonClip::class);
+    }
 
     protected $casts = [
         'date' => 'immutable_datetime',
