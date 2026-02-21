@@ -46,7 +46,9 @@
                                     </tr>
                                 @else
                                     <tr
-                                        @if (! $row['inClip'])
+                                        @if ($row['inClip'])
+                                            x-on:mouseenter="highlightStart = null; highlightEnd = null"
+                                        @else
                                             x-on:mouseenter="highlightStart = {{ $row['segmentIndex'] }}; highlightEnd = {{ $row['highlightEnd'] }}"
                                             x-on:click="$wire.createClip({{ $row['segmentIndex'] }}, {{ $row['highlightEnd'] }})"
                                             x-bind:class="highlightStart !== null && {{ $row['segmentIndex'] }} >= highlightStart && {{ $row['segmentIndex'] }} <= highlightEnd ? 'bg-orange-100 dark:bg-orange-500/10' : ''"
