@@ -28,7 +28,7 @@ class ViewSermonVideo extends ViewRecord
     }
 
     /**
-     * @return list<array{type: 'segment', start: float, end: float, segmentIndex: int, highlightEnd: int, text: string, inClip: bool}|array{type: 'gap', label: string, prevSegmentIndex: int, nextSegmentIndex: int}>
+     * @return list<array{type: 'segment', start: float, end: float, segmentIndex: int, highlightEnd: int, text: string, inClip: bool}|array{type: 'gap', label: string, prevSegmentIndex: int, nextSegmentIndex: int, inClip: bool}>
      */
     #[Computed]
     public function transcriptRows(): array
@@ -47,11 +47,14 @@ class ViewSermonVideo extends ViewRecord
             if ($previousEnd !== null) {
                 $gap = $segment['start'] - $previousEnd;
                 if ($gap > $this->gapThreshold) {
+                    $gapInClip = $clips->contains(fn ($clip) => ($index - 1) >= $clip->start_segment_index && $index <= $clip->end_segment_index);
+
                     $rows[] = [
                         'type' => 'gap',
                         'label' => $this->formatGap($gap),
                         'prevSegmentIndex' => $index - 1,
                         'nextSegmentIndex' => $index,
+                        'inClip' => $gapInClip,
                     ];
                 }
             }
