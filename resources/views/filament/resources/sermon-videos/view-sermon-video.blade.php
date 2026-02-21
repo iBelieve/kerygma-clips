@@ -17,8 +17,10 @@
             </div>
 
             <div
-                x-data="{ highlightStart: null, highlightEnd: null }"
-                x-on:mouseleave="highlightStart = null; highlightEnd = null"
+                x-data="viewTranscript()"
+                x-load
+                x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('view-transcript') }}"
+                x-on:mouseleave="clearHighlight()"
                 class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
             >
                 <div class="overflow-x-auto py-3">
@@ -30,7 +32,7 @@
                                         @if ($row['inClip'])
                                             class="bg-emerald-100 transition duration-75 dark:bg-emerald-500/10"
                                         @else
-                                            x-bind:class="highlightStart !== null && {{ $row['prevSegmentIndex'] }} >= highlightStart && {{ $row['nextSegmentIndex'] }} <= highlightEnd ? 'bg-orange-100 dark:bg-orange-500/10' : ''"
+                                            x-bind:class="isGapHighlighted({{ $row['prevSegmentIndex'] }}, {{ $row['nextSegmentIndex'] }}) ? 'bg-orange-100 dark:bg-orange-500/10' : ''"
                                             class="transition duration-75"
                                         @endif
                                     >
@@ -47,11 +49,11 @@
                                 @else
                                     <tr
                                         @if ($row['inClip'])
-                                            x-on:mouseenter="highlightStart = null; highlightEnd = null"
+                                            x-on:mouseenter="clearHighlight()"
                                         @else
-                                            x-on:mouseenter="highlightStart = {{ $row['segmentIndex'] }}; highlightEnd = {{ $row['highlightEnd'] }}"
+                                            x-on:mouseenter="setHighlight({{ $row['segmentIndex'] }}, {{ $row['highlightEnd'] }})"
                                             x-on:click="$wire.createClip({{ $row['segmentIndex'] }}, {{ $row['highlightEnd'] }})"
-                                            x-bind:class="highlightStart !== null && {{ $row['segmentIndex'] }} >= highlightStart && {{ $row['segmentIndex'] }} <= highlightEnd ? 'bg-orange-100 dark:bg-orange-500/10' : ''"
+                                            x-bind:class="isHighlighted({{ $row['segmentIndex'] }}) ? 'bg-orange-100 dark:bg-orange-500/10' : ''"
                                         @endif
                                         class="{{ $row['inClip'] ? 'bg-emerald-100 dark:bg-emerald-500/10' : 'cursor-pointer' }} transition duration-75"
                                     >
