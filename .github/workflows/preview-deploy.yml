@@ -49,9 +49,10 @@ jobs:
           dokku-host: ${{ env.DOKKU_HOST }}
           app-name-prefix: ${{ env.APP_NAME_PREFIX }}
           base-domain: ${{ env.BASE_DOMAIN }}
-          release-command: "php artisan migrate:fresh --force --seed"
+          release-command: "/bin/sh -c 'cp /app/prod-storage/database.sqlite /app/storage/app/database.sqlite && php artisan migrate --force'"
           storage-mounts: |
             {STORAGE_DIR}:/app/storage
+            /var/lib/dokku/data/storage/kerygma/app/:/app/prod-storage:ro
             /data/syncthing/mluther-videos/Sermons:/app/sermon-videos:ro
             /var/lib/dokku/data/storage/hf-cache:/app/hf-cache
           env-vars: |
