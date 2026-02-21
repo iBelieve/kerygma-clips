@@ -101,6 +101,12 @@ class ViewSermonVideo extends ViewRecord
                 $lastHighlight--;
             }
 
+            // Shrink back past any trailing clip segments so the
+            // highlight never ends right before a gap into a clip
+            while ($lastHighlight > $row['segmentIndex'] && $rows[$segmentIndices[$lastHighlight]]['inClip']) {
+                $lastHighlight--;
+            }
+
             $rows[$segmentIndices[$i]]['highlightEnd'] = $lastHighlight;
         }
 
