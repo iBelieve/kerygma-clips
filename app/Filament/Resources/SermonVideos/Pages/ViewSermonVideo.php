@@ -6,6 +6,7 @@ use App\Filament\Resources\SermonVideos\SermonVideoResource;
 use App\Models\SermonVideo;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Computed;
 
 /**
@@ -117,6 +118,11 @@ class ViewSermonVideo extends ViewRecord
     {
         // Ensure start <= end
         if ($startSegmentIndex > $endSegmentIndex) {
+            Log::warning('createClip called with start > end, swapping', [
+                'sermon_video_id' => $this->getRecord()->id,
+                'start_segment_index' => $startSegmentIndex,
+                'end_segment_index' => $endSegmentIndex,
+            ]);
             [$startSegmentIndex, $endSegmentIndex] = [$endSegmentIndex, $startSegmentIndex];
         }
 
@@ -127,6 +133,12 @@ class ViewSermonVideo extends ViewRecord
             ->exists();
 
         if ($startInClip) {
+            Log::error('createClip called with start inside an existing clip', [
+                'sermon_video_id' => $this->getRecord()->id,
+                'start_segment_index' => $startSegmentIndex,
+                'end_segment_index' => $endSegmentIndex,
+            ]);
+
             return;
         }
 
@@ -137,6 +149,12 @@ class ViewSermonVideo extends ViewRecord
             ->min('start_segment_index');
 
         if ($nextClipStart !== null) {
+            Log::warning('createClip truncating end to avoid overlapping a following clip', [
+                'sermon_video_id' => $this->getRecord()->id,
+                'start_segment_index' => $startSegmentIndex,
+                'original_end_segment_index' => $endSegmentIndex,
+                'truncated_end_segment_index' => $nextClipStart - 1,
+            ]);
             $endSegmentIndex = $nextClipStart - 1;
         }
 
