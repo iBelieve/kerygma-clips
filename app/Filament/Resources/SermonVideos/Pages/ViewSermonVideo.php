@@ -28,16 +28,17 @@ class ViewSermonVideo extends ViewRecord
     }
 
     /**
-     * @return list<array{type: 'segment', start: float, text: string}|array{type: 'gap', label: string}>
+     * @return list<array{type: 'segment', start: float, end: float, segmentIndex: int, highlightEnd: int, text: string}|array{type: 'gap', label: string}>
      */
     #[Computed]
     public function transcriptRows(): array
     {
         $segments = $this->getRecord()->transcript['segments'] ?? [];
         $rows = [];
+        $segmentIndices = [];
         $previousEnd = null;
 
-        foreach ($segments as $segment) {
+        foreach ($segments as $index => $segment) {
             if ($previousEnd !== null) {
                 $gap = $segment['start'] - $previousEnd;
                 if ($gap > $this->gapThreshold) {
@@ -48,13 +49,46 @@ class ViewSermonVideo extends ViewRecord
                 }
             }
 
+            $rowIndex = count($rows);
             $rows[] = [
                 'type' => 'segment',
                 'start' => $segment['start'],
+                'end' => $segment['end'],
+                'segmentIndex' => $index,
+                'highlightEnd' => $index,
                 'text' => trim($segment['text']),
             ];
+            $segmentIndices[] = $rowIndex;
 
             $previousEnd = $segment['end'];
+        }
+
+        // Walk backward to precompute highlightEnd for each segment.
+        // Since earlier segments start sooner, their 60s window ends at or
+        // before the next segment's window: highlightEnd[i] <= highlightEnd[i+1].
+        // Starting from the previous answer and shrinking gives O(n) total.
+        $segmentCount = count($segmentIndices);
+        $lastHighlight = $segmentCount - 1;
+
+        for ($i = $segmentCount - 1; $i >= 0; $i--) {
+            $row = $rows[$segmentIndices[$i]];
+            $anchorStart = $row['start'];
+
+            // Start from the next segment's highlightEnd (or end of list)
+            if ($i < $segmentCount - 1) {
+                $lastHighlight = $rows[$segmentIndices[$i + 1]]['highlightEnd'];
+            }
+
+            // Shrink back while the window exceeds 60s
+            while ($lastHighlight > $row['segmentIndex']) {
+                $candidateEnd = $rows[$segmentIndices[$lastHighlight]]['end'];
+                if ($candidateEnd - $anchorStart <= 60) {
+                    break;
+                }
+                $lastHighlight--;
+            }
+
+            $rows[$segmentIndices[$i]]['highlightEnd'] = $lastHighlight;
         }
 
         return $rows;
