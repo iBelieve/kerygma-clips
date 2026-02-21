@@ -1,5 +1,5 @@
-document.addEventListener("alpine:init", () => {
-    Alpine.data("viewTranscript", () => ({
+export default function viewTranscript() {
+    return {
         highlightStart: null,
         highlightEnd: null,
 
@@ -28,5 +28,5 @@ document.addEventListener("alpine:init", () => {
                 nextSegmentIndex <= this.highlightEnd
             );
         },
-    }));
-});
+    };
+}

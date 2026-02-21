@@ -17,6 +17,8 @@
             </div>
 
             <div
+                x-load
+                x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('view-transcript') }}"
                 x-data="viewTranscript()"
                 x-on:mouseleave="clearHighlight()"
                 class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
