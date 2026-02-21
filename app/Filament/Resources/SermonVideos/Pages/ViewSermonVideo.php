@@ -120,22 +120,24 @@ class ViewSermonVideo extends ViewRecord
             [$startSegmentIndex, $endSegmentIndex] = [$endSegmentIndex, $startSegmentIndex];
         }
 
-        $existingClips = $this->getRecord()->sermonClips()
-            ->orderBy('start_segment_index')
-            ->get(['start_segment_index', 'end_segment_index']);
-
         // Reject if start is within an existing clip
-        foreach ($existingClips as $clip) {
-            if ($startSegmentIndex >= $clip->start_segment_index && $startSegmentIndex <= $clip->end_segment_index) {
-                return;
-            }
+        $startInClip = $this->getRecord()->sermonClips()
+            ->where('start_segment_index', '<=', $startSegmentIndex)
+            ->where('end_segment_index', '>=', $startSegmentIndex)
+            ->exists();
+
+        if ($startInClip) {
+            return;
         }
 
         // Truncate end if it would overlap into a following clip
-        foreach ($existingClips as $clip) {
-            if ($clip->start_segment_index > $startSegmentIndex && $clip->start_segment_index <= $endSegmentIndex) {
-                $endSegmentIndex = $clip->start_segment_index - 1;
-            }
+        $nextClipStart = $this->getRecord()->sermonClips()
+            ->where('start_segment_index', '>', $startSegmentIndex)
+            ->where('start_segment_index', '<=', $endSegmentIndex)
+            ->min('start_segment_index');
+
+        if ($nextClipStart !== null) {
+            $endSegmentIndex = $nextClipStart - 1;
         }
 
         $this->getRecord()->sermonClips()->create([
