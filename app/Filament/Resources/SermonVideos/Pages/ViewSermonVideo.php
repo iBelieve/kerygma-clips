@@ -29,7 +29,7 @@ class ViewSermonVideo extends ViewRecord
     }
 
     /**
-     * @return list<array{type: 'segment', start: float, end: float, segmentIndex: int, highlightEnd: int, text: string, inClip: bool}|array{type: 'gap', label: string, prevSegmentIndex: int, nextSegmentIndex: int, inClip: bool}>
+     * @return list<array{type: 'segment', start: float, end: float, segmentIndex: int, highlightEnd: int, text: string, inClip: bool, clipId: int|null, clipStart: int|null, clipEnd: int|null}|array{type: 'gap', label: string, prevSegmentIndex: int, nextSegmentIndex: int, inClip: bool, clipId: int|null, clipStart: int|null, clipEnd: int|null}>
      */
     #[Computed]
     public function transcriptRows(): array
@@ -42,25 +42,28 @@ class ViewSermonVideo extends ViewRecord
         // Load clip ranges for this sermon video
         $clips = $this->getRecord()->sermonClips()
             ->orderBy('start_segment_index')
-            ->get(['start_segment_index', 'end_segment_index']);
+            ->get(['id', 'start_segment_index', 'end_segment_index']);
 
         foreach ($segments as $index => $segment) {
             if ($previousEnd !== null) {
                 $gap = $segment['start'] - $previousEnd;
                 if ($gap > $this->gapThreshold) {
-                    $gapInClip = $clips->contains(fn ($clip) => ($index - 1) >= $clip->start_segment_index && $index <= $clip->end_segment_index);
+                    $gapClip = $clips->first(fn ($clip) => ($index - 1) >= $clip->start_segment_index && $index <= $clip->end_segment_index);
 
                     $rows[] = [
                         'type' => 'gap',
                         'label' => $this->formatGap($gap),
                         'prevSegmentIndex' => $index - 1,
                         'nextSegmentIndex' => $index,
-                        'inClip' => $gapInClip,
+                        'inClip' => $gapClip !== null,
+                        'clipId' => $gapClip?->id,
+                        'clipStart' => $gapClip?->start_segment_index,
+                        'clipEnd' => $gapClip?->end_segment_index,
                     ];
                 }
             }
 
-            $inClip = $clips->contains(fn ($clip) => $index >= $clip->start_segment_index && $index <= $clip->end_segment_index);
+            $matchingClip = $clips->first(fn ($clip) => $index >= $clip->start_segment_index && $index <= $clip->end_segment_index);
 
             $rowIndex = count($rows);
             $rows[] = [
@@ -70,7 +73,10 @@ class ViewSermonVideo extends ViewRecord
                 'segmentIndex' => $index,
                 'highlightEnd' => $index,
                 'text' => trim($segment['text']),
-                'inClip' => $inClip,
+                'inClip' => $matchingClip !== null,
+                'clipId' => $matchingClip?->id,
+                'clipStart' => $matchingClip?->start_segment_index,
+                'clipEnd' => $matchingClip?->end_segment_index,
             ];
             $segmentIndices[] = $rowIndex;
 
@@ -112,6 +118,109 @@ class ViewSermonVideo extends ViewRecord
         }
 
         return $rows;
+    }
+
+    /**
+     * @return array<int, array{start: float, end: float}>
+     */
+    #[Computed]
+    public function segmentTimings(): array
+    {
+        $segments = $this->getRecord()->transcript['segments'] ?? [];
+        $timings = [];
+
+        foreach ($segments as $index => $segment) {
+            $timings[$index] = [
+                'start' => $segment['start'],
+                'end' => $segment['end'],
+            ];
+        }
+
+        return $timings;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    #[Computed]
+    public function clipDurations(): array
+    {
+        $segments = $this->getRecord()->transcript['segments'] ?? [];
+        $clips = $this->getRecord()->sermonClips()
+            ->orderBy('start_segment_index')
+            ->get(['id', 'start_segment_index', 'end_segment_index']);
+
+        $durations = [];
+
+        foreach ($clips as $clip) {
+            $startTime = $segments[$clip->start_segment_index]['start'] ?? 0;
+            $endTime = $segments[$clip->end_segment_index]['end'] ?? 0;
+            $durations[$clip->id] = $this->formatDuration($endTime - $startTime);
+        }
+
+        return $durations;
+    }
+
+    public function formatDuration(float $seconds): string
+    {
+        $totalSeconds = (int) round($seconds);
+        $minutes = intdiv($totalSeconds, 60);
+        $secs = $totalSeconds % 60;
+
+        return sprintf('%d:%02d', $minutes, $secs);
+    }
+
+    public function resizeClip(int $clipId, int $newStart, int $newEnd): void
+    {
+        $clip = $this->getRecord()->sermonClips()->findOrFail($clipId);
+        $segments = $this->getRecord()->transcript['segments'] ?? [];
+
+        if ($newStart > $newEnd) {
+            [$newStart, $newEnd] = [$newEnd, $newStart];
+        }
+
+        if (! isset($segments[$newStart]) || ! isset($segments[$newEnd])) {
+            Log::error('resizeClip: segment index out of range', [
+                'clip_id' => $clipId,
+                'newStart' => $newStart,
+                'newEnd' => $newEnd,
+            ]);
+
+            return;
+        }
+
+        $duration = $segments[$newEnd]['end'] - $segments[$newStart]['start'];
+        if ($duration > 90) {
+            Log::warning('resizeClip: duration exceeds 90s', [
+                'clip_id' => $clipId,
+                'duration' => $duration,
+            ]);
+
+            return;
+        }
+
+        $overlapping = $this->getRecord()->sermonClips()
+            ->where('id', '!=', $clipId)
+            ->where('start_segment_index', '<=', $newEnd)
+            ->where('end_segment_index', '>=', $newStart)
+            ->exists();
+
+        if ($overlapping) {
+            Log::warning('resizeClip: would overlap with another clip', [
+                'clip_id' => $clipId,
+                'newStart' => $newStart,
+                'newEnd' => $newEnd,
+            ]);
+
+            return;
+        }
+
+        $clip->update([
+            'start_segment_index' => $newStart,
+            'end_segment_index' => $newEnd,
+        ]);
+
+        unset($this->transcriptRows, $this->clipDurations);
     }
 
     public function createClip(int $startSegmentIndex, int $endSegmentIndex): void
@@ -163,7 +272,7 @@ class ViewSermonVideo extends ViewRecord
             'end_segment_index' => $endSegmentIndex,
         ]);
 
-        unset($this->transcriptRows);
+        unset($this->transcriptRows, $this->clipDurations);
     }
 
     #[Computed]
