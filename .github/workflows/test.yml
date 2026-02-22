@@ -140,17 +140,20 @@ jobs:
 
       - name: Upgrade Chrome
         uses: browser-actions/setup-chrome@latest
+        id: setup-chrome
         with:
           chrome-version: stable
 
       - name: Start Chrome Driver
-        run: ./vendor/laravel/dusk/bin/chromedriver-linux --port=9515 &
+        run: ${{ steps.setup-chrome.outputs.chromedriver-path }} --port=9515 &
 
       - name: Start Laravel Server
         run: php artisan serve --no-reload &
 
       - name: Run Dusk Tests
         run: php artisan dusk
+        env:
+          DUSK_DRIVER_URL: http://localhost:9515
 
       - name: Upload Screenshots
         if: failure()
