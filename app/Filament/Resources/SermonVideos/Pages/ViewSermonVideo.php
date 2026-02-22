@@ -39,18 +39,9 @@ class ViewSermonVideo extends ViewRecord
                 'text' => trim($s['text']),
             ])->values()->all();
 
-        $clips = $this->getRecord()->sermonClips()
-            ->orderBy('start_segment_index')
-            ->get(['id', 'start_segment_index', 'end_segment_index'])
-            ->map(fn ($c): array => [
-                'id' => $c->id,
-                'start' => $c->start_segment_index,
-                'end' => $c->end_segment_index,
-            ])->values()->all();
-
         return [
             'segments' => $segments,
-            'clips' => $clips,
+            'clips' => $this->getClips(),
         ];
     }
 
