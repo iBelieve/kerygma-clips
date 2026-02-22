@@ -146,7 +146,16 @@ jobs:
 
       - name: Start Chrome Driver
         run: |
-          ${{ steps.setup-chrome.outputs.chromedriver-path }} --port=9515 &
+          CHROMEDRIVER="${{ steps.setup-chrome.outputs.chromedriver-path }}"
+          if [ -z "$CHROMEDRIVER" ] || [ ! -x "$CHROMEDRIVER" ]; then
+            CHROMEDRIVER=$(which chromedriver 2>/dev/null || true)
+          fi
+          if [ -z "$CHROMEDRIVER" ]; then
+            echo "::error::ChromeDriver not found"
+            exit 1
+          fi
+          echo "Using ChromeDriver at: $CHROMEDRIVER"
+          "$CHROMEDRIVER" --port=9515 &
           echo "Waiting for ChromeDriver to start..."
           for i in $(seq 1 10); do
             if curl -s http://localhost:9515/status > /dev/null 2>&1; then
@@ -156,7 +165,7 @@ jobs:
             echo "Attempt $i: ChromeDriver not ready yet..."
             sleep 1
           done
-          curl -s http://localhost:9515/status || (echo "ChromeDriver failed to start" && exit 1)
+          curl -s http://localhost:9515/status || (echo "::error::ChromeDriver failed to start" && exit 1)
 
       - name: Add DUSK_DRIVER_URL to env
         run: echo "DUSK_DRIVER_URL=http://localhost:9515" >> .env.dusk.local
