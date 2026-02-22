@@ -55,6 +55,23 @@ export default function viewTranscript({ segments, clips }) {
             // window ends at or before the next segment's window, so
             // shrinking from the previous answer gives O(n) total.
             const count = this.segments.length;
+
+            // Find the first clip start index at or after each segment.
+            // nextClipAt[i] = index of the first clip start >= i, or count if none.
+            const nextClipAt = new Array(count).fill(count);
+            for (const c of this.clips) {
+                // Mark the clip start position
+                if (c.start < count && nextClipAt[c.start] > c.start) {
+                    nextClipAt[c.start] = c.start;
+                }
+            }
+            // Fill backwards so nextClipAt[i] = min(nextClipAt[i], nextClipAt[i+1])
+            for (let i = count - 2; i >= 0; i--) {
+                if (nextClipAt[i] > nextClipAt[i + 1]) {
+                    nextClipAt[i] = nextClipAt[i + 1];
+                }
+            }
+
             let lastHighlight = count - 1;
 
             for (let i = count - 1; i >= 0; i--) {
@@ -72,10 +89,13 @@ export default function viewTranscript({ segments, clips }) {
                     lastHighlight--;
                 }
 
-                // Shrink back past any trailing clip segments so the
-                // highlight never ends right before a gap into a clip
-                while (lastHighlight > i && this.inClip(lastHighlight)) {
-                    lastHighlight--;
+                // Don't highlight past a clip that starts after this segment
+                if (
+                    !this.inClip(i) &&
+                    nextClipAt[i] > i &&
+                    nextClipAt[i] <= lastHighlight
+                ) {
+                    lastHighlight = nextClipAt[i] - 1;
                 }
 
                 this.highlightEnds[i] = lastHighlight;

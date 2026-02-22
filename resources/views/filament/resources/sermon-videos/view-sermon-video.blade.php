@@ -54,7 +54,7 @@
                                         !dragging && row.type === 'segment' && !inClip(row.segmentIndex)
                                             && createClip(row.segmentIndex, highlightEnds[row.segmentIndex])
                                     "
-                                    class="transition duration-75"
+                                    class="relative transition duration-75"
                                 >
                                     {{-- Gap row content --}}
                                     <td
@@ -75,27 +75,13 @@
                                     {{-- Segment row content --}}
                                     <td
                                         x-show="row.type === 'segment'"
-                                        class="relative whitespace-nowrap py-1 pe-3 ps-4 align-baseline text-xs text-end tabular-nums text-gray-500 sm:ps-6 dark:text-gray-400"
+                                        class="whitespace-nowrap py-1 pe-3 ps-4 align-baseline text-xs text-end tabular-nums text-gray-500 sm:ps-6 dark:text-gray-400"
                                     >
                                         <span x-text="row.type === 'segment' ? formatTimestamp(row.start) : ''"></span>
-
-                                        {{-- Top drag handle for clip start --}}
-                                        <div
-                                            x-show="row.type === 'segment' && isClipStart(row.segmentIndex)"
-                                            x-on:mousedown.prevent="startDrag(row.segmentIndex, 'start')"
-                                            class="absolute inset-x-0 top-0 z-10 h-1 cursor-ns-resize bg-emerald-400/40 transition hover:bg-emerald-400"
-                                        ></div>
-
-                                        {{-- Bottom drag handle for clip end --}}
-                                        <div
-                                            x-show="row.type === 'segment' && isClipEnd(row.segmentIndex)"
-                                            x-on:mousedown.prevent="startDrag(row.segmentIndex, 'end')"
-                                            class="absolute inset-x-0 bottom-0 z-10 h-1 cursor-ns-resize bg-emerald-400/40 transition hover:bg-emerald-400"
-                                        ></div>
                                     </td>
                                     <td
                                         x-show="row.type === 'segment'"
-                                        class="relative w-full py-1 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white"
+                                        class="w-full py-1 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white"
                                     >
                                         <div class="flex items-baseline gap-2">
                                             <span class="flex-1" x-text="row.text"></span>
