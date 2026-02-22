@@ -105,6 +105,75 @@ class ViewSermonVideo extends ViewRecord
     /**
      * @return list<array{id: int, start: int, end: int}>
      */
+    public function updateClip(int $clipId, int $startSegmentIndex, int $endSegmentIndex): array
+    {
+        $clip = $this->getRecord()->sermonClips()->findOrFail($clipId);
+
+        // Ensure start <= end
+        if ($startSegmentIndex > $endSegmentIndex) {
+            Log::warning('updateClip called with start > end, swapping', [
+                'clip_id' => $clipId,
+                'start_segment_index' => $startSegmentIndex,
+                'end_segment_index' => $endSegmentIndex,
+            ]);
+            [$startSegmentIndex, $endSegmentIndex] = [$endSegmentIndex, $startSegmentIndex];
+        }
+
+        $segments = $this->transcriptData['segments'];
+
+        // Validate segment indices in bounds
+        if ($startSegmentIndex < 0 || $endSegmentIndex >= count($segments)) {
+            Log::warning('updateClip called with out-of-bounds indices', [
+                'clip_id' => $clipId,
+                'start_segment_index' => $startSegmentIndex,
+                'end_segment_index' => $endSegmentIndex,
+                'segment_count' => count($segments),
+            ]);
+
+            return $this->getClips();
+        }
+
+        // Enforce 90-second maximum duration
+        $duration = $segments[$endSegmentIndex]['end'] - $segments[$startSegmentIndex]['start'];
+        if ($duration > 90) {
+            Log::warning('updateClip rejected: duration exceeds 90 seconds', [
+                'clip_id' => $clipId,
+                'duration' => $duration,
+            ]);
+
+            return $this->getClips();
+        }
+
+        // Check for overlap with other clips
+        $overlaps = $this->getRecord()->sermonClips()
+            ->where('id', '!=', $clipId)
+            ->where('start_segment_index', '<=', $endSegmentIndex)
+            ->where('end_segment_index', '>=', $startSegmentIndex)
+            ->exists();
+
+        if ($overlaps) {
+            Log::warning('updateClip rejected: would overlap with another clip', [
+                'clip_id' => $clipId,
+                'start_segment_index' => $startSegmentIndex,
+                'end_segment_index' => $endSegmentIndex,
+            ]);
+
+            return $this->getClips();
+        }
+
+        $clip->update([
+            'start_segment_index' => $startSegmentIndex,
+            'end_segment_index' => $endSegmentIndex,
+        ]);
+
+        unset($this->transcriptData);
+
+        return $this->getClips();
+    }
+
+    /**
+     * @return list<array{id: int, start: int, end: int}>
+     */
     private function getClips(): array
     {
         return $this->getRecord()->sermonClips()
