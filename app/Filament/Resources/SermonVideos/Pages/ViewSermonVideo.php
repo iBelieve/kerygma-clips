@@ -76,6 +76,22 @@ class ViewSermonVideo extends ViewRecord
             return $this->getClips();
         }
 
+        // Reject if clip would exceed 90s
+        $segments = $this->getRecord()->transcript['segments'] ?? [];
+        if (isset($segments[$startSegmentIndex], $segments[$endSegmentIndex])) {
+            $duration = $segments[$endSegmentIndex]['end'] - $segments[$startSegmentIndex]['start'];
+            if ($duration > 90) {
+                Log::warning('createClip rejected: duration exceeds 90s', [
+                    'sermon_video_id' => $this->getRecord()->id,
+                    'start_segment_index' => $startSegmentIndex,
+                    'end_segment_index' => $endSegmentIndex,
+                    'duration' => $duration,
+                ]);
+
+                return $this->getClips();
+            }
+        }
+
         // Truncate end if it would overlap into a following clip
         $nextClipStart = $this->getRecord()->sermonClips()
             ->where('start_segment_index', '>', $startSegmentIndex)
@@ -93,6 +109,59 @@ class ViewSermonVideo extends ViewRecord
         }
 
         $this->getRecord()->sermonClips()->create([
+            'start_segment_index' => $startSegmentIndex,
+            'end_segment_index' => $endSegmentIndex,
+        ]);
+
+        unset($this->transcriptData);
+
+        return $this->getClips();
+    }
+
+    /**
+     * @return list<array{id: int, start: int, end: int}>
+     */
+    public function updateClip(int $clipId, int $startSegmentIndex, int $endSegmentIndex): array
+    {
+        $clip = $this->getRecord()->sermonClips()->findOrFail($clipId);
+
+        // Ensure start <= end
+        if ($startSegmentIndex > $endSegmentIndex) {
+            [$startSegmentIndex, $endSegmentIndex] = [$endSegmentIndex, $startSegmentIndex];
+        }
+
+        // Reject if clip would exceed 90s
+        $segments = $this->getRecord()->transcript['segments'] ?? [];
+        if (isset($segments[$startSegmentIndex], $segments[$endSegmentIndex])) {
+            $duration = $segments[$endSegmentIndex]['end'] - $segments[$startSegmentIndex]['start'];
+            if ($duration > 90) {
+                Log::warning('updateClip rejected: duration exceeds 90s', [
+                    'clip_id' => $clipId,
+                    'duration' => $duration,
+                ]);
+
+                return $this->getClips();
+            }
+        }
+
+        // Check no overlap with other clips
+        $overlapping = $this->getRecord()->sermonClips()
+            ->where('id', '!=', $clipId)
+            ->where('start_segment_index', '<=', $endSegmentIndex)
+            ->where('end_segment_index', '>=', $startSegmentIndex)
+            ->exists();
+
+        if ($overlapping) {
+            Log::warning('updateClip rejected: overlaps with another clip', [
+                'clip_id' => $clipId,
+                'start_segment_index' => $startSegmentIndex,
+                'end_segment_index' => $endSegmentIndex,
+            ]);
+
+            return $this->getClips();
+        }
+
+        $clip->update([
             'start_segment_index' => $startSegmentIndex,
             'end_segment_index' => $endSegmentIndex,
         ]);
