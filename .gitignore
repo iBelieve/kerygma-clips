@@ -26,3 +26,6 @@ Homestead.yaml
 Thumbs.db
 .claude/settings.local.json
 .hf-cache
+/tests/Browser/screenshots
+/tests/Browser/console
+/tests/Browser/source
