@@ -145,15 +145,27 @@ jobs:
           chrome-version: stable
 
       - name: Start Chrome Driver
-        run: ${{ steps.setup-chrome.outputs.chromedriver-path }} --port=9515 &
+        run: |
+          ${{ steps.setup-chrome.outputs.chromedriver-path }} --port=9515 &
+          echo "Waiting for ChromeDriver to start..."
+          for i in $(seq 1 10); do
+            if curl -s http://localhost:9515/status > /dev/null 2>&1; then
+              echo "ChromeDriver is ready"
+              break
+            fi
+            echo "Attempt $i: ChromeDriver not ready yet..."
+            sleep 1
+          done
+          curl -s http://localhost:9515/status || (echo "ChromeDriver failed to start" && exit 1)
+
+      - name: Add DUSK_DRIVER_URL to env
+        run: echo "DUSK_DRIVER_URL=http://localhost:9515" >> .env.dusk.local
 
       - name: Start Laravel Server
         run: php artisan serve --no-reload &
 
       - name: Run Dusk Tests
         run: php artisan dusk
-        env:
-          DUSK_DRIVER_URL: http://localhost:9515
 
       - name: Upload Screenshots
         if: failure()
