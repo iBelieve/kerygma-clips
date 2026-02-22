@@ -20,8 +20,6 @@ class ViewSermonVideo extends ViewRecord
 
     protected string $view = 'filament.resources.sermon-videos.view-sermon-video';
 
-    public int $gapThreshold = 2;
-
     public function getTitle(): string|Htmlable
     {
         return $this->getRecord()->title
@@ -29,92 +27,37 @@ class ViewSermonVideo extends ViewRecord
     }
 
     /**
-     * @return list<array{type: 'segment', start: float, end: float, segmentIndex: int, highlightEnd: int, text: string, inClip: bool}|array{type: 'gap', label: string, prevSegmentIndex: int, nextSegmentIndex: int, inClip: bool}>
+     * @return array{segments: list<array{start: float, end: float, text: string}>, clips: list<array{id: int, start: int, end: int}>}
      */
     #[Computed]
-    public function transcriptRows(): array
+    public function transcriptData(): array
     {
-        $segments = $this->getRecord()->transcript['segments'] ?? [];
-        $rows = [];
-        $segmentIndices = [];
-        $previousEnd = null;
+        $segments = collect($this->getRecord()->transcript['segments'] ?? [])
+            ->map(fn (array $s): array => [
+                'start' => $s['start'],
+                'end' => $s['end'],
+                'text' => trim($s['text']),
+            ])->values()->all();
 
-        // Load clip ranges for this sermon video
         $clips = $this->getRecord()->sermonClips()
             ->orderBy('start_segment_index')
-            ->get(['start_segment_index', 'end_segment_index']);
+            ->get(['id', 'start_segment_index', 'end_segment_index'])
+            ->map(fn ($c): array => [
+                'id' => $c->id,
+                'start' => $c->start_segment_index,
+                'end' => $c->end_segment_index,
+            ])->values()->all();
 
-        foreach ($segments as $index => $segment) {
-            if ($previousEnd !== null) {
-                $gap = $segment['start'] - $previousEnd;
-                if ($gap > $this->gapThreshold) {
-                    $gapInClip = $clips->contains(fn ($clip) => ($index - 1) >= $clip->start_segment_index && $index <= $clip->end_segment_index);
-
-                    $rows[] = [
-                        'type' => 'gap',
-                        'label' => $this->formatGap($gap),
-                        'prevSegmentIndex' => $index - 1,
-                        'nextSegmentIndex' => $index,
-                        'inClip' => $gapInClip,
-                    ];
-                }
-            }
-
-            $inClip = $clips->contains(fn ($clip) => $index >= $clip->start_segment_index && $index <= $clip->end_segment_index);
-
-            $rowIndex = count($rows);
-            $rows[] = [
-                'type' => 'segment',
-                'start' => $segment['start'],
-                'end' => $segment['end'],
-                'segmentIndex' => $index,
-                'highlightEnd' => $index,
-                'text' => trim($segment['text']),
-                'inClip' => $inClip,
-            ];
-            $segmentIndices[] = $rowIndex;
-
-            $previousEnd = $segment['end'];
-        }
-
-        // Walk backward to precompute highlightEnd for each segment.
-        // Since earlier segments start sooner, their 60s window ends at or
-        // before the next segment's window: highlightEnd[i] <= highlightEnd[i+1].
-        // Starting from the previous answer and shrinking gives O(n) total.
-        $segmentCount = count($segmentIndices);
-        $lastHighlight = $segmentCount - 1;
-
-        for ($i = $segmentCount - 1; $i >= 0; $i--) {
-            $row = $rows[$segmentIndices[$i]];
-            $anchorStart = $row['start'];
-
-            // Start from the next segment's highlightEnd (or end of list)
-            if ($i < $segmentCount - 1) {
-                $lastHighlight = $rows[$segmentIndices[$i + 1]]['highlightEnd'];
-            }
-
-            // Shrink back while the window exceeds 60s
-            while ($lastHighlight > $row['segmentIndex']) {
-                $candidateEnd = $rows[$segmentIndices[$lastHighlight]]['end'];
-                if ($candidateEnd - $anchorStart <= 60) {
-                    break;
-                }
-                $lastHighlight--;
-            }
-
-            // Shrink back past any trailing clip segments so the
-            // highlight never ends right before a gap into a clip
-            while ($lastHighlight > $row['segmentIndex'] && $rows[$segmentIndices[$lastHighlight]]['inClip']) {
-                $lastHighlight--;
-            }
-
-            $rows[$segmentIndices[$i]]['highlightEnd'] = $lastHighlight;
-        }
-
-        return $rows;
+        return [
+            'segments' => $segments,
+            'clips' => $clips,
+        ];
     }
 
-    public function createClip(int $startSegmentIndex, int $endSegmentIndex): void
+    /**
+     * @return list<array{id: int, start: int, end: int}>
+     */
+    public function createClip(int $startSegmentIndex, int $endSegmentIndex): array
     {
         // Ensure start <= end
         if ($startSegmentIndex > $endSegmentIndex) {
@@ -139,7 +82,7 @@ class ViewSermonVideo extends ViewRecord
                 'end_segment_index' => $endSegmentIndex,
             ]);
 
-            return;
+            return $this->getClips();
         }
 
         // Truncate end if it would overlap into a following clip
@@ -163,43 +106,23 @@ class ViewSermonVideo extends ViewRecord
             'end_segment_index' => $endSegmentIndex,
         ]);
 
-        unset($this->transcriptRows);
+        unset($this->transcriptData);
+
+        return $this->getClips();
     }
 
-    #[Computed]
-    public function lastSegmentStart(): float
+    /**
+     * @return list<array{id: int, start: int, end: int}>
+     */
+    private function getClips(): array
     {
-        $segments = $this->getRecord()->transcript['segments'] ?? [];
-        $last = end($segments);
-
-        return $last !== false ? $last['start'] : 0.0;
-    }
-
-    public function formatTimestamp(float $seconds): string
-    {
-        $totalSeconds = (int) $seconds;
-        $hours = intdiv($totalSeconds, 3600);
-        $minutes = intdiv($totalSeconds % 3600, 60);
-        $secs = $totalSeconds % 60;
-
-        if ($this->lastSegmentStart >= 3600) {
-            return sprintf('%d:%02d:%02d', $hours, $minutes, $secs);
-        }
-
-        return sprintf('%02d:%02d', $minutes, $secs);
-    }
-
-    public function formatGap(float $seconds): string
-    {
-        $totalSeconds = (int) round($seconds);
-
-        if ($totalSeconds >= 60) {
-            $minutes = intdiv($totalSeconds, 60);
-            $secs = $totalSeconds % 60;
-
-            return sprintf('%dm %02ds pause', $minutes, $secs);
-        }
-
-        return sprintf('%ds pause', $totalSeconds);
+        return $this->getRecord()->sermonClips()
+            ->orderBy('start_segment_index')
+            ->get(['id', 'start_segment_index', 'end_segment_index'])
+            ->map(fn ($c): array => [
+                'id' => $c->id,
+                'start' => $c->start_segment_index,
+                'end' => $c->end_segment_index,
+            ])->values()->all();
     }
 }
