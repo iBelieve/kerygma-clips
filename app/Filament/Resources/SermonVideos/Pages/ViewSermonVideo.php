@@ -46,57 +46,19 @@ class ViewSermonVideo extends ViewRecord
     }
 
     /**
-     * Normalize and validate segment indices for a clip.
-     *
-     * Swaps start/end if reversed, validates that both segment indices exist
-     * in the transcript, and rejects clips that would exceed 90 seconds.
-     *
-     * @return array{0: int, 1: int}|null Normalized [start, end] indices, or null if invalid.
-     */
-    private function validateClipSegments(int $startSegmentIndex, int $endSegmentIndex): ?array
-    {
-        if ($startSegmentIndex > $endSegmentIndex) {
-            [$startSegmentIndex, $endSegmentIndex] = [$endSegmentIndex, $startSegmentIndex];
-        }
-
-        $segments = $this->getRecord()->transcript['segments'] ?? [];
-
-        if (! isset($segments[$startSegmentIndex], $segments[$endSegmentIndex])) {
-            Log::error('Clip segment indices out of bounds', [
-                'sermon_video_id' => $this->getRecord()->id,
-                'start_segment_index' => $startSegmentIndex,
-                'end_segment_index' => $endSegmentIndex,
-                'segment_count' => count($segments),
-            ]);
-
-            return null;
-        }
-
-        $duration = $segments[$endSegmentIndex]['end'] - $segments[$startSegmentIndex]['start'];
-        if ($duration > 90) {
-            Log::warning('Clip rejected: duration exceeds 90s', [
-                'sermon_video_id' => $this->getRecord()->id,
-                'start_segment_index' => $startSegmentIndex,
-                'end_segment_index' => $endSegmentIndex,
-                'duration' => $duration,
-            ]);
-
-            return null;
-        }
-
-        return [$startSegmentIndex, $endSegmentIndex];
-    }
-
-    /**
      * @return list<array{id: int, start: int, end: int}>
      */
     public function createClip(int $startSegmentIndex, int $endSegmentIndex): array
     {
-        $validated = $this->validateClipSegments($startSegmentIndex, $endSegmentIndex);
-        if ($validated === null) {
-            return $this->getClips();
+        // Ensure start <= end
+        if ($startSegmentIndex > $endSegmentIndex) {
+            Log::warning('createClip called with start > end, swapping', [
+                'sermon_video_id' => $this->getRecord()->id,
+                'start_segment_index' => $startSegmentIndex,
+                'end_segment_index' => $endSegmentIndex,
+            ]);
+            [$startSegmentIndex, $endSegmentIndex] = [$endSegmentIndex, $startSegmentIndex];
         }
-        [$startSegmentIndex, $endSegmentIndex] = $validated;
 
         // Reject if start is within an existing clip
         $startInClip = $this->getRecord()->sermonClips()
@@ -109,6 +71,32 @@ class ViewSermonVideo extends ViewRecord
                 'sermon_video_id' => $this->getRecord()->id,
                 'start_segment_index' => $startSegmentIndex,
                 'end_segment_index' => $endSegmentIndex,
+            ]);
+
+            return $this->getClips();
+        }
+
+        // Reject if clip would exceed 90s
+        $segments = $this->getRecord()->transcript['segments'] ?? [];
+
+        if (! isset($segments[$startSegmentIndex], $segments[$endSegmentIndex])) {
+            Log::error('createClip segment indices out of bounds', [
+                'sermon_video_id' => $this->getRecord()->id,
+                'start_segment_index' => $startSegmentIndex,
+                'end_segment_index' => $endSegmentIndex,
+                'segment_count' => count($segments),
+            ]);
+
+            return $this->getClips();
+        }
+
+        $duration = $segments[$endSegmentIndex]['end'] - $segments[$startSegmentIndex]['start'];
+        if ($duration > 90) {
+            Log::warning('createClip rejected: duration exceeds 90s', [
+                'sermon_video_id' => $this->getRecord()->id,
+                'start_segment_index' => $startSegmentIndex,
+                'end_segment_index' => $endSegmentIndex,
+                'duration' => $duration,
             ]);
 
             return $this->getClips();
@@ -147,11 +135,34 @@ class ViewSermonVideo extends ViewRecord
     {
         $clip = $this->getRecord()->sermonClips()->findOrFail($clipId);
 
-        $validated = $this->validateClipSegments($startSegmentIndex, $endSegmentIndex);
-        if ($validated === null) {
+        // Ensure start <= end
+        if ($startSegmentIndex > $endSegmentIndex) {
+            [$startSegmentIndex, $endSegmentIndex] = [$endSegmentIndex, $startSegmentIndex];
+        }
+
+        $segments = $this->getRecord()->transcript['segments'] ?? [];
+
+        if (! isset($segments[$startSegmentIndex], $segments[$endSegmentIndex])) {
+            Log::error('updateClip segment indices out of bounds', [
+                'clip_id' => $clipId,
+                'start_segment_index' => $startSegmentIndex,
+                'end_segment_index' => $endSegmentIndex,
+                'segment_count' => count($segments),
+            ]);
+
             return $this->getClips();
         }
-        [$startSegmentIndex, $endSegmentIndex] = $validated;
+
+        // Reject if clip would exceed 90s
+        $duration = $segments[$endSegmentIndex]['end'] - $segments[$startSegmentIndex]['start'];
+        if ($duration > 90) {
+            Log::warning('updateClip rejected: duration exceeds 90s', [
+                'clip_id' => $clipId,
+                'duration' => $duration,
+            ]);
+
+            return $this->getClips();
+        }
 
         // Check no overlap with other clips
         $overlapping = $this->getRecord()->sermonClips()
