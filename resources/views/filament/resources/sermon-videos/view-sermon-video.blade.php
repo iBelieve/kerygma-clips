@@ -60,7 +60,7 @@
                                     {{-- Gap row content --}}
                                     <td
                                         x-show="row.type === 'gap'"
-                                        colspan="3"
+                                        colspan="2"
                                         class="px-4 sm:px-6"
                                     >
                                         <div class="flex items-center gap-3 py-2">
