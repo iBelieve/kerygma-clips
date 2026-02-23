@@ -142,13 +142,15 @@ jobs:
         run: php artisan dusk:chrome-driver --detect
 
       - name: Start Chrome Driver
-        run: ./vendor/laravel/dusk/bin/chromedriver-linux &
+        run: ./vendor/laravel/dusk/bin/chromedriver-linux --port=9515 &
 
       - name: Run Laravel Server
         run: php artisan serve --no-reload &
 
       - name: Run Dusk tests
-        run: php artisan dusk
+        run: |
+          sleep 2
+          php artisan dusk
 
       - name: Upload Screenshots
         if: failure()
