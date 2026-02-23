@@ -194,6 +194,16 @@ export default function viewTranscript({ segments, clips }) {
             return `${total}s`;
         },
 
+        startDragFromRow(segmentIndex, event) {
+            if (this.isClipStart(segmentIndex)) {
+                event.preventDefault();
+                this.startDrag(segmentIndex, "start");
+            } else if (this.isClipEnd(segmentIndex)) {
+                event.preventDefault();
+                this.startDrag(segmentIndex, "end");
+            }
+        },
+
         startDrag(segmentIndex, edge) {
             const clipIndex = this.clipIndexOfSegment(segmentIndex);
             if (clipIndex === -1) return;

@@ -30,25 +30,26 @@
                         <tbody>
                             <template x-for="(row, i) in rows" :key="i">
                                 <tr
-                                    x-bind:class="
-                                        row.type === 'gap'
-                                            ? (gapInClip(row.prevSegmentIndex, row.nextSegmentIndex)
-                                                ? 'bg-emerald-100 dark:bg-emerald-500/10'
-                                                : (isGapHighlighted(row.prevSegmentIndex, row.nextSegmentIndex)
-                                                    ? 'bg-orange-100 dark:bg-orange-500/10'
-                                                    : ''))
-                                            : (inClip(row.segmentIndex)
-                                                ? 'bg-emerald-100 dark:bg-emerald-500/10'
-                                                : (isHighlighted(row.segmentIndex)
-                                                    ? 'bg-orange-100 dark:bg-orange-500/10 cursor-pointer'
-                                                    : 'cursor-pointer'))
-                                    "
+                                    x-bind:class="{
+                                        'bg-emerald-100 dark:bg-emerald-500/10': row.type === 'gap'
+                                            ? gapInClip(row.prevSegmentIndex, row.nextSegmentIndex)
+                                            : inClip(row.segmentIndex),
+                                        'bg-orange-100 dark:bg-orange-500/10': row.type === 'gap'
+                                            ? isGapHighlighted(row.prevSegmentIndex, row.nextSegmentIndex)
+                                            : isHighlighted(row.segmentIndex),
+                                        'cursor-pointer': row.type === 'segment' && !inClip(row.segmentIndex),
+                                        'group/drag cursor-ns-resize': row.type === 'segment'
+                                            && (isClipStart(row.segmentIndex) || isClipEnd(row.segmentIndex)),
+                                    }"
                                     x-on:mouseenter="
                                         row.type === 'segment' && (dragging
                                             ? handleDragOver(row.segmentIndex)
                                             : (inClip(row.segmentIndex)
                                                 ? clearHighlight()
                                                 : setHighlight(row.segmentIndex)))
+                                    "
+                                    x-on:mousedown="
+                                        row.type === 'segment' && startDragFromRow(row.segmentIndex, $event)
                                     "
                                     x-on:click="
                                         !dragging && row.type === 'segment' && !inClip(row.segmentIndex)
@@ -97,15 +98,13 @@
                                         {{-- Top drag handle for clip start --}}
                                         <div
                                             x-show="row.type === 'segment' && isClipStart(row.segmentIndex)"
-                                            x-on:mousedown.prevent="startDrag(row.segmentIndex, 'start')"
-                                            class="absolute inset-x-0 top-0 z-10 h-1 cursor-ns-resize bg-emerald-400/40 transition hover:bg-emerald-400"
+                                            class="absolute inset-x-0 top-0 h-1 bg-emerald-400/40 transition group-hover/drag:bg-emerald-400"
                                         ></div>
 
                                         {{-- Bottom drag handle for clip end --}}
                                         <div
                                             x-show="row.type === 'segment' && isClipEnd(row.segmentIndex)"
-                                            x-on:mousedown.prevent="startDrag(row.segmentIndex, 'end')"
-                                            class="absolute inset-x-0 bottom-0 z-10 h-1 cursor-ns-resize bg-emerald-400/40 transition hover:bg-emerald-400"
+                                            class="absolute inset-x-0 bottom-0 h-1 bg-emerald-400/40 transition group-hover/drag:bg-emerald-400"
                                         ></div>
                                     </td>
                                 </tr>
