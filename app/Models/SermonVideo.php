@@ -30,6 +30,7 @@ class SermonVideo extends Model
         'vertical_video_started_at',
         'vertical_video_completed_at',
         'vertical_video_crop_center',
+        'preview_frame_path',
     ];
 
     /**

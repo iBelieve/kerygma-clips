@@ -5,6 +5,7 @@ namespace App\Filament\Resources\SermonVideos\Pages;
 use App\Enums\JobStatus;
 use App\Filament\Resources\SermonVideos\SermonVideoResource;
 use App\Jobs\ConvertToVerticalVideo;
+use App\Jobs\ExtractPreviewFrame;
 use App\Jobs\ScanSermonVideos;
 use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
@@ -72,6 +73,41 @@ class ListSermonVideos extends ListRecords
                         ->success()
                         ->send();
                 }),
+
+            Action::make('extract_frames')
+                ->label('Extract All Frames')
+                ->icon('heroicon-o-camera')
+                ->color('primary')
+                ->visible(fn (): bool => SermonVideo::whereNull('preview_frame_path')->exists())
+                ->requiresConfirmation()
+                ->action(function () {
+                    $videos = SermonVideo::whereNull('preview_frame_path')->get();
+
+                    foreach ($videos as $video) {
+                        ExtractPreviewFrame::dispatch($video);
+                    }
+
+                    Notification::make()
+                        ->title('Frame extraction queued')
+                        ->body("Dispatched frame extraction for {$videos->count()} sermon video(s).")
+                        ->success()
+                        ->send();
+                }),
         ];
+    }
+
+    public function updateVideoFraming(int $videoId, int $cropCenter): void
+    {
+        $video = SermonVideo::findOrFail($videoId);
+        $video->update(['vertical_video_crop_center' => $cropCenter]);
+        ConvertToVerticalVideo::dispatch($video);
+
+        Notification::make()
+            ->title('Framing updated')
+            ->body('Vertical video conversion has been re-queued.')
+            ->success()
+            ->send();
+
+        $this->unmountAction();
     }
 }

@@ -138,6 +138,20 @@ class SermonVideosTable
                             ->success()
                             ->send();
                     }),
+
+                Action::make('framing')
+                    ->label('Framing')
+                    ->icon('heroicon-o-viewfinder-circle')
+                    ->color('primary')
+                    ->visible(fn (SermonVideo $record): bool => $record->preview_frame_path !== null)
+                    ->modalHeading('Video Framing')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->modalWidth('3xl')
+                    ->modalContent(fn (SermonVideo $record): \Illuminate\Contracts\View\View => view(
+                        'filament.resources.sermon-videos.video-framing-modal',
+                        ['record' => $record]
+                    )),
             ])
             ->defaultSort('date', 'desc')
             ->paginated([10]);

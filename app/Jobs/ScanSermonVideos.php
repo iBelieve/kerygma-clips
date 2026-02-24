@@ -141,6 +141,16 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
             }
         }
 
+        $missingFrames = SermonVideo::whereNull('preview_frame_path')->get();
+
+        foreach ($missingFrames as $sermonVideo) {
+            ExtractPreviewFrame::dispatch($sermonVideo);
+        }
+
+        if ($this->verbose && $missingFrames->isNotEmpty()) {
+            Log::info("Dispatched preview frame extraction for {$missingFrames->count()} sermon videos.");
+        }
+
         if ($this->verbose) {
             Log::info("Scan complete: {$created} created, {$skipped} skipped.");
         }
