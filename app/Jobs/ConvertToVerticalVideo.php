@@ -49,8 +49,9 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
             'vertical_video_completed_at' => null,
         ]);
 
-        $disk = Storage::disk('sermon_videos');
-        $absolutePath = $disk->path($this->sermonVideo->raw_video_path);
+        $inputDisk = Storage::disk('sermon_videos');
+        $outputDisk = Storage::disk('public');
+        $absolutePath = $inputDisk->path($this->sermonVideo->raw_video_path);
 
         try {
             $dimensions = $videoProbe->getVideoDimensions($absolutePath);
@@ -73,7 +74,7 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
 
             $inputFilename = pathinfo($this->sermonVideo->raw_video_path, PATHINFO_FILENAME);
             $outputRelativePath = "vertical/{$inputFilename}.mp4";
-            $outputAbsolutePath = $disk->path($outputRelativePath);
+            $outputAbsolutePath = $outputDisk->path($outputRelativePath);
 
             // Ensure the vertical/ directory exists
             $outputDir = dirname($outputAbsolutePath);

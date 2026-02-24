@@ -12,6 +12,7 @@ uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('sermon_videos');
+    Storage::fake('public');
 });
 
 // --- Job Tests ---
