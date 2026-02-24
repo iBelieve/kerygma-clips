@@ -49,7 +49,7 @@ jobs:
           dokku-host: ${{ env.DOKKU_HOST }}
           app-name-prefix: ${{ env.APP_NAME_PREFIX }}
           base-domain: ${{ env.BASE_DOMAIN }}
-          release-command: "/bin/sh -c 'cp /app/prod-storage/database.sqlite /app/storage/app/database.sqlite && php artisan migrate --force'"
+          release-command: "/bin/sh -c 'cp /app/prod-storage/database.sqlite /app/storage/app/database.sqlite && php artisan migrate --force && php artisan optimize:clear && php artisan optimize'"
           storage-mounts: |
             {STORAGE_DIR}:/app/storage
             /var/lib/dokku/data/storage/kerygma/app/:/app/prod-storage:ro
