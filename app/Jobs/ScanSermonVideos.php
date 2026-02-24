@@ -7,6 +7,7 @@ use App\Services\VideoProbe;
 use Carbon\Carbon;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     private const VIDEO_EXTENSIONS = [
         'mp4',

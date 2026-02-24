@@ -13,7 +13,7 @@ uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('sermon_videos');
-    Queue::fake();
+    Queue::fake([TranscribeSermonVideo::class, ConvertToVerticalVideo::class]);
 
     $this->mock(VideoProbe::class, function ($mock) {
         $mock->shouldReceive('getDurationInSeconds')
