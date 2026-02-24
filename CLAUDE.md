@@ -215,6 +215,8 @@ php artisan view:clear        # Clear compiled views
 
 - **Immutable timestamps**: Always use `immutable_datetime` (or `immutable_date`) casts for datetime model attributes. This ensures all date properties return `CarbonImmutable` instances, preventing accidental mutation of date values.
 
+- **SQLite virtual column drop order**: When rolling back migrations that include virtual/generated columns (e.g. `virtualAs`), always drop the virtual column in a separate `Schema::table` call *before* dropping the columns it references. SQLite will error if you try to drop a column that a virtual column still depends on.
+
 ## PHPDoc Conventions
 
 ### Filament Page Record Types

@@ -23,6 +23,9 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drop the virtual `duration` column first because it references
+        // `ends_at - starts_at`. SQLite will error if you try to drop a
+        // column that a virtual/generated column still depends on.
         Schema::table('sermon_clips', function (Blueprint $table) {
             $table->dropColumn('duration');
         });
