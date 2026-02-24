@@ -43,6 +43,14 @@ test('it skips files that are too recently modified', function () {
     expect(SermonVideo::count())->toBe(0);
 });
 
+test('it includes recently modified files when includeRecent is true', function () {
+    Storage::disk('sermon_videos')->put('2025-12-10 18-53-50.mp4', 'fake-content');
+
+    ScanSermonVideos::dispatchSync(includeRecent: true);
+
+    expect(SermonVideo::count())->toBe(1);
+});
+
 test('it skips files that already have a sermon video entry', function () {
     createOldVideoFile('2025-12-10 18-53-50.mp4');
 
