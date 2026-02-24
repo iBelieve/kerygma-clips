@@ -107,6 +107,10 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
                 'vertical_video_path' => $outputRelativePath,
                 'vertical_video_completed_at' => now(),
             ]);
+
+            foreach ($this->sermonVideo->sermonClips as $clip) {
+                ExtractSermonClipVerticalVideo::dispatch($clip);
+            }
         } catch (\Throwable $e) {
             $isTimeout = $e instanceof ProcessTimedOutException;
 

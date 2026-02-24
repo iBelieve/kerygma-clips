@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\SermonVideos\Pages;
 
 use App\Filament\Resources\SermonVideos\SermonVideoResource;
+use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Models\SermonVideo;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\Support\Htmlable;
@@ -118,10 +119,12 @@ class ViewSermonVideo extends ViewRecord
             $endSegmentIndex = $nextClipStart - 1;
         }
 
-        $this->getRecord()->sermonClips()->create([
+        $clip = $this->getRecord()->sermonClips()->create([
             'start_segment_index' => $startSegmentIndex,
             'end_segment_index' => $endSegmentIndex,
         ]);
+
+        ExtractSermonClipVerticalVideo::dispatch($clip);
 
         unset($this->transcriptData);
 
@@ -185,6 +188,8 @@ class ViewSermonVideo extends ViewRecord
             'start_segment_index' => $startSegmentIndex,
             'end_segment_index' => $endSegmentIndex,
         ]);
+
+        ExtractSermonClipVerticalVideo::dispatch($clip);
 
         unset($this->transcriptData);
 

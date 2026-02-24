@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\JobStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +17,11 @@ class SermonClip extends Model
         'end_segment_index',
         'starts_at',
         'ends_at',
+        'clip_video_status',
+        'clip_video_path',
+        'clip_video_error',
+        'clip_video_started_at',
+        'clip_video_completed_at',
     ];
 
     protected $casts = [
@@ -24,6 +30,10 @@ class SermonClip extends Model
         'starts_at' => 'float',
         'ends_at' => 'float',
         'duration' => 'float',
+        'clip_video_status' => JobStatus::class,
+        'clip_video_started_at' => 'immutable_datetime',
+        'clip_video_completed_at' => 'immutable_datetime',
+        'clip_video_duration' => 'integer',
     ];
 
     protected static function booted(): void
