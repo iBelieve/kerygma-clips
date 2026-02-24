@@ -171,3 +171,44 @@ test('job is queued on the video-processing queue', function () {
     $job = new ExtractSermonClipVerticalVideo($clip);
     expect($job->queue)->toBe('video-processing');
 });
+
+// --- Command Tests ---
+
+test('command regenerates all clips for a sermon video', function () {
+    Process::fake(['*' => Process::result()]);
+
+    $video = createVideoWithVerticalAndTranscript();
+    Storage::disk('public')->put($video->vertical_video_path, 'fake-vertical-content');
+
+    $clip1 = SermonClip::factory()->create([
+        'sermon_video_id' => $video->id,
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+    ]);
+
+    $clip2 = SermonClip::factory()->create([
+        'sermon_video_id' => $video->id,
+        'start_segment_index' => 5,
+        'end_segment_index' => 8,
+    ]);
+
+    $this->artisan('app:extract-sermon-clip-videos', ['id' => $video->id])
+        ->assertSuccessful();
+
+    $clip1->refresh();
+    $clip2->refresh();
+    expect($clip1->clip_video_status)->toBe(JobStatus::Completed);
+    expect($clip2->clip_video_status)->toBe(JobStatus::Completed);
+});
+
+test('command fails for non-existent sermon video', function () {
+    $this->artisan('app:extract-sermon-clip-videos', ['id' => 999])
+        ->assertFailed();
+});
+
+test('command succeeds with message when video has no clips', function () {
+    $video = createVideoWithVerticalAndTranscript();
+
+    $this->artisan('app:extract-sermon-clip-videos', ['id' => $video->id])
+        ->assertSuccessful();
+});
