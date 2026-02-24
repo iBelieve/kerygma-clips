@@ -10,7 +10,8 @@ class ScanSermonVideos extends Command
     protected $signature = 'app:scan-sermon-videos
                             {--transcribe : Dispatch transcription jobs for newly created sermon videos}
                             {--convert-to-vertical : Dispatch vertical video conversion jobs for newly created sermon videos}
-                            {--queue : Dispatch the scan to the queue instead of running synchronously}';
+                            {--queue : Dispatch the scan to the queue instead of running synchronously}
+                            {--include-recent : Include recently modified files that would normally be skipped}';
 
     protected $description = 'Scan the sermon_videos disk for new video files and create SermonVideo entries';
 
@@ -18,12 +19,14 @@ class ScanSermonVideos extends Command
     {
         $transcribe = $this->option('transcribe');
         $convertToVertical = $this->option('convert-to-vertical');
+        $includeRecent = $this->option('include-recent');
 
         if ($this->option('queue')) {
             ScanSermonVideosJob::dispatch(
                 verbose: true,
                 transcribe: $transcribe,
                 convertToVertical: $convertToVertical,
+                includeRecent: $includeRecent,
             );
             $this->info('Scan job dispatched to queue.');
         } else {
@@ -32,6 +35,7 @@ class ScanSermonVideos extends Command
                 verbose: true,
                 transcribe: $transcribe,
                 convertToVertical: $convertToVertical,
+                includeRecent: $includeRecent,
             );
             $this->info('Done.');
         }
