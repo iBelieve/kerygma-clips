@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum TranscriptStatus: string
+enum JobStatus: string
 {
     case Pending = 'pending';
     case Processing = 'processing';

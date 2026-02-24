@@ -2,7 +2,8 @@
 
 namespace App\Filament\Resources\SermonVideos\Tables;
 
-use App\Enums\TranscriptStatus;
+use App\Enums\JobStatus;
+use App\Jobs\ConvertToVerticalVideo;
 use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
 use Filament\Actions\Action;
@@ -50,14 +51,14 @@ class SermonVideosTable
                 TextColumn::make('transcript_status')
                     ->label('Transcript')
                     ->badge()
-                    ->color(fn (TranscriptStatus $state): string => match ($state) {
-                        TranscriptStatus::Pending => 'warning',
-                        TranscriptStatus::Processing => 'info',
-                        TranscriptStatus::Completed => 'success',
-                        TranscriptStatus::Failed => 'danger',
+                    ->color(fn (JobStatus $state): string => match ($state) {
+                        JobStatus::Pending => 'warning',
+                        JobStatus::Processing => 'info',
+                        JobStatus::Completed => 'success',
+                        JobStatus::Failed => 'danger',
                     })
                     ->tooltip(function (SermonVideo $record): ?string {
-                        if ($record->transcript_status !== TranscriptStatus::Completed) {
+                        if ($record->transcript_status !== JobStatus::Completed) {
                             return null;
                         }
 
@@ -73,6 +74,32 @@ class SermonVideosTable
                         return sprintf('Transcription completed in %dm %02ds', $minutes, $seconds);
                     }),
 
+                TextColumn::make('vertical_video_status')
+                    ->label('Vertical')
+                    ->badge()
+                    ->color(fn (JobStatus $state): string => match ($state) {
+                        JobStatus::Pending => 'warning',
+                        JobStatus::Processing => 'info',
+                        JobStatus::Completed => 'success',
+                        JobStatus::Failed => 'danger',
+                    })
+                    ->tooltip(function (SermonVideo $record): ?string {
+                        if ($record->vertical_video_status !== JobStatus::Completed) {
+                            return null;
+                        }
+
+                        $duration = $record->vertical_video_duration;
+
+                        if ($duration === null) {
+                            return null;
+                        }
+
+                        $minutes = intdiv($duration, 60);
+                        $seconds = $duration % 60;
+
+                        return sprintf('Conversion completed in %dm %02ds', $minutes, $seconds);
+                    }),
+
                 TextColumn::make('created_at')
                     ->label('Added')
                     ->since()
@@ -84,7 +111,7 @@ class SermonVideosTable
                     ->label('Transcribe')
                     ->icon('heroicon-o-language')
                     ->color('primary')
-                    ->visible(fn (SermonVideo $record): bool => $record->transcript_status !== TranscriptStatus::Completed)
+                    ->visible(fn (SermonVideo $record): bool => $record->transcript_status !== JobStatus::Completed)
                     ->requiresConfirmation()
                     ->action(function (SermonVideo $record) {
                         TranscribeSermonVideo::dispatch($record);
@@ -92,6 +119,22 @@ class SermonVideosTable
                         Notification::make()
                             ->title('Transcription queued')
                             ->body('Transcription has been dispatched.')
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('convert_to_vertical')
+                    ->label('Convert to Vertical')
+                    ->icon('heroicon-o-device-phone-mobile')
+                    ->color('primary')
+                    ->visible(fn (SermonVideo $record): bool => $record->vertical_video_status !== JobStatus::Completed)
+                    ->requiresConfirmation()
+                    ->action(function (SermonVideo $record) {
+                        ConvertToVerticalVideo::dispatch($record);
+
+                        Notification::make()
+                            ->title('Vertical conversion queued')
+                            ->body('Vertical video conversion has been dispatched.')
                             ->success()
                             ->send();
                     }),

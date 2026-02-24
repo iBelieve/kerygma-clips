@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\TranscriptStatus;
+use App\Enums\JobStatus;
 use App\Models\SermonVideo;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,7 +18,8 @@ class SermonVideoFactory extends Factory
         return [
             'title' => $this->faker->sentence(3),
             'raw_video_path' => $this->faker->date('Y-m-d').' '.$this->faker->time('H-i-s').'.mp4',
-            'transcript_status' => TranscriptStatus::Pending,
+            'transcript_status' => JobStatus::Pending,
+            'vertical_video_status' => JobStatus::Pending,
             'date' => $this->faker->dateTime(),
         ];
     }

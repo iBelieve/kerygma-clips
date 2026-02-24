@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\TranscriptStatus;
+use App\Enums\JobStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,6 +24,12 @@ class SermonVideo extends Model
         'transcription_completed_at',
         'duration',
         'date',
+        'vertical_video_status',
+        'vertical_video_path',
+        'vertical_video_error',
+        'vertical_video_started_at',
+        'vertical_video_completed_at',
+        'vertical_video_crop_center',
     ];
 
     /**
@@ -36,11 +42,16 @@ class SermonVideo extends Model
 
     protected $casts = [
         'date' => 'immutable_datetime',
-        'transcript_status' => TranscriptStatus::class,
+        'transcript_status' => JobStatus::class,
         'transcript' => 'array',
         'duration' => 'integer',
         'transcription_started_at' => 'immutable_datetime',
         'transcription_completed_at' => 'immutable_datetime',
         'transcription_duration' => 'integer',
+        'vertical_video_status' => JobStatus::class,
+        'vertical_video_crop_center' => 'integer',
+        'vertical_video_started_at' => 'immutable_datetime',
+        'vertical_video_completed_at' => 'immutable_datetime',
+        'vertical_video_duration' => 'integer',
     ];
 }

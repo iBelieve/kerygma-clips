@@ -1,6 +1,7 @@
 <?php
 
-use App\Enums\TranscriptStatus;
+use App\Enums\JobStatus;
+use App\Jobs\ConvertToVerticalVideo;
 use App\Jobs\ScanSermonVideos;
 use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
@@ -30,7 +31,7 @@ test('it creates a sermon video entry for a valid video file', function () {
     $video = SermonVideo::first();
     expect($video->raw_video_path)->toBe('2025-12-10 18-53-50.m4v');
     expect($video->title)->toBeNull();
-    expect($video->transcript_status)->toBe(TranscriptStatus::Pending);
+    expect($video->transcript_status)->toBe(JobStatus::Pending);
     expect($video->date->format('Y-m-d H:i:s'))->toBe('2025-12-11 00:53:50');
     expect($video->duration)->toBe(3600);
 });
@@ -115,6 +116,25 @@ test('it does not dispatch transcription job when transcribe is false', function
 
     expect(SermonVideo::count())->toBe(1);
     Queue::assertNotPushed(TranscribeSermonVideo::class);
+});
+
+test('it dispatches vertical video conversion job for new sermon video', function () {
+    createOldVideoFile('2025-12-10 18-53-50.mp4');
+
+    ScanSermonVideos::dispatchSync();
+
+    Queue::assertPushed(ConvertToVerticalVideo::class, function ($job) {
+        return $job->sermonVideo->raw_video_path === '2025-12-10 18-53-50.mp4';
+    });
+});
+
+test('it does not dispatch vertical video conversion job when convertToVertical is false', function () {
+    createOldVideoFile('2025-12-10 18-53-50.mp4');
+
+    ScanSermonVideos::dispatchSync(convertToVertical: false);
+
+    expect(SermonVideo::count())->toBe(1);
+    Queue::assertNotPushed(ConvertToVerticalVideo::class);
 });
 
 test('it handles empty disk with no video files', function () {
