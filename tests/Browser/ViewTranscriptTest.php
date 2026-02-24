@@ -41,26 +41,26 @@ test('hovering a segment highlights it and clicking creates a clip', function ()
             ->assertSeeIn('@transcript-table', 'Let us begin with a reading.');
 
         // Verify no segments are highlighted initially (no orange or emerald classes)
-        $browser->assertMissing('[dusk="segment-row-0"].bg-orange-100')
-            ->assertMissing('[dusk="segment-row-0"].bg-emerald-100');
+        $browser->assertMissing('[dusk="segment-row-4"].bg-orange-100')
+            ->assertMissing('[dusk="segment-row-4"].bg-emerald-100');
 
-        // Hover over the first segment row to trigger highlight
-        $browser->mouseover('@segment-row-0')
+        // Hover over a middle segment row to trigger highlight
+        $browser->mouseover('@segment-row-4')
             ->pause(200);
 
         // Verify the hovered segment has the orange highlight class
         $hasHighlight = $browser->script(
-            "return document.querySelector('[dusk=\"segment-row-0\"]').classList.contains('bg-orange-100')"
+            "return document.querySelector('[dusk=\"segment-row-4\"]').classList.contains('bg-orange-100')"
         );
         expect($hasHighlight[0])->toBeTrue();
 
         // Click to create a clip from the highlighted segment
-        $browser->click('@segment-row-0')
+        $browser->click('@segment-row-4')
             ->pause(500);
 
         // Verify the segment now has the emerald (clip) background class
         $browser->waitUntil(
-            "document.querySelector('[dusk=\"segment-row-0\"]').classList.contains('bg-emerald-100')",
+            "document.querySelector('[dusk=\"segment-row-4\"]').classList.contains('bg-emerald-100')",
             5
         );
     });
@@ -69,5 +69,6 @@ test('hovering a segment highlights it and clicking creates a clip', function ()
     expect(SermonClip::where('sermon_video_id', $sermonVideo->id)->count())->toBe(1);
 
     $clip = SermonClip::where('sermon_video_id', $sermonVideo->id)->first();
-    expect($clip->start_segment_index)->toBe(0);
+    expect($clip->start_segment_index)->toBe(4);
+    expect($clip->end_segment_index)->toBe(10);
 });
