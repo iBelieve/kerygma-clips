@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 
@@ -99,6 +100,11 @@ class TranscribeSermonVideo implements ShouldBeUnique, ShouldQueue
                 'transcription_completed_at' => now(),
             ]);
         } catch (\Throwable $e) {
+            Log::error('Transcription failed', [
+                'video_path' => $this->sermonVideo->raw_video_path,
+                'exception' => $e,
+            ]);
+
             $this->sermonVideo->update([
                 'transcript_status' => JobStatus::Failed,
                 'transcript_error' => $e->getMessage(),

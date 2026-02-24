@@ -11,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 
@@ -104,6 +105,11 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
                 'vertical_video_completed_at' => now(),
             ]);
         } catch (\Throwable $e) {
+            Log::error('Vertical video conversion failed', [
+                'video_path' => $this->sermonVideo->raw_video_path,
+                'exception' => $e,
+            ]);
+
             $this->sermonVideo->update([
                 'vertical_video_status' => JobStatus::Failed,
                 'vertical_video_error' => $e->getMessage(),
