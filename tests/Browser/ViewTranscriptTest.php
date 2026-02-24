@@ -14,11 +14,21 @@ test('hovering a segment highlights it and clicking creates a clip', function ()
         'duration' => 120,
         'transcript' => [
             'segments' => [
-                ['start' => 0.0, 'end' => 5.0, 'text' => 'First segment of the sermon.'],
-                ['start' => 5.5, 'end' => 10.0, 'text' => 'Second segment of the sermon.'],
-                ['start' => 10.5, 'end' => 15.0, 'text' => 'Third segment of the sermon.'],
-                ['start' => 15.5, 'end' => 20.0, 'text' => 'Fourth segment of the sermon.'],
-                ['start' => 20.5, 'end' => 25.0, 'text' => 'Fifth segment of the sermon.'],
+                ['start' => 0.0, 'end' => 8.0, 'text' => 'Welcome to today\'s sermon.'],
+                ['start' => 8.5, 'end' => 16.0, 'text' => 'Let us begin with a reading.'],
+                ['start' => 16.5, 'end' => 24.0, 'text' => 'The passage speaks of hope.'],
+                ['start' => 24.5, 'end' => 32.0, 'text' => 'Hope is central to our faith.'],
+                ['start' => 32.5, 'end' => 40.0, 'text' => 'We see it reflected in scripture.'],
+                ['start' => 40.5, 'end' => 48.0, 'text' => 'And in the lives of believers.'],
+                ['start' => 48.5, 'end' => 56.0, 'text' => 'Consider the example of Abraham.'],
+                ['start' => 56.5, 'end' => 64.0, 'text' => 'He trusted God\'s promise.'],
+                ['start' => 64.5, 'end' => 72.0, 'text' => 'Even when it seemed impossible.'],
+                ['start' => 72.5, 'end' => 80.0, 'text' => 'That is the nature of true faith.'],
+                ['start' => 80.5, 'end' => 88.0, 'text' => 'It perseveres through trials.'],
+                ['start' => 88.5, 'end' => 96.0, 'text' => 'And holds fast to the promise.'],
+                ['start' => 96.5, 'end' => 104.0, 'text' => 'Let us carry this forward.'],
+                ['start' => 104.5, 'end' => 112.0, 'text' => 'Into our daily lives.'],
+                ['start' => 112.5, 'end' => 120.0, 'text' => 'Thank you and amen.'],
             ],
         ],
     ]);
@@ -27,8 +37,8 @@ test('hovering a segment highlights it and clicking creates a clip', function ()
         $browser->loginAs($user)
             ->visit("/sermon-videos/{$sermonVideo->id}")
             ->waitFor('@transcript-table')
-            ->assertSeeIn('@transcript-table', 'First segment of the sermon.')
-            ->assertSeeIn('@transcript-table', 'Second segment of the sermon.');
+            ->assertSeeIn('@transcript-table', 'Welcome to today\'s sermon.')
+            ->assertSeeIn('@transcript-table', 'Let us begin with a reading.');
 
         // Verify no segments are highlighted initially (no orange or emerald classes)
         $browser->assertMissing('[dusk="segment-row-0"].bg-orange-100')
