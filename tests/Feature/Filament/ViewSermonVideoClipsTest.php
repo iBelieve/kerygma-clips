@@ -1,6 +1,7 @@
 <?php
 
 use App\Filament\Resources\SermonVideos\Pages\ViewSermonVideo;
+use App\Models\SermonClip;
 use App\Models\SermonVideo;
 use App\Models\User;
 use Livewire\Livewire;
@@ -42,6 +43,42 @@ function makeSermonVideo(int $segmentCount = 30): SermonVideo
         'transcript' => makeTranscript($segmentCount),
     ]);
 }
+
+// --- timestamp tests ---
+
+test('createClip sets starts_at, ends_at, and duration from segment times', function () {
+    $video = makeSermonVideo(30); // segments: 0–5s, 5–10s, … each 5s
+
+    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+        ->call('createClip', 2, 5);
+
+    $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
+    // Segment 2 starts at 10.0, segment 5 ends at 30.0
+    expect($clip)
+        ->starts_at->toBe(10.0)
+        ->ends_at->toBe(30.0)
+        ->duration->toBe(20.0);
+});
+
+test('updateClip updates starts_at, ends_at, and duration from segment times', function () {
+    $video = makeSermonVideo(30);
+
+    $clip = $video->sermonClips()->create([
+        'start_segment_index' => 2,
+        'end_segment_index' => 5,
+    ]);
+
+    // Shrink to segments 3–4
+    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+        ->call('updateClip', $clip->id, 3, 4);
+
+    $clip->refresh();
+    // Segment 3 starts at 15.0, segment 4 ends at 25.0
+    expect($clip)
+        ->starts_at->toBe(15.0)
+        ->ends_at->toBe(25.0)
+        ->duration->toBe(10.0);
+});
 
 // --- createClip tests ---
 
