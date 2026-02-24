@@ -16,6 +16,7 @@ class SermonClip extends Model
         'end_segment_index',
         'starts_at',
         'ends_at',
+        'ai_title',
     ];
 
     protected $casts = [
