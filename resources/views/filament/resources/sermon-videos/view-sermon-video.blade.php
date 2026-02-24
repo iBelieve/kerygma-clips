@@ -2,6 +2,8 @@
     @if (count($this->transcriptData['segments']))
         <div
             x-data="viewTranscript(@js($this->transcriptData))"
+            x-on:mouseup.window="endDrag()"
+            x-bind:class="{ 'select-none': dragging }"
             class="flex flex-col gap-4"
         >
             <div class="flex items-center justify-end gap-3">
@@ -21,7 +23,7 @@
 
             <div
                 dusk="transcript-table"
-                x-on:mouseleave="clearHighlight()"
+                x-on:mouseleave="!dragging && clearHighlight()"
                 class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
             >
                 <div class="overflow-x-auto py-3">
@@ -30,29 +32,32 @@
                             <template x-for="(row, i) in rows" :key="i">
                                 <tr
                                     x-bind:dusk="row.type === 'segment' ? `segment-row-${row.segmentIndex}` : `gap-row-${i}`"
-                                    x-bind:class="
-                                        row.type === 'gap'
-                                            ? (gapInClip(row.prevSegmentIndex, row.nextSegmentIndex)
-                                                ? 'bg-emerald-100 dark:bg-emerald-500/10'
-                                                : (isGapHighlighted(row.prevSegmentIndex, row.nextSegmentIndex)
-                                                    ? 'bg-orange-100 dark:bg-orange-500/10'
-                                                    : ''))
-                                            : (inClip(row.segmentIndex)
-                                                ? 'bg-emerald-100 dark:bg-emerald-500/10'
-                                                : (isHighlighted(row.segmentIndex)
-                                                    ? 'bg-orange-100 dark:bg-orange-500/10 cursor-pointer'
-                                                    : 'cursor-pointer'))
-                                    "
+                                    x-bind:class="{
+                                        'bg-emerald-100 dark:bg-emerald-500/10': row.type === 'gap'
+                                            ? gapInClip(row.prevSegmentIndex, row.nextSegmentIndex)
+                                            : inClip(row.segmentIndex),
+                                        'bg-orange-100 dark:bg-orange-500/10': row.type === 'gap'
+                                            ? isGapHighlighted(row.prevSegmentIndex, row.nextSegmentIndex)
+                                            : isHighlighted(row.segmentIndex),
+                                        'cursor-pointer': row.type === 'segment' && !inClip(row.segmentIndex),
+                                        'group/drag cursor-ns-resize': row.type === 'segment'
+                                            && (isClipStart(row.segmentIndex) || isClipEnd(row.segmentIndex)),
+                                    }"
                                     x-on:mouseenter="
-                                        row.type === 'segment' && (inClip(row.segmentIndex)
-                                            ? clearHighlight()
-                                            : setHighlight(row.segmentIndex))
+                                        row.type === 'segment' && (dragging
+                                            ? handleDragOver(row.segmentIndex)
+                                            : (inClip(row.segmentIndex)
+                                                ? clearHighlight()
+                                                : setHighlight(row.segmentIndex)))
+                                    "
+                                    x-on:mousedown="
+                                        row.type === 'segment' && startDragFromRow(row.segmentIndex, $event)
                                     "
                                     x-on:click="
-                                        row.type === 'segment' && !inClip(row.segmentIndex)
+                                        !dragging && row.type === 'segment' && !inClip(row.segmentIndex)
                                             && createClip(row.segmentIndex, highlightEnds[row.segmentIndex])
                                     "
-                                    class="transition duration-75"
+                                    class="relative transition duration-75"
                                 >
                                     {{-- Gap row content --}}
                                     <td
@@ -74,13 +79,36 @@
                                     <td
                                         x-show="row.type === 'segment'"
                                         class="whitespace-nowrap py-1 pe-3 ps-4 align-baseline text-xs text-end tabular-nums text-gray-500 sm:ps-6 dark:text-gray-400"
-                                        x-text="row.type === 'segment' ? formatTimestamp(row.start) : ''"
-                                    ></td>
+                                    >
+                                        <span x-text="row.type === 'segment' ? formatTimestamp(row.start) : ''"></span>
+                                    </td>
                                     <td
                                         x-show="row.type === 'segment'"
                                         class="w-full py-1 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white"
-                                        x-text="row.text"
-                                    ></td>
+                                    >
+                                        <div class="flex items-baseline gap-2">
+                                            <span class="flex-1" x-text="row.text"></span>
+
+                                            {{-- Duration badge on clip start row --}}
+                                            <span
+                                                x-show="isClipStart(row.segmentIndex)"
+                                                x-text="formatDuration(clipDurationOfSegment(row.segmentIndex))"
+                                                class="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium tabular-nums text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+                                            ></span>
+                                        </div>
+
+                                        {{-- Top drag handle for clip start --}}
+                                        <div
+                                            x-show="row.type === 'segment' && isClipStart(row.segmentIndex)"
+                                            class="absolute inset-x-0 top-0 h-1 bg-emerald-400/40 transition group-hover/drag:bg-emerald-400"
+                                        ></div>
+
+                                        {{-- Bottom drag handle for clip end --}}
+                                        <div
+                                            x-show="row.type === 'segment' && isClipEnd(row.segmentIndex)"
+                                            class="absolute inset-x-0 bottom-0 h-1 bg-emerald-400/40 transition group-hover/drag:bg-emerald-400"
+                                        ></div>
+                                    </td>
                                 </tr>
                             </template>
                         </tbody>
