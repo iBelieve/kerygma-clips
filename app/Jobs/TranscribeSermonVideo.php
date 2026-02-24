@@ -10,6 +10,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Process\Exceptions\ProcessTimedOutException;
+use Illuminate\Queue\TimeoutExceededException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
@@ -100,18 +102,36 @@ class TranscribeSermonVideo implements ShouldBeUnique, ShouldQueue
                 'transcription_completed_at' => now(),
             ]);
         } catch (\Throwable $e) {
+            $isTimeout = $e instanceof ProcessTimedOutException;
+
             Log::error('Transcription failed', [
                 'video_path' => $this->sermonVideo->raw_video_path,
                 'exception' => $e,
             ]);
 
             $this->sermonVideo->update([
-                'transcript_status' => JobStatus::Failed,
+                'transcript_status' => $isTimeout ? JobStatus::TimedOut : JobStatus::Failed,
                 'transcript_error' => $e->getMessage(),
             ]);
         } finally {
             $this->cleanupDirectory($outputDir);
         }
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        if ($this->sermonVideo->transcript_status !== JobStatus::Processing) {
+            return;
+        }
+
+        $isTimeout = $exception instanceof TimeoutExceededException
+            || $exception instanceof ProcessTimedOutException
+            || $exception instanceof \Symfony\Component\Process\Exception\ProcessTimedOutException;
+
+        $this->sermonVideo->update([
+            'transcript_status' => $isTimeout ? JobStatus::TimedOut : JobStatus::Failed,
+            'transcript_error' => $exception->getMessage(),
+        ]);
     }
 
     private function cleanupDirectory(string $dir): void

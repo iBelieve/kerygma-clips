@@ -11,6 +11,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Process\Exceptions\ProcessTimedOutException;
+use Illuminate\Queue\TimeoutExceededException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
@@ -106,15 +108,33 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
                 'vertical_video_completed_at' => now(),
             ]);
         } catch (\Throwable $e) {
+            $isTimeout = $e instanceof ProcessTimedOutException;
+
             Log::error('Vertical video conversion failed', [
                 'video_path' => $this->sermonVideo->raw_video_path,
                 'exception' => $e,
             ]);
 
             $this->sermonVideo->update([
-                'vertical_video_status' => JobStatus::Failed,
+                'vertical_video_status' => $isTimeout ? JobStatus::TimedOut : JobStatus::Failed,
                 'vertical_video_error' => $e->getMessage(),
             ]);
         }
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        if ($this->sermonVideo->vertical_video_status !== JobStatus::Processing) {
+            return;
+        }
+
+        $isTimeout = $exception instanceof TimeoutExceededException
+            || $exception instanceof ProcessTimedOutException
+            || $exception instanceof \Symfony\Component\Process\Exception\ProcessTimedOutException;
+
+        $this->sermonVideo->update([
+            'vertical_video_status' => $isTimeout ? JobStatus::TimedOut : JobStatus::Failed,
+            'vertical_video_error' => $exception->getMessage(),
+        ]);
     }
 }

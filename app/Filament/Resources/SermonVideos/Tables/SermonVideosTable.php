@@ -55,7 +55,7 @@ class SermonVideosTable
                         JobStatus::Pending => 'warning',
                         JobStatus::Processing => 'info',
                         JobStatus::Completed => 'success',
-                        JobStatus::Failed => 'danger',
+                        JobStatus::Failed, JobStatus::TimedOut => 'danger',
                     })
                     ->tooltip(function (SermonVideo $record): ?string {
                         if ($record->transcript_status !== JobStatus::Completed) {
@@ -81,7 +81,7 @@ class SermonVideosTable
                         JobStatus::Pending => 'warning',
                         JobStatus::Processing => 'info',
                         JobStatus::Completed => 'success',
-                        JobStatus::Failed => 'danger',
+                        JobStatus::Failed, JobStatus::TimedOut => 'danger',
                     })
                     ->tooltip(function (SermonVideo $record): ?string {
                         if ($record->vertical_video_status !== JobStatus::Completed) {
