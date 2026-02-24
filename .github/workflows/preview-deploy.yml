@@ -62,6 +62,7 @@ jobs:
           process-scaling: |
             worker=1
             transcription=1
+            video-processing=1
 
   destroy-preview:
     name: Destroy Preview Environment
