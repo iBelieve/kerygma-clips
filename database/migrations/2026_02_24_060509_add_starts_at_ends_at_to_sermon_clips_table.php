@@ -24,7 +24,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('sermon_clips', function (Blueprint $table) {
-            $table->dropColumn(['starts_at', 'ends_at', 'duration']);
+            $table->dropColumn('duration');
+        });
+
+        Schema::table('sermon_clips', function (Blueprint $table) {
+            $table->dropColumn(['starts_at', 'ends_at']);
         });
     }
 };
