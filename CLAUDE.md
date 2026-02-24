@@ -29,7 +29,9 @@ composer setup
 composer dev
 # Starts all development services concurrently:
 # - PHP server (php artisan serve)
-# - Queue worker (php artisan queue:listen)
+# - Queue worker (php artisan queue:listen) — default queue
+# - Transcription worker (--queue=transcription) — WhisperX transcription jobs
+# - Video processing worker (--queue=video-processing) — vertical video conversion jobs
 # - Log viewer (php artisan pail)
 # - Vite dev server (npm run dev)
 ```
@@ -169,6 +171,21 @@ Vite configuration: [vite.config.js](vite.config.js)
 - Uses Tailwind CSS 4 via Vite plugin
 - Dev server on `127.0.0.1`
 - Ignores `storage/framework/views/` for performance
+
+## Queue Architecture
+
+The application uses dedicated queue workers for long-running jobs. Each queue maps to a separate process in the Procfile and is scaled independently in preview deployments.
+
+| Queue | Worker | Timeout | Purpose |
+|---|---|---|---|
+| `default` | `worker` | 60s | General background jobs |
+| `transcription` | `transcription` | 3600s | WhisperX sermon video transcription |
+| `video-processing` | `video-processing` | 7200s | Vertical video conversion (ffmpeg) |
+
+When adding a new queue, update all three places:
+1. **`Procfile`** — add a new process entry
+2. **`.github/workflows/preview-deploy.yml`** — add to `process-scaling`
+3. **`composer.json`** `dev` script — add a `queue:listen` entry for local development
 
 ## Environment Configuration
 

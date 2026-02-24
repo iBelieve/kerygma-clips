@@ -6,4 +6,4 @@ php artisan migrate --force
 php artisan optimize:clear
 php artisan optimize
 
-php artisan app:scan-sermon-videos --transcribe --queue
+php artisan app:scan-sermon-videos --transcribe --convert-to-vertical --queue

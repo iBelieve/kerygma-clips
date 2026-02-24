@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\TranscriptStatus;
+use App\Enums\JobStatus;
 use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
 use Illuminate\Support\Carbon;
@@ -43,7 +43,7 @@ test('job completes transcription successfully', function () {
     Process::fake(['*' => Process::result()]);
 
     $video = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Pending,
+        'transcript_status' => JobStatus::Pending,
     ]);
 
     Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
@@ -59,7 +59,7 @@ test('job completes transcription successfully', function () {
     (new TranscribeSermonVideo($video))->handle();
 
     $video->refresh();
-    expect($video->transcript_status)->toBe(TranscriptStatus::Completed);
+    expect($video->transcript_status)->toBe(JobStatus::Completed);
     expect($video->transcript)->toBeArray();
     expect($video->transcript['segments'])->toHaveCount(2);
     expect($video->transcript_error)->toBeNull();
@@ -71,7 +71,7 @@ test('job sets status to processing before running whisperx', function () {
     Process::fake(['*' => Process::result(exitCode: 1, errorOutput: 'intentional failure')]);
 
     $video = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Pending,
+        'transcript_status' => JobStatus::Pending,
     ]);
 
     Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
@@ -82,7 +82,7 @@ test('job sets status to processing before running whisperx', function () {
     // We verify Processing was set by confirming the job ran through the full
     // lifecycle (it wouldn't reach the process call if it didn't set Processing first).
     $video->refresh();
-    expect($video->transcript_status)->toBe(TranscriptStatus::Failed);
+    expect($video->transcript_status)->toBe(JobStatus::Failed);
     expect($video->transcript_error)->toContain('intentional failure');
 });
 
@@ -93,7 +93,7 @@ test('job sets status to failed when process fails', function () {
     )]);
 
     $video = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Pending,
+        'transcript_status' => JobStatus::Pending,
     ]);
 
     Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
@@ -101,7 +101,7 @@ test('job sets status to failed when process fails', function () {
     (new TranscribeSermonVideo($video))->handle();
 
     $video->refresh();
-    expect($video->transcript_status)->toBe(TranscriptStatus::Failed);
+    expect($video->transcript_status)->toBe(JobStatus::Failed);
     expect($video->transcript_error)->toContain('WhisperX crashed');
 });
 
@@ -109,7 +109,7 @@ test('job sets status to failed when output json is missing', function () {
     Process::fake(['*' => Process::result()]);
 
     $video = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Pending,
+        'transcript_status' => JobStatus::Pending,
     ]);
 
     Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
@@ -118,7 +118,7 @@ test('job sets status to failed when output json is missing', function () {
     (new TranscribeSermonVideo($video))->handle();
 
     $video->refresh();
-    expect($video->transcript_status)->toBe(TranscriptStatus::Failed);
+    expect($video->transcript_status)->toBe(JobStatus::Failed);
     expect($video->transcript_error)->toContain('did not produce expected output file');
 });
 
@@ -126,7 +126,7 @@ test('job clears previous error on new run', function () {
     Process::fake(['*' => Process::result()]);
 
     $video = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Failed,
+        'transcript_status' => JobStatus::Failed,
         'transcript_error' => 'Previous error',
     ]);
 
@@ -136,7 +136,7 @@ test('job clears previous error on new run', function () {
     (new TranscribeSermonVideo($video))->handle();
 
     $video->refresh();
-    expect($video->transcript_status)->toBe(TranscriptStatus::Completed);
+    expect($video->transcript_status)->toBe(JobStatus::Completed);
     expect($video->transcript_error)->toBeNull();
 });
 
@@ -148,7 +148,7 @@ test('job sets transcription_started_at when processing begins', function () {
     Process::fake(['*' => Process::result(exitCode: 1, errorOutput: 'failure')]);
 
     $video = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Pending,
+        'transcript_status' => JobStatus::Pending,
     ]);
 
     Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
@@ -166,7 +166,7 @@ test('job sets transcription_completed_at on successful completion', function ()
     Process::fake(['*' => Process::result()]);
 
     $video = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Pending,
+        'transcript_status' => JobStatus::Pending,
     ]);
 
     Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
@@ -184,7 +184,7 @@ test('job does not set transcription_completed_at on failure', function () {
     Process::fake(['*' => Process::result(exitCode: 1, errorOutput: 'crash')]);
 
     $video = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Pending,
+        'transcript_status' => JobStatus::Pending,
     ]);
 
     Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
@@ -200,7 +200,7 @@ test('job resets transcription_completed_at on re-run', function () {
     Process::fake(['*' => Process::result(exitCode: 1, errorOutput: 'failure')]);
 
     $video = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Completed,
+        'transcript_status' => JobStatus::Completed,
         'transcription_started_at' => now()->subMinutes(10),
         'transcription_completed_at' => now()->subMinutes(5),
     ]);
@@ -223,7 +223,7 @@ test('job computes transcription_duration on successful completion', function ()
     Process::fake(['*' => Process::result()]);
 
     $video = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Pending,
+        'transcript_status' => JobStatus::Pending,
     ]);
 
     Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
@@ -234,7 +234,7 @@ test('job computes transcription_duration on successful completion', function ()
     // by replacing handle's flow: set started, then advance, then complete.
     // Instead, we directly set the timestamps to test the virtual column.
     $video->update([
-        'transcript_status' => TranscriptStatus::Completed,
+        'transcript_status' => JobStatus::Completed,
         'transcription_started_at' => $startTime,
         'transcription_completed_at' => $endTime,
     ]);
@@ -249,7 +249,7 @@ test('command runs transcription synchronously', function () {
     Process::fake(['*' => Process::result()]);
 
     $video = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Pending,
+        'transcript_status' => JobStatus::Pending,
     ]);
 
     Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
@@ -259,7 +259,7 @@ test('command runs transcription synchronously', function () {
         ->assertSuccessful();
 
     $video->refresh();
-    expect($video->transcript_status)->toBe(TranscriptStatus::Completed);
+    expect($video->transcript_status)->toBe(JobStatus::Completed);
     expect($video->transcript)->toBeArray();
 });
 
@@ -270,7 +270,7 @@ test('command fails for non-existent sermon video', function () {
 
 test('command fails for sermon video already being processed', function () {
     $video = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Processing,
+        'transcript_status' => JobStatus::Processing,
     ]);
 
     $this->artisan('app:transcribe-sermon-video', ['id' => $video->id])
@@ -284,7 +284,7 @@ test('command reports failure when transcription fails', function () {
     )]);
 
     $video = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Pending,
+        'transcript_status' => JobStatus::Pending,
     ]);
 
     Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
@@ -293,5 +293,5 @@ test('command reports failure when transcription fails', function () {
         ->assertFailed();
 
     $video->refresh();
-    expect($video->transcript_status)->toBe(TranscriptStatus::Failed);
+    expect($video->transcript_status)->toBe(JobStatus::Failed);
 });

@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\TranscriptStatus;
+use App\Enums\JobStatus;
 use App\Models\SermonClip;
 use App\Models\SermonVideo;
 use App\Models\User;
@@ -10,7 +10,7 @@ test('hovering a segment highlights it and clicking creates a clip', function ()
     $user = User::factory()->create();
 
     $sermonVideo = SermonVideo::factory()->create([
-        'transcript_status' => TranscriptStatus::Completed,
+        'transcript_status' => JobStatus::Completed,
         'duration' => 120,
         'transcript' => [
             'segments' => [

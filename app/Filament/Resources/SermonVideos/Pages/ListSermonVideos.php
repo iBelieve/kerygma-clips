@@ -2,8 +2,9 @@
 
 namespace App\Filament\Resources\SermonVideos\Pages;
 
-use App\Enums\TranscriptStatus;
+use App\Enums\JobStatus;
 use App\Filament\Resources\SermonVideos\SermonVideoResource;
+use App\Jobs\ConvertToVerticalVideo;
 use App\Jobs\ScanSermonVideos;
 use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
@@ -36,10 +37,10 @@ class ListSermonVideos extends ListRecords
                 ->label('Transcribe All')
                 ->icon('heroicon-o-language')
                 ->color('primary')
-                ->visible(fn (): bool => SermonVideo::where('transcript_status', '!=', TranscriptStatus::Completed)->exists())
+                ->visible(fn (): bool => SermonVideo::where('transcript_status', '!=', JobStatus::Completed)->exists())
                 ->requiresConfirmation()
                 ->action(function () {
-                    $videos = SermonVideo::where('transcript_status', '!=', TranscriptStatus::Completed)->get();
+                    $videos = SermonVideo::where('transcript_status', '!=', JobStatus::Completed)->get();
 
                     foreach ($videos as $video) {
                         TranscribeSermonVideo::dispatch($video);
@@ -48,6 +49,26 @@ class ListSermonVideos extends ListRecords
                     Notification::make()
                         ->title('Transcription queued')
                         ->body("Dispatched transcription for {$videos->count()} sermon video(s).")
+                        ->success()
+                        ->send();
+                }),
+
+            Action::make('convert_to_vertical')
+                ->label('Convert All to Vertical')
+                ->icon('heroicon-o-device-phone-mobile')
+                ->color('primary')
+                ->visible(fn (): bool => SermonVideo::where('vertical_video_status', '!=', JobStatus::Completed)->exists())
+                ->requiresConfirmation()
+                ->action(function () {
+                    $videos = SermonVideo::where('vertical_video_status', '!=', JobStatus::Completed)->get();
+
+                    foreach ($videos as $video) {
+                        ConvertToVerticalVideo::dispatch($video);
+                    }
+
+                    Notification::make()
+                        ->title('Vertical conversion queued')
+                        ->body("Dispatched vertical conversion for {$videos->count()} sermon video(s).")
                         ->success()
                         ->send();
                 }),

@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Enums\TranscriptStatus;
+use App\Enums\JobStatus;
 use App\Models\SermonVideo;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 
@@ -41,7 +42,7 @@ class TranscribeSermonVideo implements ShouldBeUnique, ShouldQueue
     public function handle(): void
     {
         $this->sermonVideo->update([
-            'transcript_status' => TranscriptStatus::Processing,
+            'transcript_status' => JobStatus::Processing,
             'transcript_error' => null,
             'transcription_started_at' => now(),
             'transcription_completed_at' => null,
@@ -94,13 +95,18 @@ class TranscribeSermonVideo implements ShouldBeUnique, ShouldQueue
             }
 
             $this->sermonVideo->update([
-                'transcript_status' => TranscriptStatus::Completed,
+                'transcript_status' => JobStatus::Completed,
                 'transcript' => $transcript,
                 'transcription_completed_at' => now(),
             ]);
         } catch (\Throwable $e) {
+            Log::error('Transcription failed', [
+                'video_path' => $this->sermonVideo->raw_video_path,
+                'exception' => $e,
+            ]);
+
             $this->sermonVideo->update([
-                'transcript_status' => TranscriptStatus::Failed,
+                'transcript_status' => JobStatus::Failed,
                 'transcript_error' => $e->getMessage(),
             ]);
         } finally {

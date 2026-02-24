@@ -2,10 +2,11 @@
 
 namespace App\Jobs;
 
-use App\Enums\TranscriptStatus;
+use App\Enums\JobStatus;
 use App\Models\SermonVideo;
 use App\Services\VideoProbe;
 use Carbon\Carbon;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     private const VIDEO_EXTENSIONS = [
         'mp4',
@@ -38,6 +39,7 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
     public function __construct(
         public bool $verbose = false,
         public bool $transcribe = true,
+        public bool $convertToVertical = true,
         public bool $includeRecent = false,
     ) {}
 
@@ -116,7 +118,7 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
         }
 
         if ($this->transcribe) {
-            $pending = SermonVideo::where('transcript_status', TranscriptStatus::Pending)->get();
+            $pending = SermonVideo::where('transcript_status', JobStatus::Pending)->get();
 
             foreach ($pending as $sermonVideo) {
                 TranscribeSermonVideo::dispatch($sermonVideo);
@@ -124,6 +126,18 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
 
             if ($this->verbose && $pending->isNotEmpty()) {
                 Log::info("Dispatched transcription for {$pending->count()} pending sermon videos.");
+            }
+        }
+
+        if ($this->convertToVertical) {
+            $pendingVertical = SermonVideo::where('vertical_video_status', JobStatus::Pending)->get();
+
+            foreach ($pendingVertical as $sermonVideo) {
+                ConvertToVerticalVideo::dispatch($sermonVideo);
+            }
+
+            if ($this->verbose && $pendingVertical->isNotEmpty()) {
+                Log::info("Dispatched vertical video conversion for {$pendingVertical->count()} pending sermon videos.");
             }
         }
 

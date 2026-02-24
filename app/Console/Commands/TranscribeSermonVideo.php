@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\TranscriptStatus;
+use App\Enums\JobStatus;
 use App\Jobs\TranscribeSermonVideo as TranscribeSermonVideoJob;
 use App\Models\SermonVideo;
 use Illuminate\Console\Command;
@@ -24,7 +24,7 @@ class TranscribeSermonVideo extends Command
             return self::FAILURE;
         }
 
-        if ($sermonVideo->transcript_status === TranscriptStatus::Processing) {
+        if ($sermonVideo->transcript_status === JobStatus::Processing) {
             $this->error("Sermon video #{$sermonVideo->id} is already being processed.");
 
             return self::FAILURE;
@@ -35,7 +35,7 @@ class TranscribeSermonVideo extends Command
 
         $sermonVideo->refresh();
 
-        if ($sermonVideo->transcript_status === TranscriptStatus::Completed) {
+        if ($sermonVideo->transcript_status === JobStatus::Completed) {
             $this->info('Transcription completed successfully.');
         } else {
             $this->error("Transcription failed: {$sermonVideo->transcript_error}");
