@@ -137,6 +137,44 @@ test('it does not dispatch vertical video conversion job when convertToVertical 
     Queue::assertNotPushed(ConvertToVerticalVideo::class);
 });
 
+test('it dispatches transcription for existing pending sermon videos', function () {
+    createOldVideoFile('already-imported.mp4');
+    createOldVideoFile('already-transcribed.mp4');
+
+    $pending = SermonVideo::factory()->create([
+        'raw_video_path' => 'already-imported.mp4',
+        'transcript_status' => JobStatus::Pending,
+    ]);
+
+    $completed = SermonVideo::factory()->create([
+        'raw_video_path' => 'already-transcribed.mp4',
+        'transcript_status' => JobStatus::Completed,
+    ]);
+
+    ScanSermonVideos::dispatchSync();
+
+    Queue::assertPushed(TranscribeSermonVideo::class, function ($job) use ($pending) {
+        return $job->sermonVideo->id === $pending->id;
+    });
+
+    Queue::assertNotPushed(TranscribeSermonVideo::class, function ($job) use ($completed) {
+        return $job->sermonVideo->id === $completed->id;
+    });
+});
+
+test('it does not dispatch transcription for pending videos when transcribe is false', function () {
+    createOldVideoFile('already-imported.mp4');
+
+    SermonVideo::factory()->create([
+        'raw_video_path' => 'already-imported.mp4',
+        'transcript_status' => JobStatus::Pending,
+    ]);
+
+    ScanSermonVideos::dispatchSync(transcribe: false);
+
+    Queue::assertNotPushed(TranscribeSermonVideo::class);
+});
+
 test('it handles empty disk with no video files', function () {
     ScanSermonVideos::dispatchSync();
 

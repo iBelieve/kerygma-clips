@@ -22,6 +22,7 @@
             </div>
 
             <div
+                dusk="transcript-table"
                 x-on:mouseleave="!dragging && clearHighlight()"
                 class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10"
             >
@@ -30,6 +31,7 @@
                         <tbody>
                             <template x-for="(row, i) in rows" :key="i">
                                 <tr
+                                    x-bind:dusk="row.type === 'segment' ? `segment-row-${row.segmentIndex}` : `gap-row-${i}`"
                                     x-bind:class="{
                                         'bg-emerald-100 dark:bg-emerald-500/10': row.type === 'gap'
                                             ? gapInClip(row.prevSegmentIndex, row.nextSegmentIndex)
