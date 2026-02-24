@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::table('sermon_clips', function (Blueprint $table) {
             $table->decimal('starts_at', 8, 2)->nullable()->after('end_segment_index');
             $table->decimal('ends_at', 8, 2)->nullable()->after('starts_at');
+            $table->decimal('duration', 8, 2)->nullable()->virtualAs('ends_at - starts_at')->after('ends_at');
         });
     }
 
@@ -23,7 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('sermon_clips', function (Blueprint $table) {
-            $table->dropColumn(['starts_at', 'ends_at']);
+            $table->dropColumn(['starts_at', 'ends_at', 'duration']);
         });
     }
 };
