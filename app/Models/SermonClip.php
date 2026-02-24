@@ -31,10 +31,12 @@ class SermonClip extends Model
         static::saving(function (SermonClip $clip): void {
             $segments = $clip->sermonVideo->transcript['segments'] ?? [];
 
-            if (isset($segments[$clip->start_segment_index], $segments[$clip->end_segment_index])) {
-                $clip->starts_at = $segments[$clip->start_segment_index]['start'];
-                $clip->ends_at = $segments[$clip->end_segment_index]['end'];
+            if (! isset($segments[$clip->start_segment_index], $segments[$clip->end_segment_index])) {
+                throw new \RuntimeException("Segment indices [{$clip->start_segment_index}, {$clip->end_segment_index}] are out of bounds.");
             }
+
+            $clip->starts_at = $segments[$clip->start_segment_index]['start'];
+            $clip->ends_at = $segments[$clip->end_segment_index]['end'];
         });
     }
 

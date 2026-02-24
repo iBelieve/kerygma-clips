@@ -28,14 +28,16 @@ return new class extends Migration
             $startSegment = $segments[$clip->start_segment_index] ?? null;
             $endSegment = $segments[$clip->end_segment_index] ?? null;
 
-            if ($startSegment && $endSegment) {
-                DB::table('sermon_clips')
-                    ->where('id', $clip->id)
-                    ->update([
-                        'starts_at' => $startSegment['start'],
-                        'ends_at' => $endSegment['end'],
-                    ]);
+            if (! $startSegment || ! $endSegment) {
+                throw new \RuntimeException("Sermon clip {$clip->id} has segment indices that are out of bounds.");
             }
+
+            DB::table('sermon_clips')
+                ->where('id', $clip->id)
+                ->update([
+                    'starts_at' => $startSegment['start'],
+                    'ends_at' => $endSegment['end'],
+                ]);
         }
 
         // Now that all rows are populated, make the columns non-nullable.
