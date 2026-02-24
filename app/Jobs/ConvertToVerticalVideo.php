@@ -105,6 +105,10 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
                 'vertical_video_path' => $outputRelativePath,
                 'vertical_video_completed_at' => now(),
             ]);
+
+            foreach ($this->sermonVideo->sermonClips as $clip) {
+                ExtractSermonClipVerticalVideo::dispatch($clip);
+            }
         } catch (\Throwable $e) {
             Log::error('Vertical video conversion failed', [
                 'video_path' => $this->sermonVideo->raw_video_path,

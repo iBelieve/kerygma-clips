@@ -2,10 +2,12 @@
 
 use App\Enums\JobStatus;
 use App\Jobs\ConvertToVerticalVideo;
+use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Models\SermonVideo;
 use App\Services\VideoProbe;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -265,6 +267,74 @@ test('job computes vertical_video_duration on successful completion', function (
 
     $video->refresh();
     expect($video->vertical_video_duration)->toBe(330);
+});
+
+// --- Clip Extraction Dispatch Tests ---
+
+test('job dispatches clip extraction for all sermon clips on success', function () {
+    Queue::fake([ExtractSermonClipVerticalVideo::class]);
+    Process::fake(['*' => Process::result()]);
+
+    $this->mock(VideoProbe::class, function ($mock) {
+        $mock->shouldReceive('getVideoDimensions')
+            ->andReturn(['width' => 1920, 'height' => 1080]);
+    });
+
+    $video = SermonVideo::factory()->create([
+        'vertical_video_status' => JobStatus::Pending,
+    ]);
+
+    $clip1 = $video->sermonClips()->create(['start_segment_index' => 0, 'end_segment_index' => 3]);
+    $clip2 = $video->sermonClips()->create(['start_segment_index' => 5, 'end_segment_index' => 8]);
+
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+
+    (new ConvertToVerticalVideo($video))->handle(app(VideoProbe::class));
+
+    Queue::assertPushed(ExtractSermonClipVerticalVideo::class, 2);
+    Queue::assertPushed(ExtractSermonClipVerticalVideo::class, fn ($job) => $job->sermonClip->id === $clip1->id);
+    Queue::assertPushed(ExtractSermonClipVerticalVideo::class, fn ($job) => $job->sermonClip->id === $clip2->id);
+});
+
+test('job does not dispatch clip extraction on failure', function () {
+    Queue::fake([ExtractSermonClipVerticalVideo::class]);
+
+    $this->mock(VideoProbe::class, function ($mock) {
+        $mock->shouldReceive('getVideoDimensions')
+            ->andReturn(null);
+    });
+
+    $video = SermonVideo::factory()->create([
+        'vertical_video_status' => JobStatus::Pending,
+    ]);
+
+    $video->sermonClips()->create(['start_segment_index' => 0, 'end_segment_index' => 3]);
+
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+
+    (new ConvertToVerticalVideo($video))->handle(app(VideoProbe::class));
+
+    Queue::assertNotPushed(ExtractSermonClipVerticalVideo::class);
+});
+
+test('job does not dispatch clip extraction when video has no clips', function () {
+    Queue::fake([ExtractSermonClipVerticalVideo::class]);
+    Process::fake(['*' => Process::result()]);
+
+    $this->mock(VideoProbe::class, function ($mock) {
+        $mock->shouldReceive('getVideoDimensions')
+            ->andReturn(['width' => 1920, 'height' => 1080]);
+    });
+
+    $video = SermonVideo::factory()->create([
+        'vertical_video_status' => JobStatus::Pending,
+    ]);
+
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+
+    (new ConvertToVerticalVideo($video))->handle(app(VideoProbe::class));
+
+    Queue::assertNotPushed(ExtractSermonClipVerticalVideo::class);
 });
 
 // --- Command Tests ---
