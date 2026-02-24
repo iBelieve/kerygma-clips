@@ -43,16 +43,34 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Drop the virtual column first since it references other columns being dropped.
+        // Each drop must be a separate statement for SQLite compatibility.
         Schema::table('sermon_videos', function (Blueprint $table) {
-            $table->dropColumn([
-                'vertical_video_status',
-                'vertical_video_path',
-                'vertical_video_error',
-                'vertical_video_started_at',
-                'vertical_video_completed_at',
-                'vertical_video_duration',
-                'vertical_video_crop_center',
-            ]);
+            $table->dropColumn('vertical_video_duration');
+        });
+
+        Schema::table('sermon_videos', function (Blueprint $table) {
+            $table->dropColumn('vertical_video_crop_center');
+        });
+
+        Schema::table('sermon_videos', function (Blueprint $table) {
+            $table->dropColumn('vertical_video_completed_at');
+        });
+
+        Schema::table('sermon_videos', function (Blueprint $table) {
+            $table->dropColumn('vertical_video_started_at');
+        });
+
+        Schema::table('sermon_videos', function (Blueprint $table) {
+            $table->dropColumn('vertical_video_error');
+        });
+
+        Schema::table('sermon_videos', function (Blueprint $table) {
+            $table->dropColumn('vertical_video_path');
+        });
+
+        Schema::table('sermon_videos', function (Blueprint $table) {
+            $table->dropColumn('vertical_video_status');
         });
     }
 };

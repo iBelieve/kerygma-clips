@@ -110,7 +110,6 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
                 ConvertToVerticalVideo::dispatch($sermonVideo);
             }
 
-
             Log::info("Created sermon video for {$file}", [
                 'date' => $date->toDateTimeString(),
                 'duration' => $duration,
