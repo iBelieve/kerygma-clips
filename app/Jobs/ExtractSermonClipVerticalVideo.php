@@ -41,6 +41,8 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
         $sermonClip->update([
             'clip_video_status' => JobStatus::Processing,
             'clip_video_error' => null,
+            'clip_video_started_at' => now(),
+            'clip_video_completed_at' => null,
         ]);
 
         try {
@@ -91,6 +93,7 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
             $sermonClip->update([
                 'clip_video_status' => JobStatus::Completed,
                 'clip_video_path' => $outputRelativePath,
+                'clip_video_completed_at' => now(),
             ]);
         } catch (\Throwable $e) {
             Log::error('Sermon clip vertical video extraction failed', [

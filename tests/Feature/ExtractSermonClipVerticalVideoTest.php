@@ -4,7 +4,9 @@ use App\Enums\JobStatus;
 use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Models\SermonClip;
 use App\Models\SermonVideo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -172,13 +174,124 @@ test('job is queued on the video-processing queue', function () {
     expect($job->queue)->toBe('video-processing');
 });
 
-// --- Command Tests ---
+// --- Timestamp Tests ---
 
-test('command regenerates all clips for a sermon video', function () {
+test('job sets clip_video_started_at when processing begins', function () {
+    Carbon::setTestNow('2026-02-24 12:00:00');
+
+    $video = SermonVideo::factory()->create([
+        'vertical_video_status' => JobStatus::Pending,
+        'transcript' => ['segments' => [
+            ['start' => 0.0, 'end' => 5.0, 'text' => 'test'],
+        ]],
+    ]);
+
+    $clip = SermonClip::factory()->create([
+        'sermon_video_id' => $video->id,
+        'start_segment_index' => 0,
+        'end_segment_index' => 0,
+    ]);
+
+    (new ExtractSermonClipVerticalVideo($clip))->handle();
+
+    $clip->refresh();
+    expect($clip->clip_video_started_at)->not->toBeNull();
+    expect($clip->clip_video_started_at->toDateTimeString())->toBe('2026-02-24 12:00:00');
+});
+
+test('job sets clip_video_completed_at on successful completion', function () {
+    Carbon::setTestNow('2026-02-24 12:00:00');
     Process::fake(['*' => Process::result()]);
 
     $video = createVideoWithVerticalAndTranscript();
     Storage::disk('public')->put($video->vertical_video_path, 'fake-vertical-content');
+
+    $clip = SermonClip::factory()->create([
+        'sermon_video_id' => $video->id,
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+    ]);
+
+    (new ExtractSermonClipVerticalVideo($clip))->handle();
+
+    $clip->refresh();
+    expect($clip->clip_video_started_at)->not->toBeNull();
+    expect($clip->clip_video_completed_at)->not->toBeNull();
+    expect($clip->clip_video_completed_at->toDateTimeString())->toBe('2026-02-24 12:00:00');
+});
+
+test('job does not set clip_video_completed_at on failure', function () {
+    $video = SermonVideo::factory()->create([
+        'vertical_video_status' => JobStatus::Pending,
+        'transcript' => ['segments' => [
+            ['start' => 0.0, 'end' => 5.0, 'text' => 'test'],
+        ]],
+    ]);
+
+    $clip = SermonClip::factory()->create([
+        'sermon_video_id' => $video->id,
+        'start_segment_index' => 0,
+        'end_segment_index' => 0,
+    ]);
+
+    (new ExtractSermonClipVerticalVideo($clip))->handle();
+
+    $clip->refresh();
+    expect($clip->clip_video_started_at)->not->toBeNull();
+    expect($clip->clip_video_completed_at)->toBeNull();
+});
+
+test('job resets clip_video_completed_at on re-run', function () {
+    $video = SermonVideo::factory()->create([
+        'vertical_video_status' => JobStatus::Pending,
+        'transcript' => ['segments' => [
+            ['start' => 0.0, 'end' => 5.0, 'text' => 'test'],
+        ]],
+    ]);
+
+    $clip = SermonClip::factory()->create([
+        'sermon_video_id' => $video->id,
+        'start_segment_index' => 0,
+        'end_segment_index' => 0,
+        'clip_video_status' => JobStatus::Completed,
+        'clip_video_started_at' => now()->subMinutes(10),
+        'clip_video_completed_at' => now()->subMinutes(5),
+    ]);
+
+    (new ExtractSermonClipVerticalVideo($clip))->handle();
+
+    $clip->refresh();
+    expect($clip->clip_video_completed_at)->toBeNull();
+});
+
+test('job computes clip_video_duration on successful completion', function () {
+    $startTime = Carbon::parse('2026-02-24 12:00:00');
+    $endTime = Carbon::parse('2026-02-24 12:02:30');
+
+    $video = createVideoWithVerticalAndTranscript();
+
+    $clip = SermonClip::factory()->create([
+        'sermon_video_id' => $video->id,
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+    ]);
+
+    $clip->update([
+        'clip_video_status' => JobStatus::Completed,
+        'clip_video_started_at' => $startTime,
+        'clip_video_completed_at' => $endTime,
+    ]);
+
+    $clip->refresh();
+    expect($clip->clip_video_duration)->toBe(150);
+});
+
+// --- Command Tests ---
+
+test('command dispatches extraction jobs for all clips', function () {
+    Queue::fake([ExtractSermonClipVerticalVideo::class]);
+
+    $video = createVideoWithVerticalAndTranscript();
 
     $clip1 = SermonClip::factory()->create([
         'sermon_video_id' => $video->id,
@@ -195,10 +308,9 @@ test('command regenerates all clips for a sermon video', function () {
     $this->artisan('app:extract-sermon-clip-videos', ['id' => $video->id])
         ->assertSuccessful();
 
-    $clip1->refresh();
-    $clip2->refresh();
-    expect($clip1->clip_video_status)->toBe(JobStatus::Completed);
-    expect($clip2->clip_video_status)->toBe(JobStatus::Completed);
+    Queue::assertPushed(ExtractSermonClipVerticalVideo::class, 2);
+    Queue::assertPushed(ExtractSermonClipVerticalVideo::class, fn ($job) => $job->sermonClip->id === $clip1->id);
+    Queue::assertPushed(ExtractSermonClipVerticalVideo::class, fn ($job) => $job->sermonClip->id === $clip2->id);
 });
 
 test('command fails for non-existent sermon video', function () {

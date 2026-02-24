@@ -18,12 +18,17 @@ class SermonClip extends Model
         'clip_video_status',
         'clip_video_path',
         'clip_video_error',
+        'clip_video_started_at',
+        'clip_video_completed_at',
     ];
 
     protected $casts = [
         'start_segment_index' => 'integer',
         'end_segment_index' => 'integer',
         'clip_video_status' => JobStatus::class,
+        'clip_video_started_at' => 'immutable_datetime',
+        'clip_video_completed_at' => 'immutable_datetime',
+        'clip_video_duration' => 'integer',
     ];
 
     /**

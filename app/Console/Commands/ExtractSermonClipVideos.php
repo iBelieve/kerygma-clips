@@ -32,16 +32,11 @@ class ExtractSermonClipVideos extends Command
         }
 
         foreach ($clips as $clip) {
-            ExtractSermonClipVerticalVideo::dispatchSync($clip);
-
-            $clip->refresh();
-
-            if ($clip->clip_video_status->value === 'completed') {
-                $this->info("Clip #{$clip->id} (segments {$clip->start_segment_index}-{$clip->end_segment_index}): completed.");
-            } else {
-                $this->error("Clip #{$clip->id} (segments {$clip->start_segment_index}-{$clip->end_segment_index}): {$clip->clip_video_error}");
-            }
+            ExtractSermonClipVerticalVideo::dispatch($clip);
+            $this->info("Dispatched clip #{$clip->id} (segments {$clip->start_segment_index}-{$clip->end_segment_index}).");
         }
+
+        $this->info("Dispatched {$clips->count()} clip extraction ".str('job')->plural($clips->count()).'.');
 
         return self::SUCCESS;
     }
