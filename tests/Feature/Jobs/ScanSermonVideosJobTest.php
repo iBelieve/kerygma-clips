@@ -118,6 +118,9 @@ test('it does not dispatch transcription job when transcribe is false', function
 });
 
 test('it dispatches transcription for existing pending sermon videos', function () {
+    createOldVideoFile('already-imported.mp4');
+    createOldVideoFile('already-transcribed.mp4');
+
     $pending = SermonVideo::factory()->create([
         'raw_video_path' => 'already-imported.mp4',
         'transcript_status' => TranscriptStatus::Pending,
@@ -140,6 +143,8 @@ test('it dispatches transcription for existing pending sermon videos', function 
 });
 
 test('it does not dispatch transcription for pending videos when transcribe is false', function () {
+    createOldVideoFile('already-imported.mp4');
+
     SermonVideo::factory()->create([
         'raw_video_path' => 'already-imported.mp4',
         'transcript_status' => TranscriptStatus::Pending,

@@ -55,14 +55,14 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
             if ($this->verbose) {
                 Log::warning('No video files found on the sermon_videos disk.');
             }
+
+            return;
         }
 
-        $existingPaths = ! empty($videoFiles)
-            ? SermonVideo::whereIn('raw_video_path', $videoFiles)
-                ->pluck('raw_video_path')
-                ->flip()
-                ->all()
-            : [];
+        $existingPaths = SermonVideo::whereIn('raw_video_path', $videoFiles)
+            ->pluck('raw_video_path')
+            ->flip()
+            ->all();
 
         $now = Carbon::now();
         $created = 0;
