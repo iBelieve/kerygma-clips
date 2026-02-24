@@ -8,6 +8,11 @@ export default function viewTranscript({ segments, clips }) {
         rows: [],
         highlightEnds: [],
 
+        // Drag state
+        dragging: null, // { clipIndex, edge: 'start'|'end' }
+        dragPreviewStart: null,
+        dragPreviewEnd: null,
+
         init() {
             this.recompute();
             this.$watch("gapThreshold", () => this.recompute());
@@ -50,6 +55,23 @@ export default function viewTranscript({ segments, clips }) {
             // window ends at or before the next segment's window, so
             // shrinking from the previous answer gives O(n) total.
             const count = this.segments.length;
+
+            // Find the first clip start index at or after each segment.
+            // nextClipAt[i] = index of the first clip start >= i, or count if none.
+            const nextClipAt = new Array(count).fill(count);
+            for (const c of this.clips) {
+                // Mark the clip start position
+                if (c.start < count && nextClipAt[c.start] > c.start) {
+                    nextClipAt[c.start] = c.start;
+                }
+            }
+            // Fill backwards so nextClipAt[i] = min(nextClipAt[i], nextClipAt[i+1])
+            for (let i = count - 2; i >= 0; i--) {
+                if (nextClipAt[i] > nextClipAt[i + 1]) {
+                    nextClipAt[i] = nextClipAt[i + 1];
+                }
+            }
+
             let lastHighlight = count - 1;
 
             for (let i = count - 1; i >= 0; i--) {
@@ -67,10 +89,13 @@ export default function viewTranscript({ segments, clips }) {
                     lastHighlight--;
                 }
 
-                // Shrink back past any trailing clip segments so the
-                // highlight never ends right before a gap into a clip
-                while (lastHighlight > i && this.inClip(lastHighlight)) {
-                    lastHighlight--;
+                // Don't highlight past a clip that starts after this segment
+                if (
+                    !this.inClip(i) &&
+                    nextClipAt[i] > i &&
+                    nextClipAt[i] <= lastHighlight
+                ) {
+                    lastHighlight = nextClipAt[i] - 1;
                 }
 
                 this.highlightEnds[i] = lastHighlight;
@@ -80,15 +105,169 @@ export default function viewTranscript({ segments, clips }) {
         },
 
         inClip(segmentIndex) {
-            return this.clips.some(
+            return this.clips.some((c, i) => {
+                const start =
+                    this.dragging && this.dragging.clipIndex === i
+                        ? this.dragPreviewStart
+                        : c.start;
+                const end =
+                    this.dragging && this.dragging.clipIndex === i
+                        ? this.dragPreviewEnd
+                        : c.end;
+                return segmentIndex >= start && segmentIndex <= end;
+            });
+        },
+
+        gapInClip(prevIndex, nextIndex) {
+            return this.clips.some((c, i) => {
+                const start =
+                    this.dragging && this.dragging.clipIndex === i
+                        ? this.dragPreviewStart
+                        : c.start;
+                const end =
+                    this.dragging && this.dragging.clipIndex === i
+                        ? this.dragPreviewEnd
+                        : c.end;
+                return prevIndex >= start && nextIndex <= end;
+            });
+        },
+
+        clipIndexOfSegment(segmentIndex) {
+            return this.clips.findIndex(
                 (c) => segmentIndex >= c.start && segmentIndex <= c.end,
             );
         },
 
-        gapInClip(prevIndex, nextIndex) {
-            return this.clips.some(
-                (c) => prevIndex >= c.start && nextIndex <= c.end,
-            );
+        isClipStart(segmentIndex) {
+            return this.clips.some((c, i) => {
+                const start =
+                    this.dragging && this.dragging.clipIndex === i
+                        ? this.dragPreviewStart
+                        : c.start;
+                return segmentIndex === start;
+            });
+        },
+
+        isClipEnd(segmentIndex) {
+            return this.clips.some((c, i) => {
+                const end =
+                    this.dragging && this.dragging.clipIndex === i
+                        ? this.dragPreviewEnd
+                        : c.end;
+                return segmentIndex === end;
+            });
+        },
+
+        clipDuration(clipIndex) {
+            const c = this.clips[clipIndex];
+            if (!c) return 0;
+            const start =
+                this.dragging && this.dragging.clipIndex === clipIndex
+                    ? this.dragPreviewStart
+                    : c.start;
+            const end =
+                this.dragging && this.dragging.clipIndex === clipIndex
+                    ? this.dragPreviewEnd
+                    : c.end;
+            return this.segments[end].end - this.segments[start].start;
+        },
+
+        clipDurationOfSegment(segmentIndex) {
+            const idx = this.clips.findIndex((c, i) => {
+                const start =
+                    this.dragging && this.dragging.clipIndex === i
+                        ? this.dragPreviewStart
+                        : c.start;
+                return segmentIndex === start;
+            });
+            if (idx === -1) return 0;
+            return this.clipDuration(idx);
+        },
+
+        formatDuration(seconds) {
+            const total = Math.round(seconds);
+            if (total >= 60) {
+                const m = Math.floor(total / 60);
+                const s = total % 60;
+                return `${m}m ${String(s).padStart(2, "0")}s`;
+            }
+            return `${total}s`;
+        },
+
+        startDragFromRow(segmentIndex, event) {
+            if (this.isClipStart(segmentIndex)) {
+                event.preventDefault();
+                this.startDrag(segmentIndex, "start");
+            } else if (this.isClipEnd(segmentIndex)) {
+                event.preventDefault();
+                this.startDrag(segmentIndex, "end");
+            }
+        },
+
+        startDrag(segmentIndex, edge) {
+            const clipIndex = this.clipIndexOfSegment(segmentIndex);
+            if (clipIndex === -1) return;
+
+            const c = this.clips[clipIndex];
+            this.dragging = { clipIndex, edge };
+            this.dragPreviewStart = c.start;
+            this.dragPreviewEnd = c.end;
+            this.clearHighlight();
+        },
+
+        handleDragOver(segmentIndex) {
+            if (!this.dragging) return;
+
+            const { clipIndex, edge } = this.dragging;
+            const c = this.clips[clipIndex];
+            let newStart =
+                edge === "start" ? segmentIndex : this.dragPreviewStart;
+            let newEnd = edge === "end" ? segmentIndex : this.dragPreviewEnd;
+
+            // Can't drag start past end or vice versa
+            if (newStart > newEnd) return;
+
+            // Check 90s limit
+            const duration =
+                this.segments[newEnd].end - this.segments[newStart].start;
+            if (duration > 90) return;
+
+            // Check no overlap with other clips
+            for (let i = 0; i < this.clips.length; i++) {
+                if (i === clipIndex) continue;
+                const other = this.clips[i];
+                if (newStart <= other.end && newEnd >= other.start) return;
+            }
+
+            this.dragPreviewStart = newStart;
+            this.dragPreviewEnd = newEnd;
+        },
+
+        async endDrag() {
+            if (!this.dragging) return;
+
+            const { clipIndex } = this.dragging;
+            const c = this.clips[clipIndex];
+            const newStart = this.dragPreviewStart;
+            const newEnd = this.dragPreviewEnd;
+            const changed = newStart !== c.start || newEnd !== c.end;
+
+            // Reset drag state
+            this.dragging = null;
+            this.dragPreviewStart = null;
+            this.dragPreviewEnd = null;
+
+            if (!changed) return;
+
+            // Optimistic update
+            c.start = newStart;
+            c.end = newEnd;
+            this.recompute();
+
+            // Persist and sync with server
+            const clips = await this.$wire.updateClip(c.id, newStart, newEnd);
+            this.clips = clips;
+            this.recompute();
         },
 
         setHighlight(segmentIndex) {
