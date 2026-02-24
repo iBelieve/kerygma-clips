@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\TranscriptStatus;
 use App\Models\SermonVideo;
 use App\Services\VideoProbe;
 use Carbon\Carbon;
@@ -103,16 +104,24 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
                 'duration' => $duration,
             ]);
 
-            if ($this->transcribe) {
-                TranscribeSermonVideo::dispatch($sermonVideo);
-            }
-
             Log::info("Created sermon video for {$file}", [
                 'date' => $date->toDateTimeString(),
                 'duration' => $duration,
             ]);
 
             $created++;
+        }
+
+        if ($this->transcribe) {
+            $pending = SermonVideo::where('transcript_status', TranscriptStatus::Pending)->get();
+
+            foreach ($pending as $sermonVideo) {
+                TranscribeSermonVideo::dispatch($sermonVideo);
+            }
+
+            if ($this->verbose && $pending->isNotEmpty()) {
+                Log::info("Dispatched transcription for {$pending->count()} pending sermon videos.");
+            }
         }
 
         if ($this->verbose) {
