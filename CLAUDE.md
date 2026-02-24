@@ -20,7 +20,8 @@ This is a Laravel 12 application with Filament (admin panel) integration. The pr
 ### Initial Setup
 ```bash
 composer setup
-# Runs: composer install, creates .env, generates key, runs migrations, npm install, npm run build
+# Runs: composer install, creates .env, generates key, runs migrations, npm install, npm run build,
+# and configures git pre-commit hooks
 ```
 
 ### Development Server
@@ -63,6 +64,9 @@ composer analyze           # Run Larastan (PHPStan) static analysis
 The project uses **Larastan** (level 5) with the Livewire plugin for static analysis. Configuration is in `phpstan.neon`.
 
 ### Code Formatting
+
+Formatting is run automatically via a pre-commit hook (configured by `composer setup`), so there is no need to run formatters manually before committing. To run them on demand:
+
 ```bash
 composer format            # Fix all PHP files with Laravel Pint
 composer format:check      # Check PHP formatting without fixing
@@ -250,7 +254,7 @@ public function getHeading(): string|Htmlable
 
 **JavaScript/CSS**: Uses Prettier
 - Configuration inherits from project defaults
-- Run `npm run format` before committing frontend changes
+- Automatically formatted by the pre-commit hook
 
 **EditorConfig**: [.editorconfig](.editorconfig)
 - 4 spaces for PHP, 2 spaces for YAML
