@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Pre-commit hook: auto-format staged files with Laravel Pint and Prettier
+# Uses lint-staged to only format staged files and handle partial staging correctly
+
+npx lint-staged
