@@ -106,10 +106,6 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
                 'duration' => $duration,
             ]);
 
-            if ($this->convertToVertical) {
-                ConvertToVerticalVideo::dispatch($sermonVideo);
-            }
-
             Log::info("Created sermon video for {$file}", [
                 'date' => $date->toDateTimeString(),
                 'duration' => $duration,
@@ -127,6 +123,18 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
 
             if ($this->verbose && $pending->isNotEmpty()) {
                 Log::info("Dispatched transcription for {$pending->count()} pending sermon videos.");
+            }
+        }
+
+        if ($this->convertToVertical) {
+            $pendingVertical = SermonVideo::where('vertical_video_status', JobStatus::Pending)->get();
+
+            foreach ($pendingVertical as $sermonVideo) {
+                ConvertToVerticalVideo::dispatch($sermonVideo);
+            }
+
+            if ($this->verbose && $pendingVertical->isNotEmpty()) {
+                Log::info("Dispatched vertical video conversion for {$pendingVertical->count()} pending sermon videos.");
             }
         }
 
