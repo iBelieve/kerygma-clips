@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# Pre-commit hook: auto-format staged files with Laravel Pint and Prettier
+
+# Format PHP files with Laravel Pint
+composer format
+if [ $? -ne 0 ]; then
+    echo "composer format failed"
+    exit 1
+fi
+
+# Format JS/CSS files with Prettier
+npm run format
+if [ $? -ne 0 ]; then
+    echo "npm run format failed"
+    exit 1
+fi
+
+# Re-stage any files that were reformatted
+git add -u
