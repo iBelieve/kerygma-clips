@@ -23,7 +23,7 @@ class ListSermonVideos extends ListRecords
                 ->icon('heroicon-o-arrow-path')
                 ->color('primary')
                 ->action(function () {
-                    ScanSermonVideos::dispatch(verbose: true);
+                    ScanSermonVideos::dispatch(verbose: true, includeRecent: true);
 
                     Notification::make()
                         ->title('Scan started')
