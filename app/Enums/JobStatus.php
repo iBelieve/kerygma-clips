@@ -8,4 +8,5 @@ enum JobStatus: string
     case Processing = 'processing';
     case Completed = 'completed';
     case Failed = 'failed';
+    case TimedOut = 'timed_out';
 }
