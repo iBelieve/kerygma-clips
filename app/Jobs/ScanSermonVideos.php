@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Enums\JobStatus;
+use App\Jobs\ExtractPreviewFrame;
 use App\Models\SermonVideo;
 use App\Services\VideoProbe;
 use Carbon\Carbon;
@@ -139,6 +140,16 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
             if ($this->verbose && $pendingVertical->isNotEmpty()) {
                 Log::info("Dispatched vertical video conversion for {$pendingVertical->count()} pending sermon videos.");
             }
+        }
+
+        $missingFrames = SermonVideo::whereNull('preview_frame_path')->get();
+
+        foreach ($missingFrames as $sermonVideo) {
+            ExtractPreviewFrame::dispatch($sermonVideo);
+        }
+
+        if ($this->verbose && $missingFrames->isNotEmpty()) {
+            Log::info("Dispatched preview frame extraction for {$missingFrames->count()} sermon videos.");
         }
 
         if ($this->verbose) {
