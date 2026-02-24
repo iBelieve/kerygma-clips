@@ -5,6 +5,7 @@ use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Models\SermonClip;
 use App\Models\SermonVideo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -105,11 +106,16 @@ test('job fails when segment indices are out of bounds', function () {
     $video = createVideoWithVerticalAndTranscript(5);
     Storage::disk('public')->put($video->vertical_video_path, 'fake-vertical-content');
 
+    // Create a valid clip first, then move indices out of bounds directly in
+    // the DB to bypass the model's saving hook validation.
     $clip = SermonClip::factory()->create([
         'sermon_video_id' => $video->id,
         'start_segment_index' => 2,
-        'end_segment_index' => 10,
+        'end_segment_index' => 4,
     ]);
+
+    DB::table('sermon_clips')->where('id', $clip->id)->update(['end_segment_index' => 10]);
+    $clip->refresh();
 
     (new ExtractSermonClipVerticalVideo($clip))->handle();
 

@@ -48,6 +48,11 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
         $disk = Storage::disk('sermon_videos');
         $files = $disk->files();
 
+        $latestCropCenter = SermonVideo::query()
+            ->whereNotNull('vertical_video_crop_center')
+            ->latest('date')
+            ->value('vertical_video_crop_center');
+
         $videoFiles = array_filter($files, function (string $file): bool {
             $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
@@ -107,6 +112,7 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
                 'raw_video_path' => $file,
                 'date' => $date->utc(),
                 'duration' => $duration,
+                'vertical_video_crop_center' => $latestCropCenter ?? 50,
             ]);
 
             Log::info("Created sermon video for {$file}", [
@@ -139,6 +145,16 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
             if ($this->verbose && $pendingVertical->isNotEmpty()) {
                 Log::info("Dispatched vertical video conversion for {$pendingVertical->count()} pending sermon videos.");
             }
+        }
+
+        $missingFrames = SermonVideo::whereNull('preview_frame_path')->get();
+
+        foreach ($missingFrames as $sermonVideo) {
+            ExtractPreviewFrame::dispatch($sermonVideo);
+        }
+
+        if ($this->verbose && $missingFrames->isNotEmpty()) {
+            Log::info("Dispatched preview frame extraction for {$missingFrames->count()} sermon videos.");
         }
 
         if ($this->verbose) {

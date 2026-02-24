@@ -105,6 +105,28 @@ test('job sets status to failed when process fails', function () {
     expect($video->transcript_error)->toContain('WhisperX crashed');
 });
 
+test('job sets status to timed_out when process times out', function () {
+    $process = new \Symfony\Component\Process\Process(['whisperx']);
+    $process->setTimeout(3600);
+
+    Process::fake(fn () => throw new \Symfony\Component\Process\Exception\ProcessTimedOutException(
+        $process,
+        \Symfony\Component\Process\Exception\ProcessTimedOutException::TYPE_GENERAL
+    ));
+
+    $video = SermonVideo::factory()->create([
+        'transcript_status' => JobStatus::Pending,
+    ]);
+
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+
+    (new TranscribeSermonVideo($video))->handle();
+
+    $video->refresh();
+    expect($video->transcript_status)->toBe(JobStatus::TimedOut);
+    expect($video->transcript_error)->toContain('exceeded the timeout');
+});
+
 test('job sets status to failed when output json is missing', function () {
     Process::fake(['*' => Process::result()]);
 

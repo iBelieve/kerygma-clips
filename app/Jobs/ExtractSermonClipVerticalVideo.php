@@ -38,14 +38,13 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
         $sermonClip = $this->sermonClip;
         $sermonVideo = $sermonClip->sermonVideo;
 
-        $sermonClip->update([
-            'clip_video_status' => JobStatus::Processing,
-            'clip_video_error' => null,
-            'clip_video_started_at' => now(),
-            'clip_video_completed_at' => null,
-        ]);
-
         try {
+            $sermonClip->update([
+                'clip_video_status' => JobStatus::Processing,
+                'clip_video_error' => null,
+                'clip_video_started_at' => now(),
+                'clip_video_completed_at' => null,
+            ]);
             if ($sermonVideo->vertical_video_status !== JobStatus::Completed || $sermonVideo->vertical_video_path === null) {
                 throw new \RuntimeException('Sermon video does not have a completed vertical video');
             }
@@ -102,7 +101,7 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 'exception' => $e,
             ]);
 
-            $sermonClip->update([
+            $sermonClip->updateQuietly([
                 'clip_video_status' => JobStatus::Failed,
                 'clip_video_error' => $e->getMessage(),
             ]);

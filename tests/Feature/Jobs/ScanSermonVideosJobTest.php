@@ -226,3 +226,31 @@ test('it handles empty disk with no video files', function () {
 
     expect(SermonVideo::count())->toBe(0);
 });
+
+test('it inherits vertical_video_crop_center from the most recent sermon video by date', function () {
+    SermonVideo::factory()->create([
+        'date' => now()->subDays(2),
+        'vertical_video_crop_center' => 30,
+    ]);
+
+    SermonVideo::factory()->create([
+        'date' => now()->subDay(),
+        'vertical_video_crop_center' => 75,
+    ]);
+
+    createOldVideoFile('2025-12-10 18-53-50.mp4');
+
+    ScanSermonVideos::dispatchSync();
+
+    $newVideo = SermonVideo::where('raw_video_path', '2025-12-10 18-53-50.mp4')->first();
+    expect($newVideo->vertical_video_crop_center)->toBe(75);
+});
+
+test('it uses default crop center when no previous sermon videos exist', function () {
+    createOldVideoFile('2025-12-10 18-53-50.mp4');
+
+    ScanSermonVideos::dispatchSync();
+
+    $video = SermonVideo::where('raw_video_path', '2025-12-10 18-53-50.mp4')->first();
+    expect($video->vertical_video_crop_center)->toBe(50);
+});

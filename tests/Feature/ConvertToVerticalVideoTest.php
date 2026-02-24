@@ -84,6 +84,33 @@ test('job sets status to failed when video dimensions cannot be detected', funct
     expect($video->vertical_video_error)->toContain('Failed to detect video dimensions');
 });
 
+test('job sets status to timed_out when process times out', function () {
+    $process = new \Symfony\Component\Process\Process(['ffmpeg']);
+    $process->setTimeout(7200);
+
+    Process::fake(fn () => throw new \Symfony\Component\Process\Exception\ProcessTimedOutException(
+        $process,
+        \Symfony\Component\Process\Exception\ProcessTimedOutException::TYPE_GENERAL
+    ));
+
+    $this->mock(VideoProbe::class, function ($mock) {
+        $mock->shouldReceive('getVideoDimensions')
+            ->andReturn(['width' => 1920, 'height' => 1080]);
+    });
+
+    $video = SermonVideo::factory()->create([
+        'vertical_video_status' => JobStatus::Pending,
+    ]);
+
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+
+    (new ConvertToVerticalVideo($video))->handle(app(VideoProbe::class));
+
+    $video->refresh();
+    expect($video->vertical_video_status)->toBe(JobStatus::TimedOut);
+    expect($video->vertical_video_error)->toContain('exceeded the timeout');
+});
+
 test('job clears previous error on new run', function () {
     Process::fake(['*' => Process::result()]);
 
@@ -280,8 +307,15 @@ test('job dispatches clip extraction for all sermon clips on success', function 
             ->andReturn(['width' => 1920, 'height' => 1080]);
     });
 
+    $segments = collect(range(0, 9))->map(fn ($i) => [
+        'start' => $i * 5.0,
+        'end' => $i * 5.0 + 5.0,
+        'text' => "Segment {$i}",
+    ])->all();
+
     $video = SermonVideo::factory()->create([
         'vertical_video_status' => JobStatus::Pending,
+        'transcript' => ['segments' => $segments],
     ]);
 
     $clip1 = $video->sermonClips()->create(['start_segment_index' => 0, 'end_segment_index' => 3]);
@@ -304,8 +338,15 @@ test('job does not dispatch clip extraction on failure', function () {
             ->andReturn(null);
     });
 
+    $segments = collect(range(0, 4))->map(fn ($i) => [
+        'start' => $i * 5.0,
+        'end' => $i * 5.0 + 5.0,
+        'text' => "Segment {$i}",
+    ])->all();
+
     $video = SermonVideo::factory()->create([
         'vertical_video_status' => JobStatus::Pending,
+        'transcript' => ['segments' => $segments],
     ]);
 
     $video->sermonClips()->create(['start_segment_index' => 0, 'end_segment_index' => 3]);
