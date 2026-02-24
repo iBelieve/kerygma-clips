@@ -3,7 +3,6 @@
 namespace App\Jobs;
 
 use App\Enums\JobStatus;
-use App\Jobs\ExtractPreviewFrame;
 use App\Models\SermonVideo;
 use App\Services\VideoProbe;
 use Carbon\Carbon;
