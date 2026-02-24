@@ -10,24 +10,14 @@ return new class extends Migration
     {
         Schema::table('sermon_clips', function (Blueprint $table) {
             $table->string('clip_video_status')->default('pending')->after('end_segment_index');
-        });
-
-        Schema::table('sermon_clips', function (Blueprint $table) {
             $table->string('clip_video_path')->nullable()->after('clip_video_status');
-        });
-
-        Schema::table('sermon_clips', function (Blueprint $table) {
             $table->text('clip_video_error')->nullable()->after('clip_video_path');
-        });
-
-        Schema::table('sermon_clips', function (Blueprint $table) {
             $table->timestampTz('clip_video_started_at')->nullable()->after('clip_video_error');
-        });
-
-        Schema::table('sermon_clips', function (Blueprint $table) {
             $table->timestampTz('clip_video_completed_at')->nullable()->after('clip_video_started_at');
         });
 
+        // Virtual generated column must be added separately because it
+        // references columns from the ALTER TABLE statement above.
         Schema::table('sermon_clips', function (Blueprint $table) {
             $table->integer('clip_video_duration')->nullable()->virtualAs(
                 'CAST(ROUND((julianday(clip_video_completed_at) - julianday(clip_video_started_at)) * 86400) AS INTEGER)'
@@ -37,28 +27,19 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Drop the virtual column first since it references other columns being dropped.
         Schema::table('sermon_clips', function (Blueprint $table) {
             $table->dropColumn('clip_video_duration');
         });
 
         Schema::table('sermon_clips', function (Blueprint $table) {
-            $table->dropColumn('clip_video_completed_at');
-        });
-
-        Schema::table('sermon_clips', function (Blueprint $table) {
-            $table->dropColumn('clip_video_started_at');
-        });
-
-        Schema::table('sermon_clips', function (Blueprint $table) {
-            $table->dropColumn('clip_video_error');
-        });
-
-        Schema::table('sermon_clips', function (Blueprint $table) {
-            $table->dropColumn('clip_video_path');
-        });
-
-        Schema::table('sermon_clips', function (Blueprint $table) {
-            $table->dropColumn('clip_video_status');
+            $table->dropColumn([
+                'clip_video_completed_at',
+                'clip_video_started_at',
+                'clip_video_error',
+                'clip_video_path',
+                'clip_video_status',
+            ]);
         });
     }
 };
