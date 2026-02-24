@@ -7,18 +7,20 @@ use Illuminate\Console\Command;
 
 class ScanSermonVideos extends Command
 {
-    protected $signature = 'app:scan-sermon-videos {--transcribe : Dispatch transcription jobs for newly created sermon videos} {--queue : Dispatch the scan to the queue instead of running synchronously}';
+    protected $signature = 'app:scan-sermon-videos {--transcribe : Dispatch transcription jobs for newly created sermon videos} {--queue : Dispatch the scan to the queue instead of running synchronously} {--include-recent : Include recently modified files that would normally be skipped}';
 
     protected $description = 'Scan the sermon_videos disk for new video files and create SermonVideo entries';
 
     public function handle(): int
     {
         $transcribe = $this->option('transcribe');
+        $includeRecent = $this->option('include-recent');
 
         if ($this->option('queue')) {
             ScanSermonVideosJob::dispatch(
                 verbose: true,
                 transcribe: $transcribe,
+                includeRecent: $includeRecent,
             );
             $this->info('Scan job dispatched to queue.');
         } else {
@@ -26,6 +28,7 @@ class ScanSermonVideos extends Command
             ScanSermonVideosJob::dispatchSync(
                 verbose: true,
                 transcribe: $transcribe,
+                includeRecent: $includeRecent,
             );
             $this->info('Done.');
         }

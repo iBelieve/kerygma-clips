@@ -38,6 +38,7 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
     public function __construct(
         public bool $verbose = false,
         public bool $transcribe = true,
+        public bool $includeRecent = false,
     ) {}
 
     public function handle(VideoProbe $videoProbe): void
@@ -75,14 +76,16 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
                 continue;
             }
 
-            $lastModified = Carbon::createFromTimestamp($disk->lastModified($file));
-            if ($lastModified->gt($now->copy()->subMinutes(self::MIN_AGE_MINUTES))) {
-                if ($this->verbose) {
-                    Log::info("Skipping recently modified file: {$file}");
-                }
-                $skipped++;
+            if (! $this->includeRecent) {
+                $lastModified = Carbon::createFromTimestamp($disk->lastModified($file));
+                if ($lastModified->gt($now->copy()->subMinutes(self::MIN_AGE_MINUTES))) {
+                    if ($this->verbose) {
+                        Log::info("Skipping recently modified file: {$file}");
+                    }
+                    $skipped++;
 
-                continue;
+                    continue;
+                }
             }
 
             $date = $this->parseDateFromFilename($file);
