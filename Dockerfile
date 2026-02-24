@@ -124,7 +124,7 @@ COPY --link public public
 COPY --link --from=node /app/public /app/public
 COPY --link resources/views resources/views
 COPY --link pyproject.toml uv.lock .python-version ./
-COPY --link entrypoint.sh /app/entrypoint.sh
+COPY --link Procfile release.sh entrypoint.sh /app/
 
 RUN php artisan storage:link
 
