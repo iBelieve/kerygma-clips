@@ -4,7 +4,6 @@ use App\Enums\JobStatus;
 use App\Filament\Resources\SermonClips\Pages\ListSermonClips;
 use App\Filament\Resources\SermonClips\SermonClipResource;
 use App\Jobs\ExtractSermonClipVerticalVideo;
-use App\Models\SermonClip;
 use App\Models\SermonVideo;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
