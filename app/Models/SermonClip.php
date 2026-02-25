@@ -11,6 +11,8 @@ class SermonClip extends Model
 {
     use HasFactory;
 
+    public const float MAX_PAUSE = 0.5;
+
     protected $fillable = [
         'sermon_video_id',
         'start_segment_index',
@@ -69,7 +71,7 @@ class SermonClip extends Model
         } else {
             $gapBefore = max(0, $segmentStart);
         }
-        $pauseBefore = min($gapBefore / 2, 0.5);
+        $pauseBefore = min($gapBefore / 2, self::MAX_PAUSE);
 
         // Calculate pause_after: half the gap to the following segment, max 0.5s
         if (isset($segments[$endSegmentIndex + 1])) {
@@ -78,7 +80,7 @@ class SermonClip extends Model
         } else {
             $gapAfter = max(0, $videoDuration - $segmentEnd);
         }
-        $pauseAfter = min($gapAfter / 2, 0.5);
+        $pauseAfter = min($gapAfter / 2, self::MAX_PAUSE);
 
         return [
             'pause_before' => $pauseBefore,
