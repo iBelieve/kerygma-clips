@@ -3,7 +3,6 @@
 use App\Ai\Agents\SermonClipTitleGenerator;
 use App\Filament\Resources\SermonVideos\Pages\ViewSermonVideo;
 use App\Jobs\GenerateSermonClipTitle;
-use App\Models\SermonClip;
 use App\Models\SermonVideo;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
