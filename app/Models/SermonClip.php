@@ -18,7 +18,7 @@ class SermonClip extends Model
         'end_segment_index',
         'starts_at',
         'ends_at',
-        'ai_title',
+        'title',
         'clip_video_status',
         'clip_video_path',
         'clip_video_error',

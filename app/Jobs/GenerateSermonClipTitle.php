@@ -57,7 +57,7 @@ class GenerateSermonClipTitle implements ShouldQueue
         $response = (new SermonClipTitleGenerator)->prompt($prompt);
 
         $this->sermonClip->update([
-            'ai_title' => trim((string) $response),
+            'title' => trim((string) $response),
         ]);
     }
 
