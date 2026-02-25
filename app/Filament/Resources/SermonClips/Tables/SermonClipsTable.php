@@ -114,6 +114,13 @@ class SermonClipsTable
                             ->success()
                             ->send();
                     }),
+
+                Action::make('delete')
+                    ->label('Delete')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(fn (SermonClip $record) => $record->delete()),
             ])
             ->defaultSort('created_at', 'desc')
             ->paginated([10]);
