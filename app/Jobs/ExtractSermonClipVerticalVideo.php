@@ -74,6 +74,7 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 '-c:v', 'libx264',
                 '-preset', 'medium',
                 '-crf', '23',
+                '-bf', '0',
                 '-c:a', 'aac',
                 '-b:a', '128k',
                 '-movflags', '+faststart',
