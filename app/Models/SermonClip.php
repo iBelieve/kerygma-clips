@@ -40,39 +40,71 @@ class SermonClip extends Model
         'clip_video_duration' => 'integer',
     ];
 
+    /**
+     * Calculate pause timing for a clip based on segment gaps.
+     *
+     * Returns pause_before, pause_after, starts_at, and ends_at values
+     * derived from the gaps between transcript segments.
+     *
+     * @param  list<array{start: float, end: float, text: string}>  $segments
+     * @return array{pause_before: float, pause_after: float, starts_at: float, ends_at: float}
+     */
+    public static function calculatePauseTiming(
+        int $startSegmentIndex,
+        int $endSegmentIndex,
+        array $segments,
+        float $videoDuration,
+    ): array {
+        if (! isset($segments[$startSegmentIndex], $segments[$endSegmentIndex])) {
+            throw new \RuntimeException("Segment indices [{$startSegmentIndex}, {$endSegmentIndex}] are out of bounds.");
+        }
+
+        $segmentStart = (float) $segments[$startSegmentIndex]['start'];
+        $segmentEnd = (float) $segments[$endSegmentIndex]['end'];
+
+        // Calculate pause_before: half the gap to the preceding segment, max 0.5s
+        if ($startSegmentIndex > 0) {
+            $prevEnd = (float) $segments[$startSegmentIndex - 1]['end'];
+            $gapBefore = max(0, $segmentStart - $prevEnd);
+        } else {
+            $gapBefore = max(0, $segmentStart);
+        }
+        $pauseBefore = min($gapBefore / 2, 0.5);
+
+        // Calculate pause_after: half the gap to the following segment, max 0.5s
+        if (isset($segments[$endSegmentIndex + 1])) {
+            $nextStart = (float) $segments[$endSegmentIndex + 1]['start'];
+            $gapAfter = max(0, $nextStart - $segmentEnd);
+        } else {
+            $gapAfter = max(0, $videoDuration - $segmentEnd);
+        }
+        $pauseAfter = min($gapAfter / 2, 0.5);
+
+        return [
+            'pause_before' => $pauseBefore,
+            'pause_after' => $pauseAfter,
+            'starts_at' => $segmentStart - $pauseBefore,
+            'ends_at' => $segmentEnd + $pauseAfter,
+        ];
+    }
+
     protected static function booted(): void
     {
         static::saving(function (SermonClip $clip): void {
             $sermonVideo = $clip->sermonVideo;
             $segments = $sermonVideo->transcript['segments'] ?? [];
 
-            if (! isset($segments[$clip->start_segment_index], $segments[$clip->end_segment_index])) {
-                throw new \RuntimeException("Segment indices [{$clip->start_segment_index}, {$clip->end_segment_index}] are out of bounds.");
-            }
+            $timing = self::calculatePauseTiming(
+                $clip->start_segment_index,
+                $clip->end_segment_index,
+                $segments,
+                (float) $sermonVideo->duration,
+            );
 
-            $segmentStart = (float) $segments[$clip->start_segment_index]['start'];
-            $segmentEnd = (float) $segments[$clip->end_segment_index]['end'];
-
-            // Calculate pause_before: half the gap to the preceding segment, max 0.5s
-            if ($clip->start_segment_index > 0) {
-                $prevEnd = (float) $segments[$clip->start_segment_index - 1]['end'];
-                $gapBefore = max(0, $segmentStart - $prevEnd);
-            } else {
-                $gapBefore = max(0, $segmentStart);
-            }
-            $clip->pause_before = min($gapBefore / 2, 0.5);
-
-            // Calculate pause_after: half the gap to the following segment, max 0.5s
-            if (isset($segments[$clip->end_segment_index + 1])) {
-                $nextStart = (float) $segments[$clip->end_segment_index + 1]['start'];
-                $gapAfter = max(0, $nextStart - $segmentEnd);
-            } else {
-                $gapAfter = max(0, (float) $sermonVideo->duration - $segmentEnd);
-            }
-            $clip->pause_after = min($gapAfter / 2, 0.5);
-
-            $clip->starts_at = $segmentStart - $clip->pause_before;
-            $clip->ends_at = $segmentEnd + $clip->pause_after;
+            $clip->pause_before = $timing['pause_before'];
+            $clip->pause_after = $timing['pause_after'];
+            $clip->starts_at = $timing['starts_at'];
+            $clip->ends_at = $timing['ends_at'];
         });
     }
 

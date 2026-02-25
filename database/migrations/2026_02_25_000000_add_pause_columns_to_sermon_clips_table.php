@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\SermonClip;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -38,42 +39,17 @@ return new class extends Migration
 
         foreach ($clips as $clip) {
             $segments = json_decode($clip->transcript, true)['segments'] ?? [];
-            $startSegment = $segments[$clip->start_segment_index] ?? null;
-            $endSegment = $segments[$clip->end_segment_index] ?? null;
 
-            if (! $startSegment || ! $endSegment) {
-                throw new \RuntimeException("Sermon clip {$clip->id} has segment indices that are out of bounds.");
-            }
-
-            $segmentStart = (float) $startSegment['start'];
-            $segmentEnd = (float) $endSegment['end'];
-
-            // Calculate pause_before: half the gap to the preceding segment, max 1s
-            if ($clip->start_segment_index > 0) {
-                $prevEnd = (float) $segments[$clip->start_segment_index - 1]['end'];
-                $gapBefore = $segmentStart - $prevEnd;
-            } else {
-                $gapBefore = $segmentStart;
-            }
-            $pauseBefore = min($gapBefore / 2, 1.0);
-
-            // Calculate pause_after: half the gap to the following segment, max 1s
-            if (isset($segments[$clip->end_segment_index + 1])) {
-                $nextStart = (float) $segments[$clip->end_segment_index + 1]['start'];
-                $gapAfter = $nextStart - $segmentEnd;
-            } else {
-                $gapAfter = (float) $clip->video_duration - $segmentEnd;
-            }
-            $pauseAfter = min($gapAfter / 2, 1.0);
+            $timing = SermonClip::calculatePauseTiming(
+                $clip->start_segment_index,
+                $clip->end_segment_index,
+                $segments,
+                (float) $clip->video_duration,
+            );
 
             DB::table('sermon_clips')
                 ->where('id', $clip->id)
-                ->update([
-                    'pause_before' => $pauseBefore,
-                    'pause_after' => $pauseAfter,
-                    'starts_at' => $segmentStart - $pauseBefore,
-                    'ends_at' => $segmentEnd + $pauseAfter,
-                ]);
+                ->update($timing);
         }
 
         // Re-add the virtual duration column.
