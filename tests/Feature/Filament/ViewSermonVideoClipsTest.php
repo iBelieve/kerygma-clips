@@ -337,14 +337,14 @@ test('createClip calculates pause_before and pause_after from segment gaps', fun
 
     $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
     // Segment 1: start=6.0, Segment 3: end=22.0
-    // Gap before: 6.0 - 4.0 = 2.0 → pause_before = 0.5 (capped at 0.5s)
+    // Gap before: 6.0 - 4.0 = 2.0 → pause_before = 0.25 (capped at 0.25s)
     // Gap after: 24.0 - 22.0 = 2.0 → pause_after = 0.5 (capped at 0.5s)
     expect($clip)
-        ->pause_before->toBe(0.5)
+        ->pause_before->toBe(0.25)
         ->pause_after->toBe(0.5)
-        ->starts_at->toBe(5.5)
+        ->starts_at->toBe(5.75)
         ->ends_at->toBe(22.5)
-        ->duration->toBe(17.0);
+        ->duration->toBe(16.75);
 });
 
 test('createClip calculates partial pause when gap is less than 2s', function () {
@@ -356,14 +356,14 @@ test('createClip calculates partial pause when gap is less than 2s', function ()
 
     $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
     // Segment 1: start=5.0, Segment 3: end=19.0
-    // Gap before: 5.0 - 4.0 = 1.0 → pause_before = 0.5
+    // Gap before: 5.0 - 4.0 = 1.0 → pause_before = 0.25 (capped at 0.25s)
     // Gap after: 20.0 - 19.0 = 1.0 → pause_after = 0.5
     expect($clip)
-        ->pause_before->toBe(0.5)
+        ->pause_before->toBe(0.25)
         ->pause_after->toBe(0.5)
-        ->starts_at->toBe(4.5)
+        ->starts_at->toBe(4.75)
         ->ends_at->toBe(19.5)
-        ->duration->toBe(15.0);
+        ->duration->toBe(14.75);
 });
 
 test('createClip sets zero pause when segments are contiguous', function () {
@@ -420,7 +420,7 @@ test('updateClip recalculates pause values', function () {
     ]);
 
     expect($clip)
-        ->pause_before->toBe(0.5)
+        ->pause_before->toBe(0.25)
         ->pause_after->toBe(0.5);
 
     // Move clip to segments 2-4
@@ -428,10 +428,10 @@ test('updateClip recalculates pause values', function () {
         ->call('updateClip', $clip->id, 2, 4);
 
     $clip->refresh();
-    // Gaps are still 2s → pauses still capped at 0.5s
+    // Gaps are still 2s → pauses still capped at 0.25s before, 0.5s after
     expect($clip)
-        ->pause_before->toBe(0.5)
+        ->pause_before->toBe(0.25)
         ->pause_after->toBe(0.5)
-        ->starts_at->toBe(11.5)
+        ->starts_at->toBe(11.75)
         ->ends_at->toBe(28.5);
 });
