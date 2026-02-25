@@ -100,10 +100,9 @@ class SermonClipsTable
             )
             ->recordActions([
                 Action::make('extract_video')
-                    ->label('Extract Video')
+                    ->label(fn (SermonClip $record): string => $record->clip_video_status === JobStatus::Completed ? 'Regenerate Video' : 'Extract Video')
                     ->icon('heroicon-o-film')
-                    ->color('primary')
-                    ->visible(fn (SermonClip $record): bool => $record->clip_video_status !== JobStatus::Completed)
+                    ->color(fn (SermonClip $record): string => $record->clip_video_status === JobStatus::Completed ? 'warning' : 'primary')
                     ->requiresConfirmation()
                     ->action(function (SermonClip $record) {
                         ExtractSermonClipVerticalVideo::dispatch($record);

@@ -18,13 +18,13 @@ class ListSermonClips extends ListRecords
     {
         return [
             Action::make('extract_all_videos')
-                ->label('Extract All Videos')
+                ->label('Regenerate All Videos')
                 ->icon('heroicon-o-film')
-                ->color('primary')
-                ->visible(fn (): bool => SermonClip::where('clip_video_status', '!=', JobStatus::Completed)->exists())
+                ->color('warning')
+                ->visible(fn (): bool => SermonClip::exists())
                 ->requiresConfirmation()
                 ->action(function () {
-                    $clips = SermonClip::where('clip_video_status', '!=', JobStatus::Completed)->get();
+                    $clips = SermonClip::all();
 
                     foreach ($clips as $clip) {
                         ExtractSermonClipVerticalVideo::dispatch($clip);

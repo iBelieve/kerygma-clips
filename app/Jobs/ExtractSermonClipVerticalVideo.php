@@ -83,7 +83,7 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 mkdir($outputDir, 0755, true);
             }
 
-            $fontsDir = storage_path('app/fonts');
+            $fontsDir = resource_path('fonts');
 
             $result = Process::timeout(300)->run([
                 'ffmpeg',
