@@ -4,6 +4,7 @@ use App\Enums\JobStatus;
 use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Models\SermonClip;
 use App\Models\SermonVideo;
+use App\Services\CaptionGenerator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Process;
@@ -20,10 +21,20 @@ function createVideoWithVerticalAndTranscript(int $segmentCount = 10): SermonVid
 {
     $segments = [];
     for ($i = 0; $i < $segmentCount; $i++) {
+        $segStart = $i * 5.0;
         $segments[] = [
-            'start' => $i * 5.0,
-            'end' => $i * 5.0 + 5.0,
-            'text' => "Segment {$i}",
+            'start' => $segStart,
+            'end' => $segStart + 5.0,
+            'text' => "Segment {$i} word two three four five",
+            'words' => [
+                ['word' => 'Segment', 'start' => $segStart, 'end' => $segStart + 0.5, 'score' => 0.9],
+                ['word' => (string) $i, 'start' => $segStart + 0.6, 'end' => $segStart + 1.0, 'score' => 0.9],
+                ['word' => 'word', 'start' => $segStart + 1.1, 'end' => $segStart + 1.5, 'score' => 0.9],
+                ['word' => 'two', 'start' => $segStart + 1.6, 'end' => $segStart + 2.0, 'score' => 0.9],
+                ['word' => 'three', 'start' => $segStart + 2.1, 'end' => $segStart + 2.5, 'score' => 0.9],
+                ['word' => 'four', 'start' => $segStart + 2.6, 'end' => $segStart + 3.0, 'score' => 0.9],
+                ['word' => 'five', 'start' => $segStart + 3.1, 'end' => $segStart + 3.5, 'score' => 0.9],
+            ],
         ];
     }
 
@@ -46,7 +57,7 @@ test('job extracts clip from vertical video successfully', function () {
         'end_segment_index' => 5,
     ]);
 
-    (new ExtractSermonClipVerticalVideo($clip))->handle();
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
 
     $clip->refresh();
     expect($clip->clip_video_status)->toBe(JobStatus::Completed);
@@ -67,7 +78,7 @@ test('job passes correct time range to ffmpeg', function () {
         'end_segment_index' => 5,
     ]);
 
-    (new ExtractSermonClipVerticalVideo($clip))->handle();
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
 
     Process::assertRan(function ($process) {
         $command = $process->command;
@@ -95,7 +106,7 @@ test('job fails when vertical video is not completed', function () {
         'end_segment_index' => 0,
     ]);
 
-    (new ExtractSermonClipVerticalVideo($clip))->handle();
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
 
     $clip->refresh();
     expect($clip->clip_video_status)->toBe(JobStatus::Failed);
@@ -117,7 +128,7 @@ test('job fails when segment indices are out of bounds', function () {
     DB::table('sermon_clips')->where('id', $clip->id)->update(['end_segment_index' => 10]);
     $clip->refresh();
 
-    (new ExtractSermonClipVerticalVideo($clip))->handle();
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
 
     $clip->refresh();
     expect($clip->clip_video_status)->toBe(JobStatus::Failed);
@@ -139,7 +150,7 @@ test('job fails when ffmpeg fails', function () {
         'end_segment_index' => 3,
     ]);
 
-    (new ExtractSermonClipVerticalVideo($clip))->handle();
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
 
     $clip->refresh();
     expect($clip->clip_video_status)->toBe(JobStatus::Failed);
@@ -160,7 +171,7 @@ test('job sets status to processing before starting', function () {
         'clip_video_error' => 'Previous error',
     ]);
 
-    (new ExtractSermonClipVerticalVideo($clip))->handle();
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
 
     $clip->refresh();
     expect($clip->clip_video_status)->toBe(JobStatus::Completed);
@@ -198,7 +209,7 @@ test('job sets clip_video_started_at when processing begins', function () {
         'end_segment_index' => 0,
     ]);
 
-    (new ExtractSermonClipVerticalVideo($clip))->handle();
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
 
     $clip->refresh();
     expect($clip->clip_video_started_at)->not->toBeNull();
@@ -218,7 +229,7 @@ test('job sets clip_video_completed_at on successful completion', function () {
         'end_segment_index' => 3,
     ]);
 
-    (new ExtractSermonClipVerticalVideo($clip))->handle();
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
 
     $clip->refresh();
     expect($clip->clip_video_started_at)->not->toBeNull();
@@ -240,7 +251,7 @@ test('job does not set clip_video_completed_at on failure', function () {
         'end_segment_index' => 0,
     ]);
 
-    (new ExtractSermonClipVerticalVideo($clip))->handle();
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
 
     $clip->refresh();
     expect($clip->clip_video_started_at)->not->toBeNull();
@@ -264,7 +275,7 @@ test('job resets clip_video_completed_at on re-run', function () {
         'clip_video_completed_at' => now()->subMinutes(5),
     ]);
 
-    (new ExtractSermonClipVerticalVideo($clip))->handle();
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
 
     $clip->refresh();
     expect($clip->clip_video_completed_at)->toBeNull();
@@ -329,4 +340,66 @@ test('command succeeds with message when video has no clips', function () {
 
     $this->artisan('app:extract-sermon-clip-videos', ['id' => $video->id])
         ->assertSuccessful();
+});
+
+// --- Caption Tests ---
+
+test('job passes ass filter with fontsdir to ffmpeg', function () {
+    Process::fake(['*' => Process::result()]);
+
+    $video = createVideoWithVerticalAndTranscript();
+    Storage::disk('public')->put($video->vertical_video_path, 'fake-vertical-content');
+
+    $clip = SermonClip::factory()->create([
+        'sermon_video_id' => $video->id,
+        'start_segment_index' => 2,
+        'end_segment_index' => 5,
+    ]);
+
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
+
+    Process::assertRan(function ($process) {
+        $command = $process->command;
+        $vfIndex = array_search('-vf', $command);
+
+        return $vfIndex !== false
+            && str_contains($command[$vfIndex + 1], 'ass=')
+            && str_contains($command[$vfIndex + 1], 'fontsdir=');
+    });
+});
+
+test('job cleans up temporary ASS file after success', function () {
+    Process::fake(['*' => Process::result()]);
+
+    $video = createVideoWithVerticalAndTranscript();
+    Storage::disk('public')->put($video->vertical_video_path, 'fake-vertical-content');
+
+    $clip = SermonClip::factory()->create([
+        'sermon_video_id' => $video->id,
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+    ]);
+
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
+
+    $tempFiles = glob(sys_get_temp_dir() . '/caption_*.ass');
+    expect($tempFiles)->toBeEmpty();
+});
+
+test('job cleans up temporary ASS file after failure', function () {
+    Process::fake(['*' => Process::result(exitCode: 1, errorOutput: 'ffmpeg failed')]);
+
+    $video = createVideoWithVerticalAndTranscript();
+    Storage::disk('public')->put($video->vertical_video_path, 'fake-vertical-content');
+
+    $clip = SermonClip::factory()->create([
+        'sermon_video_id' => $video->id,
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+    ]);
+
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
+
+    $tempFiles = glob(sys_get_temp_dir() . '/caption_*.ass');
+    expect($tempFiles)->toBeEmpty();
 });
