@@ -211,18 +211,6 @@ class ViewSermonVideo extends ViewRecord
     /**
      * @return list<array{id: int, start: int, end: int}>
      */
-    public function deleteClip(int $clipId): array
-    {
-        $this->getRecord()->sermonClips()->findOrFail($clipId)->delete();
-
-        unset($this->transcriptData);
-
-        return $this->getClips();
-    }
-
-    /**
-     * @return list<array{id: int, start: int, end: int}>
-     */
     private function getClips(): array
     {
         return $this->getRecord()->sermonClips()

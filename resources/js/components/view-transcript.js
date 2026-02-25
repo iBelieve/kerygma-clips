@@ -307,17 +307,6 @@ export default function viewTranscript({ segments, clips }) {
             this.recompute();
         },
 
-        async deleteClip(clipId) {
-            // Optimistic update
-            this.clips = this.clips.filter((c) => c.id !== clipId);
-            this.recompute();
-
-            // Persist and sync with server
-            const clips = await this.$wire.deleteClip(clipId);
-            this.clips = clips;
-            this.recompute();
-        },
-
         formatTimestamp(seconds) {
             const total = Math.floor(seconds);
             const h = Math.floor(total / 3600);

@@ -95,17 +95,6 @@
                                                 x-text="formatDuration(clipDurationOfSegment(row.segmentIndex))"
                                                 class="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium tabular-nums text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
                                             ></span>
-
-                                            {{-- Delete button on clip start row --}}
-                                            <button
-                                                x-show="isClipStart(row.segmentIndex)"
-                                                x-on:click.stop="deleteClip(clips[clipIndexOfSegment(row.segmentIndex)].id)"
-                                                type="button"
-                                                title="Delete clip"
-                                                class="shrink-0 rounded p-0.5 text-gray-400 transition hover:bg-red-100 hover:text-red-600 dark:text-gray-500 dark:hover:bg-red-500/10 dark:hover:text-red-400"
-                                            >
-                                                <x-heroicon-o-trash class="h-4 w-4" />
-                                            </button>
                                         </div>
 
                                         {{-- Top drag handle for clip start --}}
