@@ -65,6 +65,7 @@ jobs:
             SERMON_VIDEOS_DIR=/app/sermon-videos
             HF_HOME=/app/hf-cache
             TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=true
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
           process-scaling: |
             worker=1
             transcription=1

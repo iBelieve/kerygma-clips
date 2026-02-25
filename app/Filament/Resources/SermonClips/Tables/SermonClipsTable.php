@@ -4,6 +4,7 @@ namespace App\Filament\Resources\SermonClips\Tables;
 
 use App\Enums\JobStatus;
 use App\Jobs\ExtractSermonClipVerticalVideo;
+use App\Jobs\GenerateSermonClipTitle;
 use App\Models\SermonClip;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -22,6 +23,11 @@ class SermonClipsTable
                     ->dateTime('M j, Y g:i A')
                     ->timezone('America/Chicago')
                     ->sortable(),
+
+                TextColumn::make('ai_title')
+                    ->label('Title')
+                    ->placeholder("\u{2014}")
+                    ->searchable(),
 
                 TextColumn::make('starts_at')
                     ->label('Start Time')
@@ -99,6 +105,21 @@ class SermonClipsTable
                 shouldOpenInNewTab: true,
             )
             ->recordActions([
+                Action::make('generate_title')
+                    ->label('Generate Title')
+                    ->icon('heroicon-o-sparkles')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->action(function (SermonClip $record) {
+                        GenerateSermonClipTitle::dispatch($record);
+
+                        Notification::make()
+                            ->title('Title generation queued')
+                            ->body('AI title generation has been dispatched.')
+                            ->success()
+                            ->send();
+                    }),
+
                 Action::make('extract_video')
                     ->label('Extract Video')
                     ->icon('heroicon-o-film')
