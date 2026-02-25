@@ -70,6 +70,7 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 '-ss', (string) $startTime,
                 '-i', $inputPath,
                 '-t', (string) $duration,
+                '-avoid_negative_ts', 'make_zero',
                 '-c:v', 'libx264',
                 '-preset', 'medium',
                 '-crf', '23',
