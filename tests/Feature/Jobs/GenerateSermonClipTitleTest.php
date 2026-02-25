@@ -18,7 +18,7 @@ uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
  *
  * @return array{segments: list<array{start: float, end: float, text: string}>}
  */
-function buildTranscript(int $count): array
+function buildTitleTestTranscript(int $count): array
 {
     $segments = [];
 
@@ -33,13 +33,13 @@ function buildTranscript(int $count): array
     return ['segments' => $segments];
 }
 
-function buildSermonVideo(int $segmentCount = 30, ?string $title = null): SermonVideo
+function buildTitleTestSermonVideo(int $segmentCount = 30, ?string $title = null): SermonVideo
 {
     return SermonVideo::create([
         'raw_video_path' => '2025-12-10 18-53-50.mp4',
         'date' => '2025-12-10 18:53:50',
         'duration' => $segmentCount * 5,
-        'transcript' => buildTranscript($segmentCount),
+        'transcript' => buildTitleTestTranscript($segmentCount),
         'title' => $title,
     ]);
 }
@@ -49,7 +49,7 @@ function buildSermonVideo(int $segmentCount = 30, ?string $title = null): Sermon
 test('job generates title and saves it to the clip', function () {
     SermonClipTitleGenerator::fake(['Grace and Mercy in Action']);
 
-    $video = buildSermonVideo();
+    $video = buildTitleTestSermonVideo();
     $clip = $video->sermonClips()->create([
         'start_segment_index' => 2,
         'end_segment_index' => 5,
@@ -64,7 +64,7 @@ test('job generates title and saves it to the clip', function () {
 test('job includes sermon title in prompt when available', function () {
     SermonClipTitleGenerator::fake(['The Power of Grace']);
 
-    $video = buildSermonVideo(title: 'Sunday Morning Service');
+    $video = buildTitleTestSermonVideo(title: 'Sunday Morning Service');
     $clip = $video->sermonClips()->create([
         'start_segment_index' => 0,
         'end_segment_index' => 2,
@@ -81,7 +81,7 @@ test('job includes sermon title in prompt when available', function () {
 test('job sends transcript text from correct segment range', function () {
     SermonClipTitleGenerator::fake(['Test Title']);
 
-    $video = buildSermonVideo();
+    $video = buildTitleTestSermonVideo();
     $clip = $video->sermonClips()->create([
         'start_segment_index' => 2,
         'end_segment_index' => 4,
@@ -129,7 +129,7 @@ test('creating a clip dispatches GenerateSermonClipTitle', function () {
     Queue::fake([GenerateSermonClipTitle::class]);
     $this->actingAs(User::factory()->create());
 
-    $video = buildSermonVideo();
+    $video = buildTitleTestSermonVideo();
 
     Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 2, 5);
@@ -144,7 +144,7 @@ test('updating a clip with changed boundaries dispatches GenerateSermonClipTitle
     Queue::fake([GenerateSermonClipTitle::class]);
     $this->actingAs(User::factory()->create());
 
-    $video = buildSermonVideo();
+    $video = buildTitleTestSermonVideo();
     $clip = $video->sermonClips()->create([
         'start_segment_index' => 2,
         'end_segment_index' => 5,
@@ -160,7 +160,7 @@ test('updating a clip without changing boundaries does not dispatch GenerateSerm
     Queue::fake([GenerateSermonClipTitle::class]);
     $this->actingAs(User::factory()->create());
 
-    $video = buildSermonVideo();
+    $video = buildTitleTestSermonVideo();
     $clip = $video->sermonClips()->create([
         'start_segment_index' => 2,
         'end_segment_index' => 5,
