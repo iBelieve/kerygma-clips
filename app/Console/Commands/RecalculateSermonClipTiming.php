@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\JobStatus;
 use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Models\SermonClip;
 use Illuminate\Console\Command;
@@ -23,6 +24,7 @@ class RecalculateSermonClipTiming extends Command
         }
 
         foreach ($clips as $clip) {
+            $clip->clip_video_status = JobStatus::Pending;
             $clip->save();
             ExtractSermonClipVerticalVideo::dispatch($clip);
             $this->info("Recalculated and dispatched clip #{$clip->id} (segments {$clip->start_segment_index}-{$clip->end_segment_index}).");
