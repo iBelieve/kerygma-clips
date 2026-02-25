@@ -290,3 +290,148 @@ test('updateClip can expand toward a neighboring clip without overlapping', func
         ->start->toBe(0)
         ->end->toBe(9);
 });
+
+// --- pause_before / pause_after tests ---
+
+/**
+ * Build a transcript with gaps between segments.
+ *
+ * Each segment is 4 seconds long with a configurable gap between them.
+ *
+ * @return array{segments: list<array{start: float, end: float, text: string}>}
+ */
+function makeGappedTranscript(int $count, float $gap = 2.0): array
+{
+    $segments = [];
+    $stride = 4.0 + $gap;
+
+    for ($i = 0; $i < $count; $i++) {
+        $segments[] = [
+            'start' => $i * $stride,
+            'end' => $i * $stride + 4.0,
+            'text' => "Segment {$i}",
+        ];
+    }
+
+    return ['segments' => $segments];
+}
+
+function makeGappedSermonVideo(int $segmentCount = 10, float $gap = 2.0): SermonVideo
+{
+    $stride = 4.0 + $gap;
+
+    return SermonVideo::create([
+        'raw_video_path' => '2025-12-10 18-53-50.mp4',
+        'date' => '2025-12-10 18:53:50',
+        'duration' => $segmentCount * $stride + 10,
+        'transcript' => makeGappedTranscript($segmentCount, $gap),
+    ]);
+}
+
+test('createClip calculates pause_before and pause_after from segment gaps', function () {
+    // Segments with 2s gaps: [0-4], [6-10], [12-16], [18-22], [24-28]
+    $video = makeGappedSermonVideo(5, 2.0);
+
+    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+        ->call('createClip', 1, 3);
+
+    $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
+    // Segment 1: start=6.0, Segment 3: end=22.0
+    // Gap before: 6.0 - 4.0 = 2.0 → pause_before = 1.0 (capped at 1s)
+    // Gap after: 24.0 - 22.0 = 2.0 → pause_after = 1.0 (capped at 1s)
+    expect($clip)
+        ->pause_before->toBe(1.0)
+        ->pause_after->toBe(1.0)
+        ->starts_at->toBe(5.0)
+        ->ends_at->toBe(23.0)
+        ->duration->toBe(18.0);
+});
+
+test('createClip calculates partial pause when gap is less than 2s', function () {
+    // Segments with 1s gaps: [0-4], [5-9], [10-14], [15-19], [20-24]
+    $video = makeGappedSermonVideo(5, 1.0);
+
+    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+        ->call('createClip', 1, 3);
+
+    $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
+    // Segment 1: start=5.0, Segment 3: end=19.0
+    // Gap before: 5.0 - 4.0 = 1.0 → pause_before = 0.5
+    // Gap after: 20.0 - 19.0 = 1.0 → pause_after = 0.5
+    expect($clip)
+        ->pause_before->toBe(0.5)
+        ->pause_after->toBe(0.5)
+        ->starts_at->toBe(4.5)
+        ->ends_at->toBe(19.5)
+        ->duration->toBe(15.0);
+});
+
+test('createClip sets zero pause when segments are contiguous', function () {
+    $video = makeSermonVideo(30); // contiguous segments, no gaps
+
+    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+        ->call('createClip', 2, 5);
+
+    $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
+    // Contiguous segments: gap = 0 on both sides
+    expect($clip)
+        ->pause_before->toBe(0.0)
+        ->pause_after->toBe(0.0)
+        ->starts_at->toBe(10.0)
+        ->ends_at->toBe(30.0);
+});
+
+test('createClip calculates pause_before from start of video for first segment', function () {
+    // Segments with 2s gaps, but first segment starts at 0.0
+    $video = makeGappedSermonVideo(5, 2.0);
+
+    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+        ->call('createClip', 0, 1);
+
+    $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
+    // Segment 0: start=0.0 → gap from video start = 0.0 → pause_before = 0.0
+    // Gap after: 12.0 - 10.0 = 2.0 → pause_after = 1.0 (capped)
+    expect($clip)
+        ->pause_before->toBe(0.0)
+        ->pause_after->toBe(1.0);
+});
+
+test('createClip calculates pause_after from video duration for last segment', function () {
+    // Segments with 2s gaps: [0-4], [6-10], [12-16], [18-22], [24-28]
+    // Video duration = 5 * 6 + 10 = 40
+    $video = makeGappedSermonVideo(5, 2.0);
+
+    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+        ->call('createClip', 3, 4);
+
+    $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
+    // Segment 4 is last segment: end=28.0, video duration=40.0
+    // Gap after: 40.0 - 28.0 = 12.0 → pause_after = 1.0 (capped)
+    expect($clip)
+        ->pause_after->toBe(1.0);
+});
+
+test('updateClip recalculates pause values', function () {
+    $video = makeGappedSermonVideo(10, 2.0);
+
+    $clip = $video->sermonClips()->create([
+        'start_segment_index' => 1,
+        'end_segment_index' => 3,
+    ]);
+
+    expect($clip)
+        ->pause_before->toBe(1.0)
+        ->pause_after->toBe(1.0);
+
+    // Move clip to segments 2-4
+    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+        ->call('updateClip', $clip->id, 2, 4);
+
+    $clip->refresh();
+    // Gaps are still 2s → pauses still capped at 1.0
+    expect($clip)
+        ->pause_before->toBe(1.0)
+        ->pause_after->toBe(1.0)
+        ->starts_at->toBe(11.0)
+        ->ends_at->toBe(29.0);
+});

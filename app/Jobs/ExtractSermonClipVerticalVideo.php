@@ -49,15 +49,9 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 throw new \RuntimeException('Sermon video does not have a completed vertical video');
             }
 
-            $segments = $sermonVideo->transcript['segments'] ?? [];
-
-            if (! isset($segments[$sermonClip->start_segment_index], $segments[$sermonClip->end_segment_index])) {
-                throw new \RuntimeException('Clip segment indices are out of bounds');
-            }
-
-            $startTime = (float) $segments[$sermonClip->start_segment_index]['start'];
-            $endTime = (float) $segments[$sermonClip->end_segment_index]['end'];
-            $duration = $endTime - $startTime;
+            $sermonClip->refresh();
+            $startTime = $sermonClip->starts_at;
+            $duration = $sermonClip->duration;
 
             $inputDisk = Storage::disk('public');
             $inputPath = $inputDisk->path($sermonVideo->vertical_video_path);

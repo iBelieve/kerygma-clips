@@ -31,6 +31,7 @@ function createVideoWithVerticalAndTranscript(int $segmentCount = 10): SermonVid
         'vertical_video_status' => JobStatus::Completed,
         'vertical_video_path' => 'vertical/test-video.mp4',
         'transcript' => ['segments' => $segments],
+        'duration' => $segmentCount * 5,
     ]);
 }
 
@@ -81,12 +82,57 @@ test('job passes correct time range to ffmpeg', function () {
     });
 });
 
+test('job passes padded time range to ffmpeg when segments have gaps', function () {
+    Process::fake(['*' => Process::result()]);
+
+    // Create segments with 2s gaps between them
+    $segments = [
+        ['start' => 0.0, 'end' => 4.0, 'text' => 'Segment 0'],
+        ['start' => 6.0, 'end' => 10.0, 'text' => 'Segment 1'],
+        ['start' => 12.0, 'end' => 16.0, 'text' => 'Segment 2'],
+        ['start' => 18.0, 'end' => 22.0, 'text' => 'Segment 3'],
+        ['start' => 24.0, 'end' => 28.0, 'text' => 'Segment 4'],
+    ];
+
+    $video = SermonVideo::factory()->create([
+        'vertical_video_status' => JobStatus::Completed,
+        'vertical_video_path' => 'vertical/test-video.mp4',
+        'transcript' => ['segments' => $segments],
+        'duration' => 60,
+    ]);
+    Storage::disk('public')->put($video->vertical_video_path, 'fake-vertical-content');
+
+    // Clip uses segments 2-3: segment start=12.0, segment end=22.0
+    // Gap before: 12.0 - 10.0 = 2.0 → pause_before = 1.0 (capped)
+    // Gap after: 24.0 - 22.0 = 2.0 → pause_after = 1.0 (capped)
+    // starts_at = 12.0 - 1.0 = 11.0, ends_at = 22.0 + 1.0 = 23.0, duration = 12.0
+    $clip = SermonClip::factory()->create([
+        'sermon_video_id' => $video->id,
+        'start_segment_index' => 2,
+        'end_segment_index' => 3,
+    ]);
+
+    (new ExtractSermonClipVerticalVideo($clip))->handle();
+
+    Process::assertRan(function ($process) {
+        $command = $process->command;
+        $ssIndex = array_search('-ss', $command);
+        $tIndex = array_search('-t', $command);
+
+        return $ssIndex !== false
+            && $command[$ssIndex + 1] === '11'
+            && $tIndex !== false
+            && $command[$tIndex + 1] === '12';
+    });
+});
+
 test('job fails when vertical video is not completed', function () {
     $video = SermonVideo::factory()->create([
         'vertical_video_status' => JobStatus::Pending,
         'transcript' => ['segments' => [
             ['start' => 0.0, 'end' => 5.0, 'text' => 'test'],
         ]],
+        'duration' => 10,
     ]);
 
     $clip = SermonClip::factory()->create([
@@ -190,6 +236,7 @@ test('job sets clip_video_started_at when processing begins', function () {
         'transcript' => ['segments' => [
             ['start' => 0.0, 'end' => 5.0, 'text' => 'test'],
         ]],
+        'duration' => 10,
     ]);
 
     $clip = SermonClip::factory()->create([
@@ -232,6 +279,7 @@ test('job does not set clip_video_completed_at on failure', function () {
         'transcript' => ['segments' => [
             ['start' => 0.0, 'end' => 5.0, 'text' => 'test'],
         ]],
+        'duration' => 10,
     ]);
 
     $clip = SermonClip::factory()->create([
@@ -253,6 +301,7 @@ test('job resets clip_video_completed_at on re-run', function () {
         'transcript' => ['segments' => [
             ['start' => 0.0, 'end' => 5.0, 'text' => 'test'],
         ]],
+        'duration' => 10,
     ]);
 
     $clip = SermonClip::factory()->create([
