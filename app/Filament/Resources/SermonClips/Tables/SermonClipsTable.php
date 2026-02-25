@@ -23,6 +23,11 @@ class SermonClipsTable
                     ->timezone('America/Chicago')
                     ->sortable(),
 
+                TextColumn::make('ai_title')
+                    ->label('Title')
+                    ->placeholder("\u{2014}")
+                    ->searchable(),
+
                 TextColumn::make('starts_at')
                     ->label('Start Time')
                     ->placeholder("\u{2014}")
