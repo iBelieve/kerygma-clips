@@ -103,9 +103,9 @@ test('job passes padded time range to ffmpeg when segments have gaps', function 
     Storage::disk('public')->put($video->vertical_video_path, 'fake-vertical-content');
 
     // Clip uses segments 2-3: segment start=12.0, segment end=22.0
-    // Gap before: 12.0 - 10.0 = 2.0 → pause_before = 1.0 (capped)
-    // Gap after: 24.0 - 22.0 = 2.0 → pause_after = 1.0 (capped)
-    // starts_at = 12.0 - 1.0 = 11.0, ends_at = 22.0 + 1.0 = 23.0, duration = 12.0
+    // Gap before: 12.0 - 10.0 = 2.0 → pause_before = 0.5 (capped at 0.5s)
+    // Gap after: 24.0 - 22.0 = 2.0 → pause_after = 0.5 (capped at 0.5s)
+    // starts_at = 12.0 - 0.5 = 11.5, ends_at = 22.0 + 0.5 = 22.5, duration = 11.0
     $clip = SermonClip::factory()->create([
         'sermon_video_id' => $video->id,
         'start_segment_index' => 2,
@@ -120,9 +120,9 @@ test('job passes padded time range to ffmpeg when segments have gaps', function 
         $tIndex = array_search('-t', $command);
 
         return $ssIndex !== false
-            && $command[$ssIndex + 1] === '11'
+            && $command[$ssIndex + 1] === '11.5'
             && $tIndex !== false
-            && $command[$tIndex + 1] === '12';
+            && $command[$tIndex + 1] === '11';
     });
 });
 

@@ -53,23 +53,23 @@ class SermonClip extends Model
             $segmentStart = (float) $segments[$clip->start_segment_index]['start'];
             $segmentEnd = (float) $segments[$clip->end_segment_index]['end'];
 
-            // Calculate pause_before: half the gap to the preceding segment, max 1s
+            // Calculate pause_before: half the gap to the preceding segment, max 0.5s
             if ($clip->start_segment_index > 0) {
                 $prevEnd = (float) $segments[$clip->start_segment_index - 1]['end'];
                 $gapBefore = max(0, $segmentStart - $prevEnd);
             } else {
                 $gapBefore = max(0, $segmentStart);
             }
-            $clip->pause_before = min($gapBefore / 2, 1.0);
+            $clip->pause_before = min($gapBefore / 2, 0.5);
 
-            // Calculate pause_after: half the gap to the following segment, max 1s
+            // Calculate pause_after: half the gap to the following segment, max 0.5s
             if (isset($segments[$clip->end_segment_index + 1])) {
                 $nextStart = (float) $segments[$clip->end_segment_index + 1]['start'];
                 $gapAfter = max(0, $nextStart - $segmentEnd);
             } else {
                 $gapAfter = max(0, (float) $sermonVideo->duration - $segmentEnd);
             }
-            $clip->pause_after = min($gapAfter / 2, 1.0);
+            $clip->pause_after = min($gapAfter / 2, 0.5);
 
             $clip->starts_at = $segmentStart - $clip->pause_before;
             $clip->ends_at = $segmentEnd + $clip->pause_after;

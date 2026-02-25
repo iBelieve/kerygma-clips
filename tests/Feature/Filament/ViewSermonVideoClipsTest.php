@@ -337,14 +337,14 @@ test('createClip calculates pause_before and pause_after from segment gaps', fun
 
     $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
     // Segment 1: start=6.0, Segment 3: end=22.0
-    // Gap before: 6.0 - 4.0 = 2.0 → pause_before = 1.0 (capped at 1s)
-    // Gap after: 24.0 - 22.0 = 2.0 → pause_after = 1.0 (capped at 1s)
+    // Gap before: 6.0 - 4.0 = 2.0 → pause_before = 0.5 (capped at 0.5s)
+    // Gap after: 24.0 - 22.0 = 2.0 → pause_after = 0.5 (capped at 0.5s)
     expect($clip)
-        ->pause_before->toBe(1.0)
-        ->pause_after->toBe(1.0)
-        ->starts_at->toBe(5.0)
-        ->ends_at->toBe(23.0)
-        ->duration->toBe(18.0);
+        ->pause_before->toBe(0.5)
+        ->pause_after->toBe(0.5)
+        ->starts_at->toBe(5.5)
+        ->ends_at->toBe(22.5)
+        ->duration->toBe(17.0);
 });
 
 test('createClip calculates partial pause when gap is less than 2s', function () {
@@ -390,10 +390,10 @@ test('createClip calculates pause_before from start of video for first segment',
 
     $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
     // Segment 0: start=0.0 → gap from video start = 0.0 → pause_before = 0.0
-    // Gap after: 12.0 - 10.0 = 2.0 → pause_after = 1.0 (capped)
+    // Gap after: 12.0 - 10.0 = 2.0 → pause_after = 0.5 (capped at 0.5s)
     expect($clip)
         ->pause_before->toBe(0.0)
-        ->pause_after->toBe(1.0);
+        ->pause_after->toBe(0.5);
 });
 
 test('createClip calculates pause_after from video duration for last segment', function () {
@@ -406,9 +406,9 @@ test('createClip calculates pause_after from video duration for last segment', f
 
     $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
     // Segment 4 is last segment: end=28.0, video duration=40.0
-    // Gap after: 40.0 - 28.0 = 12.0 → pause_after = 1.0 (capped)
+    // Gap after: 40.0 - 28.0 = 12.0 → pause_after = 0.5 (capped at 0.5s)
     expect($clip)
-        ->pause_after->toBe(1.0);
+        ->pause_after->toBe(0.5);
 });
 
 test('updateClip recalculates pause values', function () {
@@ -420,18 +420,18 @@ test('updateClip recalculates pause values', function () {
     ]);
 
     expect($clip)
-        ->pause_before->toBe(1.0)
-        ->pause_after->toBe(1.0);
+        ->pause_before->toBe(0.5)
+        ->pause_after->toBe(0.5);
 
     // Move clip to segments 2-4
     Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
         ->call('updateClip', $clip->id, 2, 4);
 
     $clip->refresh();
-    // Gaps are still 2s → pauses still capped at 1.0
+    // Gaps are still 2s → pauses still capped at 0.5s
     expect($clip)
-        ->pause_before->toBe(1.0)
-        ->pause_after->toBe(1.0)
-        ->starts_at->toBe(11.0)
-        ->ends_at->toBe(29.0);
+        ->pause_before->toBe(0.5)
+        ->pause_after->toBe(0.5)
+        ->starts_at->toBe(11.5)
+        ->ends_at->toBe(28.5);
 });
