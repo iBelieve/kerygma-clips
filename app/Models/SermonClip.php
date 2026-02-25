@@ -6,6 +6,7 @@ use App\Enums\JobStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class SermonClip extends Model
 {
@@ -47,6 +48,12 @@ class SermonClip extends Model
 
             $clip->starts_at = $segments[$clip->start_segment_index]['start'];
             $clip->ends_at = $segments[$clip->end_segment_index]['end'];
+        });
+
+        static::deleting(function (SermonClip $clip): void {
+            if ($clip->clip_video_path) {
+                Storage::disk('public')->delete($clip->clip_video_path);
+            }
         });
     }
 

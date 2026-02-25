@@ -6,6 +6,7 @@ use App\Enums\JobStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * To understand what the `transcript` field looks like, see `docs/sample_transcript.jsonc`.
@@ -32,6 +33,22 @@ class SermonVideo extends Model
         'vertical_video_crop_center',
         'preview_frame_path',
     ];
+
+    protected static function booted(): void
+    {
+        static::deleting(function (SermonVideo $video): void {
+            // Delete clips individually so their deleting events fire for file cleanup
+            $video->sermonClips->each->delete();
+
+            if ($video->vertical_video_path) {
+                Storage::disk('public')->delete($video->vertical_video_path);
+            }
+
+            if ($video->preview_frame_path) {
+                Storage::disk('public')->delete($video->preview_frame_path);
+            }
+        });
+    }
 
     /**
      * @return HasMany<SermonClip, $this>
