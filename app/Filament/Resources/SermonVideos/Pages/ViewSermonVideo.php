@@ -5,6 +5,7 @@ namespace App\Filament\Resources\SermonVideos\Pages;
 use App\Filament\Resources\SermonVideos\SermonVideoResource;
 use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Models\SermonVideo;
+use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +26,17 @@ class ViewSermonVideo extends ViewRecord
     {
         return $this->getRecord()->title
             ?? $this->getRecord()->date->timezone('America/Chicago')->format('M j, Y g:i A');
+    }
+
+    /**
+     * @return array<\Filament\Actions\Action>
+     */
+    protected function getHeaderActions(): array
+    {
+        return [
+            DeleteAction::make()
+                ->modalDescription('This will delete the sermon video record and all associated clips. The original video file will not be deleted.'),
+        ];
     }
 
     /**
