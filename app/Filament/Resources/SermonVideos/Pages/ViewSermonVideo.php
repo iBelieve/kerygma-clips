@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\SermonVideos\Pages;
 
 use App\Filament\Resources\SermonVideos\SermonVideoResource;
+use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Jobs\GenerateSermonClipTitle;
 use App\Models\SermonVideo;
 use Filament\Resources\Pages\ViewRecord;
@@ -125,6 +126,7 @@ class ViewSermonVideo extends ViewRecord
         ]);
 
         GenerateSermonClipTitle::dispatch($clip);
+        ExtractSermonClipVerticalVideo::dispatch($clip);
 
         unset($this->transcriptData);
 
@@ -195,6 +197,8 @@ class ViewSermonVideo extends ViewRecord
         if ($boundariesChanged) {
             GenerateSermonClipTitle::dispatch($clip);
         }
+
+        ExtractSermonClipVerticalVideo::dispatch($clip);
 
         unset($this->transcriptData);
 

@@ -51,6 +51,8 @@ jobs:
           base-domain: ${{ env.BASE_DOMAIN }}
           release-script: |
             cp /app/prod-storage/database.sqlite /app/storage/app/database.sqlite
+            cp -r /app/prod-storage/private/. /app/storage/app/private/
+            cp -r /app/prod-storage/public/. /app/storage/app/public/
             php artisan migrate --force
             php artisan optimize:clear
             php artisan optimize
