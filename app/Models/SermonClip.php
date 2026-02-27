@@ -30,6 +30,14 @@ class SermonClip extends Model
         'clip_video_error',
         'clip_video_started_at',
         'clip_video_completed_at',
+        'fb_reel_status',
+        'fb_reel_id',
+        'fb_reel_error',
+        'fb_reel_description',
+        'fb_reel_started_at',
+        'fb_reel_completed_at',
+        'fb_reel_published_at',
+        'fb_reel_scheduled_for',
     ];
 
     protected $casts = [
@@ -44,6 +52,11 @@ class SermonClip extends Model
         'clip_video_started_at' => 'immutable_datetime',
         'clip_video_completed_at' => 'immutable_datetime',
         'clip_video_duration' => 'integer',
+        'fb_reel_status' => JobStatus::class,
+        'fb_reel_started_at' => 'immutable_datetime',
+        'fb_reel_completed_at' => 'immutable_datetime',
+        'fb_reel_published_at' => 'immutable_datetime',
+        'fb_reel_scheduled_for' => 'immutable_datetime',
     ];
 
     /**
@@ -118,6 +131,13 @@ class SermonClip extends Model
                 Storage::disk('public')->delete($clip->clip_video_path);
             }
         });
+    }
+
+    public function canPublishToFacebook(): bool
+    {
+        return $this->clip_video_status === JobStatus::Completed
+            && $this->fb_reel_status !== JobStatus::Processing
+            && $this->fb_reel_status !== JobStatus::Completed;
     }
 
     /**

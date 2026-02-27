@@ -6,9 +6,12 @@ use App\Enums\JobStatus;
 use App\Filament\Resources\SermonClips\SermonClipResource;
 use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Jobs\GenerateSermonClipTitle;
+use App\Jobs\PublishSermonClipToFacebook;
 use App\Models\SermonClip;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\Support\Htmlable;
@@ -58,6 +61,41 @@ class EditSermonClip extends EditRecord
                     Notification::make()
                         ->title('Clip extraction queued')
                         ->body('Clip video extraction has been dispatched.')
+                        ->success()
+                        ->send();
+                }),
+
+            Action::make('publish_to_facebook')
+                ->label('Publish to Facebook')
+                ->icon('heroicon-o-arrow-up-tray')
+                ->color('primary')
+                ->visible(fn (): bool => $this->getRecord()->canPublishToFacebook())
+                ->schema([
+                    Textarea::make('fb_reel_description')
+                        ->label('Caption')
+                        ->default(fn (): ?string => $this->getRecord()->title)
+                        ->rows(3),
+                    DateTimePicker::make('fb_reel_scheduled_for')
+                        ->label('Schedule for (optional)')
+                        ->native(false)
+                        ->minDate(now()->addMinutes(10))
+                        ->timezone('America/Chicago'),
+                ])
+                ->action(function (array $data) {
+                    $record = $this->getRecord();
+
+                    $record->update([
+                        'fb_reel_description' => $data['fb_reel_description'] ?? null,
+                        'fb_reel_scheduled_for' => $data['fb_reel_scheduled_for'] ?? null,
+                    ]);
+
+                    PublishSermonClipToFacebook::dispatch($record);
+
+                    Notification::make()
+                        ->title('Facebook publishing queued')
+                        ->body($data['fb_reel_scheduled_for']
+                            ? 'Reel will be scheduled for the selected time.'
+                            : 'Reel will be published immediately.')
                         ->success()
                         ->send();
                 }),
