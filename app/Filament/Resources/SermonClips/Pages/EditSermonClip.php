@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\SermonClips\Pages;
 
-use App\Enums\JobStatus;
 use App\Filament\Resources\SermonClips\SermonClipResource;
 use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Jobs\GenerateSermonClipTitle;
 use App\Models\SermonClip;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
@@ -26,43 +26,44 @@ class EditSermonClip extends EditRecord
     protected string $view = 'filament.resources.sermon-clips.edit-sermon-clip';
 
     /**
-     * @return array<Action|DeleteAction>
+     * @return array<ActionGroup>
      */
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('generate_title')
-                ->label('Generate Title')
-                ->icon('heroicon-o-sparkles')
-                ->color('gray')
-                ->requiresConfirmation()
-                ->action(function () {
-                    GenerateSermonClipTitle::dispatch($this->getRecord());
+            ActionGroup::make([
+                Action::make('generate_title')
+                    ->label('Generate Title')
+                    ->icon('heroicon-o-sparkles')
+                    ->requiresConfirmation()
+                    ->action(function () {
+                        GenerateSermonClipTitle::dispatch($this->getRecord());
 
-                    Notification::make()
-                        ->title('Title generation queued')
-                        ->body('AI title generation has been dispatched.')
-                        ->success()
-                        ->send();
-                }),
+                        Notification::make()
+                            ->title('Title generation queued')
+                            ->body('AI title generation has been dispatched.')
+                            ->success()
+                            ->send();
+                    }),
 
-            Action::make('extract_video')
-                ->label('Extract Video')
-                ->icon('heroicon-o-film')
-                ->color('primary')
-                ->visible(fn (): bool => $this->getRecord()->clip_video_status !== JobStatus::Completed)
-                ->requiresConfirmation()
-                ->action(function () {
-                    ExtractSermonClipVerticalVideo::dispatch($this->getRecord());
+                Action::make('extract_video')
+                    ->label('Extract Video')
+                    ->icon('heroicon-o-film')
+                    ->requiresConfirmation()
+                    ->action(function () {
+                        ExtractSermonClipVerticalVideo::dispatch($this->getRecord());
 
-                    Notification::make()
-                        ->title('Clip extraction queued')
-                        ->body('Clip video extraction has been dispatched.')
-                        ->success()
-                        ->send();
-                }),
+                        Notification::make()
+                            ->title('Clip extraction queued')
+                            ->body('Clip video extraction has been dispatched.')
+                            ->success()
+                            ->send();
+                    }),
 
-            DeleteAction::make(),
+                DeleteAction::make(),
+            ])
+                ->icon('heroicon-o-cog-6-tooth')
+                ->label('Actions'),
         ];
     }
 
