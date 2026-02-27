@@ -4,12 +4,12 @@ namespace App\Filament\Resources\SermonClips\Tables;
 
 use App\Enums\JobStatus;
 use App\Jobs\ExtractSermonClipVerticalVideo;
+use App\Jobs\GenerateSermonClipTitle;
 use App\Models\SermonClip;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Storage;
 
 class SermonClipsTable
 {
@@ -22,6 +22,11 @@ class SermonClipsTable
                     ->dateTime('M j, Y g:i A')
                     ->timezone('America/Chicago')
                     ->sortable(),
+
+                TextColumn::make('title')
+                    ->label('Title')
+                    ->placeholder("\u{2014}")
+                    ->searchable(),
 
                 TextColumn::make('starts_at')
                     ->label('Start Time')
@@ -92,13 +97,22 @@ class SermonClipsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->recordUrl(
-                fn (SermonClip $record): ?string => $record->clip_video_path
-                    ? Storage::disk('public')->url($record->clip_video_path)
-                    : null,
-                shouldOpenInNewTab: true,
-            )
             ->recordActions([
+                Action::make('generate_title')
+                    ->label('Generate Title')
+                    ->icon('heroicon-o-sparkles')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->action(function (SermonClip $record) {
+                        GenerateSermonClipTitle::dispatch($record);
+
+                        Notification::make()
+                            ->title('Title generation queued')
+                            ->body('AI title generation has been dispatched.')
+                            ->success()
+                            ->send();
+                    }),
+
                 Action::make('extract_video')
                     ->label(fn (SermonClip $record): string => $record->clip_video_status === JobStatus::Completed ? 'Regenerate Video' : 'Extract Video')
                     ->icon('heroicon-o-film')

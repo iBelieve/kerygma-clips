@@ -4,6 +4,7 @@ namespace App\Filament\Resources\SermonVideos\Pages;
 
 use App\Filament\Resources\SermonVideos\SermonVideoResource;
 use App\Jobs\ExtractSermonClipVerticalVideo;
+use App\Jobs\GenerateSermonClipTitle;
 use App\Models\SermonVideo;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -136,6 +137,7 @@ class ViewSermonVideo extends ViewRecord
             'end_segment_index' => $endSegmentIndex,
         ]);
 
+        GenerateSermonClipTitle::dispatch($clip);
         ExtractSermonClipVerticalVideo::dispatch($clip);
 
         unset($this->transcriptData);
@@ -196,10 +198,17 @@ class ViewSermonVideo extends ViewRecord
             return $this->getClips();
         }
 
+        $boundariesChanged = $clip->start_segment_index !== $startSegmentIndex
+            || $clip->end_segment_index !== $endSegmentIndex;
+
         $clip->update([
             'start_segment_index' => $startSegmentIndex,
             'end_segment_index' => $endSegmentIndex,
         ]);
+
+        if ($boundariesChanged) {
+            GenerateSermonClipTitle::dispatch($clip);
+        }
 
         ExtractSermonClipVerticalVideo::dispatch($clip);
 

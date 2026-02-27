@@ -51,17 +51,13 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 throw new \RuntimeException('Sermon video does not have a completed vertical video');
             }
 
-            $segments = $sermonVideo->transcript['segments'] ?? [];
-
-            if (! isset($segments[$sermonClip->start_segment_index], $segments[$sermonClip->end_segment_index])) {
-                throw new \RuntimeException('Clip segment indices are out of bounds');
-            }
-
-            $startTime = (float) $segments[$sermonClip->start_segment_index]['start'];
-            $endTime = (float) $segments[$sermonClip->end_segment_index]['end'];
-            $duration = $endTime - $startTime;
+            $sermonClip->refresh();
+            $startTime = $sermonClip->starts_at;
+            $endTime = $sermonClip->ends_at;
+            $duration = $sermonClip->duration;
 
             // Generate ASS captions from transcript word-level data
+            $segments = $sermonVideo->transcript['segments'] ?? [];
             $clipSegments = array_slice(
                 $segments,
                 $sermonClip->start_segment_index,
@@ -90,10 +86,12 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 '-ss', (string) $startTime,
                 '-i', $inputPath,
                 '-t', (string) $duration,
-                '-vf', "ass={$assPath}:fontsdir={$fontsDir}",
+                '-vf', "ass={$assPath}:fontsdir={$fontsDir},setpts=PTS-STARTPTS",
+                '-af', 'asetpts=PTS-STARTPTS',
                 '-c:v', 'libx264',
                 '-preset', 'medium',
                 '-crf', '23',
+                '-pix_fmt', 'yuv420p',
                 '-c:a', 'aac',
                 '-b:a', '128k',
                 '-movflags', '+faststart',
