@@ -1,16 +1,5 @@
 <x-filament-panels::page>
-    <x-filament-panels::form
-        id="form"
-        :wire:key="$this->getId() . '.forms.' . $this->getFormStatePath()"
-        wire:submit="save"
-    >
-        {{ $this->form }}
-
-        <x-filament-panels::form.actions
-            :actions="$this->getCachedFormActions()"
-            :full-width="$this->hasFullWidthFormActions()"
-        />
-    </x-filament-panels::form>
+    {{ $this->content }}
 
     @php
         $clip = $this->getRecord();
@@ -31,22 +20,7 @@
 
         {{-- Readonly transcript --}}
         @if (count($this->transcriptRows))
-            <div class="flex min-w-0 flex-1 flex-col gap-4">
-                <div class="flex items-center justify-end gap-3">
-                    <label for="gapThreshold" class="whitespace-nowrap text-sm font-medium text-gray-950 dark:text-white">
-                        Gap threshold
-                    </label>
-                    <x-filament::input.wrapper class="max-w-48">
-                        <x-filament::input
-                            type="number"
-                            id="gapThreshold"
-                            wire:model.live.debounce.500ms="gapThreshold"
-                            min="1"
-                        />
-                        <x-slot name="suffix">seconds</x-slot>
-                    </x-filament::input.wrapper>
-                </div>
-
+            <div class="min-w-0 flex-1">
                 <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
                     <div class="overflow-x-auto py-3">
                         <table class="w-full">

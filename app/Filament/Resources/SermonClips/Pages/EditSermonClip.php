@@ -19,8 +19,6 @@ class EditSermonClip extends EditRecord
 
     protected string $view = 'filament.resources.sermon-clips.edit-sermon-clip';
 
-    public int $gapThreshold = 2;
-
     public function getTitle(): string|Htmlable
     {
         return $this->getRecord()->title
@@ -57,7 +55,7 @@ class EditSermonClip extends EditRecord
         foreach ($clipSegments as $segment) {
             if ($previousEnd !== null) {
                 $gap = $segment['start'] - $previousEnd;
-                if ($gap > $this->gapThreshold) {
+                if ($gap > 2) {
                     $rows[] = [
                         'type' => 'gap',
                         'label' => $this->formatGap($gap),
