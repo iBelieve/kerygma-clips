@@ -66,7 +66,17 @@ jobs:
             HF_HOME=/app/hf-cache
             TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=true
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            BROADCAST_CONNECTION=reverb
+            REVERB_APP_ID=my-app-id
+            REVERB_APP_KEY=my-app-key
+            REVERB_APP_SECRET=my-app-secret
+            REVERB_HOST=localhost
+            REVERB_PORT=8080
+            REVERB_SCHEME=http
+          docker-build-args: |
+            VITE_REVERB_APP_KEY=my-app-key
           process-scaling: |
+            reverb=1
             worker=1
             transcription=1
             video-processing=1

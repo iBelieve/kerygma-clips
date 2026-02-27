@@ -187,6 +187,21 @@ When adding a new queue, update all three places:
 2. **`.github/workflows/preview-deploy.yml`** — add to `process-scaling`
 3. **`composer.json`** `dev` script — add a `queue:listen` entry for local development
 
+## Event Broadcasting
+
+The application uses **Laravel Reverb** for WebSocket-based event broadcasting. When background jobs change the status of a `SermonVideo` or `SermonClip`, broadcast events are sent over a private `sermon-updates` channel, and Filament list pages auto-refresh via Livewire Echo listeners.
+
+| Component | Location |
+|---|---|
+| Events | `app/Events/SermonVideoUpdated.php`, `app/Events/SermonClipUpdated.php` |
+| Channel auth | `routes/channels.php` |
+| Echo config | `resources/js/bootstrap.js` |
+| Reverb process | `Procfile` (`reverb: php artisan reverb:start`) |
+
+In production, Caddy reverse-proxies WebSocket connections (`/app/*`) to the Reverb process on port 8080. In local development, the client connects directly to Reverb on `localhost:8080`.
+
+The `VITE_REVERB_APP_KEY` is the only Vite env var needed at Docker build time — the host/port/scheme fall back to the current page's hostname (via `window.location.hostname`) and HTTPS defaults, which works correctly when proxied through Caddy.
+
 ## Environment Configuration
 
 Copy `.env.example` to `.env` and configure:
