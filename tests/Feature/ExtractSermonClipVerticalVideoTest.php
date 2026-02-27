@@ -73,10 +73,14 @@ test('job passes correct time range to ffmpeg', function () {
     Process::assertRan(function ($process) {
         $command = $process->command;
         $ssIndex = array_search('-ss', $command);
+        $iIndex = array_search('-i', $command);
         $tIndex = array_search('-t', $command);
 
+        // -ss must come before -i (input seeking for frame-accurate, no-black-frame results)
         return $ssIndex !== false
             && $command[$ssIndex + 1] === '10'
+            && $iIndex !== false
+            && $ssIndex < $iIndex
             && $tIndex !== false
             && $command[$tIndex + 1] === '20';
     });
@@ -117,10 +121,14 @@ test('job passes padded time range to ffmpeg when segments have gaps', function 
     Process::assertRan(function ($process) {
         $command = $process->command;
         $ssIndex = array_search('-ss', $command);
+        $iIndex = array_search('-i', $command);
         $tIndex = array_search('-t', $command);
 
+        // -ss must come before -i (input seeking for frame-accurate, no-black-frame results)
         return $ssIndex !== false
             && $command[$ssIndex + 1] === '11.75'
+            && $iIndex !== false
+            && $ssIndex < $iIndex
             && $tIndex !== false
             && $command[$tIndex + 1] === '10.75';
     });

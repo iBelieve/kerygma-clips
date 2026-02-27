@@ -67,8 +67,8 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
 
             $result = Process::timeout(300)->run([
                 'ffmpeg',
-                '-i', $inputPath,
                 '-ss', (string) $startTime,
+                '-i', $inputPath,
                 '-t', (string) $duration,
                 '-vf', 'setpts=PTS-STARTPTS',
                 '-af', 'asetpts=PTS-STARTPTS',
