@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SermonClips\Pages;
 
+use App\Enums\JobStatus;
 use App\Filament\Resources\SermonClips\SermonClipResource;
 use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Jobs\GenerateSermonClipTitle;
@@ -35,7 +36,6 @@ class EditSermonClip extends EditRecord
                 Action::make('generate_title')
                     ->label('Generate Title')
                     ->icon('heroicon-o-sparkles')
-                    ->requiresConfirmation()
                     ->action(function () {
                         GenerateSermonClipTitle::dispatch($this->getRecord());
 
@@ -47,9 +47,8 @@ class EditSermonClip extends EditRecord
                     }),
 
                 Action::make('extract_video')
-                    ->label('Extract Video')
+                    ->label(fn () => $this->getRecord()->clip_video_status === JobStatus::Completed ? 'Re-extract Video' : 'Extract Video')
                     ->icon('heroicon-o-film')
-                    ->requiresConfirmation()
                     ->action(function () {
                         ExtractSermonClipVerticalVideo::dispatch($this->getRecord());
 
@@ -63,7 +62,9 @@ class EditSermonClip extends EditRecord
                 DeleteAction::make(),
             ])
                 ->icon('heroicon-o-cog-6-tooth')
-                ->label('Actions'),
+                ->label('')
+                ->color('gray')
+                ->button(),
         ];
     }
 
