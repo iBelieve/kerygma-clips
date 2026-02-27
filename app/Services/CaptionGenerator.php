@@ -4,7 +4,7 @@ namespace App\Services;
 
 class CaptionGenerator
 {
-    private const FONT_SIZE = 70;
+    private const FONT_SIZE = 120;
 
     private const OUTLINE_SIZE = 17;
 
@@ -12,9 +12,9 @@ class CaptionGenerator
 
     private const MARGIN_HORIZONTAL = 40;
 
-    private const MAX_WORDS_PER_PHRASE = 8;
+    private const MAX_WORDS_PER_PHRASE = 5;
 
-    private const TARGET_WORDS_PER_PHRASE = 5;
+    private const TARGET_WORDS_PER_PHRASE = 3;
 
     private const MIN_WORDS_FOR_COMMA_BREAK = 3;
 

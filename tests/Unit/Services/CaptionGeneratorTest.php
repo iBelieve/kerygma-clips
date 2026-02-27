@@ -69,9 +69,9 @@ test('it groups words into phrases of approximately 5 words', function () {
 
     $result = $this->generator->generateAss($segments, 0.0, 8.0);
 
-    // Should produce 3 phrases of 5 words each
+    // Should produce 5 phrases of 3 words each
     preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(3);
+    expect(count($matches[0]))->toBe(5);
 });
 
 test('it breaks phrases at sentence-ending punctuation', function () {
@@ -93,13 +93,14 @@ test('it breaks phrases at sentence-ending punctuation', function () {
 
     $result = $this->generator->generateAss($segments, 0.0, 5.0);
 
-    // Should break into two phrases at the period
+    // Should break at periods and target word count
     expect($result)
         ->toContain('Hello world.')
-        ->toContain('This is a test.');
+        ->toContain('This is a')
+        ->toContain('test.');
 
     preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(2);
+    expect(count($matches[0]))->toBe(3);
 });
 
 test('it breaks phrases at comma with 3+ words accumulated', function () {
@@ -124,10 +125,11 @@ test('it breaks phrases at comma with 3+ words accumulated', function () {
 
     expect($result)
         ->toContain('Grace and mercy,')
-        ->toContain('and peace are yours');
+        ->toContain('and peace are')
+        ->toContain('yours');
 
     preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(2);
+    expect(count($matches[0]))->toBe(3);
 });
 
 test('it does not break at comma with fewer than 3 words', function () {
@@ -147,10 +149,12 @@ test('it does not break at comma with fewer than 3 words', function () {
 
     $result = $this->generator->generateAss($segments, 0.0, 3.0);
 
-    // "Yes," is only 1 word, so no break at comma
+    // "Yes," is only 1 word, so no break at comma — but target of 3 words triggers a break
     preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(1);
-    expect($result)->toContain('Yes, indeed it is');
+    expect(count($matches[0]))->toBe(2);
+    expect($result)
+        ->toContain('Yes, indeed it')
+        ->toContain('is');
 });
 
 test('it handles words without start timestamps', function () {
@@ -206,7 +210,7 @@ test('it handles segments with no words array', function () {
     $result = $this->generator->generateAss($segments, 0.0, 5.0);
 
     expect($result)->toContain('Dialogue:');
-    expect($result)->toContain('This is a fallback');
+    expect($result)->toContain('This is a');
 });
 
 test('it handles empty segments array', function () {
@@ -258,9 +262,9 @@ test('it caps phrases at maximum word count', function () {
 
     $result = $this->generator->generateAss($segments, 0.0, 6.25);
 
-    // With target of 5 words and hard cap of 8, 20 words should produce 4 phrases of 5
+    // With target of 3 words and hard cap of 5, 20 words should produce 7 phrases (6×3 + 1×2)
     preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(4);
+    expect(count($matches[0]))->toBe(7);
 });
 
 test('it breaks phrases on silence gaps', function () {
@@ -397,11 +401,12 @@ test('it handles multiple segments', function () {
 
     $result = $this->generator->generateAss($segments, 10.0, 14.0);
 
-    // Words from both segments should appear (grouped into phrases of ~5 words)
-    // 7 total words => first phrase takes 5, second takes 2
+    // Words from both segments should appear (grouped into phrases of ~3 words)
+    // 7 total words => phrases of 3, 3, 1
     preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(2);
+    expect(count($matches[0]))->toBe(3);
     expect($result)
-        ->toContain('First segment words here Second')
-        ->toContain('segment now');
+        ->toContain('First segment words')
+        ->toContain('here Second segment')
+        ->toContain('now');
 });
