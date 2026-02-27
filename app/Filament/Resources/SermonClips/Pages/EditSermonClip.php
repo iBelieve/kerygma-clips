@@ -19,6 +19,8 @@ class EditSermonClip extends EditRecord
 
     protected string $view = 'filament.resources.sermon-clips.edit-sermon-clip';
 
+    public int $gapThreshold = 2;
+
     public function getTitle(): string|Htmlable
     {
         return $this->getRecord()->title
@@ -26,25 +28,80 @@ class EditSermonClip extends EditRecord
     }
 
     /**
-     * @return list<array{start: float, end: float, text: string}>
+     * @return list<array{type: string, timestamp?: string, text?: string, label?: string}>
      */
     #[Computed]
-    public function clipSegments(): array
+    public function transcriptRows(): array
     {
         $clip = $this->getRecord();
         $segments = $clip->sermonVideo->transcript['segments'] ?? [];
 
-        return collect($segments)
+        $clipSegments = collect($segments)
             ->slice(
                 $clip->start_segment_index,
                 $clip->end_segment_index - $clip->start_segment_index + 1
             )
-            ->map(fn (array $s): array => [
-                'start' => $s['start'],
-                'end' => $s['end'],
-                'text' => trim($s['text']),
-            ])
             ->values()
             ->all();
+
+        if ($clipSegments === []) {
+            return [];
+        }
+
+        $lastStart = $clipSegments[count($clipSegments) - 1]['start'];
+        $useHours = $lastStart >= 3600;
+
+        $rows = [];
+        $previousEnd = null;
+
+        foreach ($clipSegments as $segment) {
+            if ($previousEnd !== null) {
+                $gap = $segment['start'] - $previousEnd;
+                if ($gap > $this->gapThreshold) {
+                    $rows[] = [
+                        'type' => 'gap',
+                        'label' => $this->formatGap($gap),
+                    ];
+                }
+            }
+
+            $rows[] = [
+                'type' => 'segment',
+                'timestamp' => $this->formatTimestamp($segment['start'], $useHours),
+                'text' => trim($segment['text']),
+            ];
+
+            $previousEnd = $segment['end'];
+        }
+
+        return $rows;
+    }
+
+    private function formatTimestamp(float $seconds, bool $useHours): string
+    {
+        $total = (int) floor($seconds);
+        $h = intdiv($total, 3600);
+        $m = intdiv($total % 3600, 60);
+        $s = $total % 60;
+
+        if ($useHours) {
+            return sprintf('%d:%02d:%02d', $h, $m, $s);
+        }
+
+        return sprintf('%02d:%02d', $m, $s);
+    }
+
+    private function formatGap(float $seconds): string
+    {
+        $total = (int) round($seconds);
+
+        if ($total >= 60) {
+            $m = intdiv($total, 60);
+            $s = $total % 60;
+
+            return sprintf('%dm %02ds pause', $m, $s);
+        }
+
+        return "{$total}s pause";
     }
 }

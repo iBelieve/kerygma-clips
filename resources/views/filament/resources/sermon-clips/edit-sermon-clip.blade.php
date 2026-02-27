@@ -14,7 +14,6 @@
 
     @php
         $clip = $this->getRecord();
-        $clipSegments = $this->clipSegments;
     @endphp
 
     <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
@@ -31,11 +30,8 @@
         @endif
 
         {{-- Readonly transcript --}}
-        @if (count($clipSegments))
-            <div
-                x-data="readonlyTranscript({ segments: @js($clipSegments) })"
-                class="flex min-w-0 flex-1 flex-col gap-4"
-            >
+        @if (count($this->transcriptRows))
+            <div class="flex min-w-0 flex-1 flex-col gap-4">
                 <div class="flex items-center justify-end gap-3">
                     <label for="gapThreshold" class="whitespace-nowrap text-sm font-medium text-gray-950 dark:text-white">
                         Gap threshold
@@ -44,7 +40,7 @@
                         <x-filament::input
                             type="number"
                             id="gapThreshold"
-                            x-model.debounce.500ms="gapThreshold"
+                            wire:model.live.debounce.500ms="gapThreshold"
                             min="1"
                         />
                         <x-slot name="suffix">seconds</x-slot>
@@ -55,39 +51,28 @@
                     <div class="overflow-x-auto py-3">
                         <table class="w-full">
                             <tbody>
-                                <template x-for="(row, i) in rows" :key="i">
+                                @foreach ($this->transcriptRows as $row)
                                     <tr>
-                                        {{-- Gap row content --}}
-                                        <td
-                                            x-show="row.type === 'gap'"
-                                            colspan="2"
-                                            class="px-4 sm:px-6"
-                                        >
-                                            <div class="flex items-center gap-3 py-2">
-                                                <div class="flex-1 border-t border-dashed border-gray-300 dark:border-gray-600"></div>
-                                                <span
-                                                    class="shrink-0 text-xs font-medium text-gray-400 dark:text-gray-500"
-                                                    x-text="row.label"
-                                                ></span>
-                                                <div class="flex-1 border-t border-dashed border-gray-300 dark:border-gray-600"></div>
-                                            </div>
-                                        </td>
-
-                                        {{-- Segment row content --}}
-                                        <td
-                                            x-show="row.type === 'segment'"
-                                            class="whitespace-nowrap py-1 pe-3 ps-4 align-baseline text-xs text-end tabular-nums text-gray-500 sm:ps-6 dark:text-gray-400"
-                                        >
-                                            <span x-text="row.type === 'segment' ? formatTimestamp(row.start) : ''"></span>
-                                        </td>
-                                        <td
-                                            x-show="row.type === 'segment'"
-                                            class="w-full py-1 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white"
-                                        >
-                                            <span x-text="row.text"></span>
-                                        </td>
+                                        @if ($row['type'] === 'gap')
+                                            <td colspan="2" class="px-4 sm:px-6">
+                                                <div class="flex items-center gap-3 py-2">
+                                                    <div class="flex-1 border-t border-dashed border-gray-300 dark:border-gray-600"></div>
+                                                    <span class="shrink-0 text-xs font-medium text-gray-400 dark:text-gray-500">
+                                                        {{ $row['label'] }}
+                                                    </span>
+                                                    <div class="flex-1 border-t border-dashed border-gray-300 dark:border-gray-600"></div>
+                                                </div>
+                                            </td>
+                                        @else
+                                            <td class="whitespace-nowrap py-1 pe-3 ps-4 align-baseline text-end text-xs tabular-nums text-gray-500 sm:ps-6 dark:text-gray-400">
+                                                {{ $row['timestamp'] }}
+                                            </td>
+                                            <td class="w-full py-1 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white">
+                                                {{ $row['text'] }}
+                                            </td>
+                                        @endif
                                     </tr>
-                                </template>
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
