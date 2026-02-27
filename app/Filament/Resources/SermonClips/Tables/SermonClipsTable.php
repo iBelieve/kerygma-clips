@@ -10,7 +10,6 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Storage;
 
 class SermonClipsTable
 {
@@ -24,7 +23,7 @@ class SermonClipsTable
                     ->timezone('America/Chicago')
                     ->sortable(),
 
-                TextColumn::make('ai_title')
+                TextColumn::make('title')
                     ->label('Title')
                     ->placeholder("\u{2014}")
                     ->searchable(),
@@ -98,12 +97,6 @@ class SermonClipsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->recordUrl(
-                fn (SermonClip $record): ?string => $record->clip_video_path
-                    ? Storage::disk('public')->url($record->clip_video_path)
-                    : null,
-                shouldOpenInNewTab: true,
-            )
             ->recordActions([
                 Action::make('generate_title')
                     ->label('Generate Title')

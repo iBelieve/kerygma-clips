@@ -57,7 +57,7 @@ test('job generates title and saves it to the clip', function () {
     GenerateSermonClipTitle::dispatchSync($clip);
 
     $clip->refresh();
-    expect($clip->ai_title)->toBe('Grace and Mercy in Action');
+    expect($clip->title)->toBe('Grace and Mercy in Action');
 });
 
 test('job includes sermon title in prompt when available', function () {
@@ -118,7 +118,7 @@ test('job does not call agent when transcript text is empty', function () {
     GenerateSermonClipTitle::dispatchSync($clip);
 
     $clip->refresh();
-    expect($clip->ai_title)->toBeNull();
+    expect($clip->title)->toBeNull();
     SermonClipTitleGenerator::assertNeverPrompted();
 });
 

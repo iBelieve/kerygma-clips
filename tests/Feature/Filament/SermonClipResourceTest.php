@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\JobStatus;
+use App\Filament\Resources\SermonClips\Pages\EditSermonClip;
 use App\Filament\Resources\SermonClips\Pages\ListSermonClips;
 use App\Filament\Resources\SermonClips\SermonClipResource;
 use App\Jobs\ExtractSermonClipVerticalVideo;
@@ -66,4 +67,52 @@ test('it dispatches extract job from header action', function () {
 
 test('it cannot create sermon clips', function () {
     expect(SermonClipResource::canCreate())->toBeFalse();
+});
+
+test('it can render the edit page', function () {
+    $video = createVideoWithTranscript();
+    $clip = $video->sermonClips()->create([
+        'start_segment_index' => 2,
+        'end_segment_index' => 5,
+        'title' => 'Grace and Mercy',
+    ]);
+
+    Livewire::test(EditSermonClip::class, ['record' => $clip->id])
+        ->assertSuccessful()
+        ->assertFormFieldExists('title')
+        ->assertFormSet(['title' => 'Grace and Mercy']);
+});
+
+test('edit page shows transcript segments for the clip', function () {
+    $video = createVideoWithTranscript();
+    $clip = $video->sermonClips()->create([
+        'start_segment_index' => 2,
+        'end_segment_index' => 4,
+    ]);
+
+    $component = Livewire::test(EditSermonClip::class, ['record' => $clip->id]);
+
+    $rows = $component->instance()->transcriptRows;
+
+    $segmentRows = array_filter($rows, fn (array $row) => $row['type'] === 'segment');
+    expect($segmentRows)->toHaveCount(3);
+
+    $texts = array_column($segmentRows, 'text');
+    expect($texts)->toBe(['Segment 2', 'Segment 3', 'Segment 4']);
+});
+
+test('edit page can save the title', function () {
+    $video = createVideoWithTranscript();
+    $clip = $video->sermonClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+        'title' => 'Old Title',
+    ]);
+
+    Livewire::test(EditSermonClip::class, ['record' => $clip->id])
+        ->fillForm(['title' => 'New Title'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($clip->refresh()->title)->toBe('New Title');
 });

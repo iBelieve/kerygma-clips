@@ -24,7 +24,7 @@ class SermonClip extends Model
         'ends_at',
         'pause_before',
         'pause_after',
-        'ai_title',
+        'title',
         'clip_video_status',
         'clip_video_path',
         'clip_video_error',
