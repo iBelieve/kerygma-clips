@@ -1,15 +1,18 @@
 <?php
 
 use App\Filament\Resources\SermonVideos\Pages\ViewSermonVideo;
+use App\Jobs\GenerateSermonClipTitle;
 use App\Models\SermonClip;
 use App\Models\SermonVideo;
 use App\Models\User;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 beforeEach(function () {
     $this->actingAs(User::factory()->create());
+    Queue::fake([GenerateSermonClipTitle::class]);
 });
 
 /**

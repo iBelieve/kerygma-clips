@@ -152,6 +152,14 @@ class SermonVideosTable
                         'filament.resources.sermon-videos.video-framing-modal',
                         ['record' => $record]
                     )),
+
+                Action::make('delete')
+                    ->label('Delete')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalDescription('This will delete the sermon video record and all associated clips. The original video file will not be deleted.')
+                    ->action(fn (SermonVideo $record) => $record->delete()),
             ])
             ->defaultSort('date', 'desc')
             ->paginated([10]);
