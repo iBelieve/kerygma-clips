@@ -9,5 +9,5 @@ RUN install-php-extensions \
     zip
 
 RUN apt-get update \
-    && apt-get install -y sqlite3 ffmpeg \
+    && apt-get install -y sqlite3 ffmpeg fonts-montserrat \
     && rm -rf /var/lib/apt/lists/*

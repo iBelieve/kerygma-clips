@@ -99,7 +99,7 @@ FROM dunglas/frankenphp:php8.5-trixie AS runner
 ENV UV_PYTHON_INSTALL_DIR=/python
 ENV PATH="/app/.venv/bin:$PATH"
 
-RUN apt-get update && apt-get install -y mupdf-tools ffmpeg && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y mupdf-tools ffmpeg fonts-montserrat && rm -rf /var/lib/apt/lists/*
 
 RUN install-php-extensions \
     imagick \

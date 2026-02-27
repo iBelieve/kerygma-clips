@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\JobStatus;
 use App\Models\SermonClip;
+use App\Services\SubtitleGenerator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -33,10 +34,11 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
         $this->onQueue('video-processing');
     }
 
-    public function handle(): void
+    public function handle(SubtitleGenerator $subtitleGenerator): void
     {
         $sermonClip = $this->sermonClip;
         $sermonVideo = $sermonClip->sermonVideo;
+        $assFilePath = null;
 
         try {
             $sermonClip->update([
@@ -71,11 +73,31 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 mkdir($outputDir, 0755, true);
             }
 
-            $result = Process::timeout(300)->run([
+            $assContent = $subtitleGenerator->generateAssContent(
+                $sermonVideo->transcript,
+                $sermonClip->start_segment_index,
+                $sermonClip->end_segment_index,
+                $startTime,
+            );
+
+            if ($assContent !== null) {
+                $assFilePath = sys_get_temp_dir()."/sermon_clip_{$sermonClip->id}.ass";
+                file_put_contents($assFilePath, $assContent);
+            }
+
+            $ffmpegCommand = [
                 'ffmpeg',
                 '-ss', (string) $startTime,
                 '-i', $inputPath,
                 '-t', (string) $duration,
+            ];
+
+            if ($assFilePath !== null) {
+                $ffmpegCommand = [...$ffmpegCommand, '-vf', "ass={$assFilePath}"];
+            }
+
+            $ffmpegCommand = [
+                ...$ffmpegCommand,
                 '-c:v', 'libx264',
                 '-preset', 'medium',
                 '-crf', '23',
@@ -83,7 +105,9 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 '-b:a', '128k',
                 '-movflags', '+faststart',
                 '-y', $outputAbsolutePath,
-            ]);
+            ];
+
+            $result = Process::timeout(300)->run($ffmpegCommand);
 
             if ($result->failed()) {
                 throw new \RuntimeException($result->errorOutput() ?: $result->output());
@@ -105,6 +129,10 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 'clip_video_status' => JobStatus::Failed,
                 'clip_video_error' => $e->getMessage(),
             ]);
+        } finally {
+            if ($assFilePath !== null && file_exists($assFilePath)) {
+                unlink($assFilePath);
+            }
         }
     }
 }
