@@ -51,15 +51,9 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 throw new \RuntimeException('Sermon video does not have a completed vertical video');
             }
 
-            $segments = $sermonVideo->transcript['segments'] ?? [];
-
-            if (! isset($segments[$sermonClip->start_segment_index], $segments[$sermonClip->end_segment_index])) {
-                throw new \RuntimeException('Clip segment indices are out of bounds');
-            }
-
-            $startTime = (float) $segments[$sermonClip->start_segment_index]['start'];
-            $endTime = (float) $segments[$sermonClip->end_segment_index]['end'];
-            $duration = $endTime - $startTime;
+            $sermonClip->refresh();
+            $startTime = $sermonClip->starts_at;
+            $duration = $sermonClip->duration;
 
             $inputDisk = Storage::disk('public');
             $inputPath = $inputDisk->path($sermonVideo->vertical_video_path);
@@ -92,15 +86,20 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 '-t', (string) $duration,
             ];
 
+            $videoFilters = [];
             if ($assFilePath !== null) {
-                $ffmpegCommand = [...$ffmpegCommand, '-vf', "ass={$assFilePath}"];
+                $videoFilters[] = "ass={$assFilePath}";
             }
+            $videoFilters[] = 'setpts=PTS-STARTPTS';
 
             $ffmpegCommand = [
                 ...$ffmpegCommand,
+                '-vf', implode(',', $videoFilters),
+                '-af', 'asetpts=PTS-STARTPTS',
                 '-c:v', 'libx264',
                 '-preset', 'medium',
                 '-crf', '23',
+                '-pix_fmt', 'yuv420p',
                 '-c:a', 'aac',
                 '-b:a', '128k',
                 '-movflags', '+faststart',
