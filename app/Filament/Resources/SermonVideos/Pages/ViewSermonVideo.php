@@ -2,11 +2,17 @@
 
 namespace App\Filament\Resources\SermonVideos\Pages;
 
+use App\Enums\JobStatus;
 use App\Filament\Resources\SermonVideos\SermonVideoResource;
+use App\Jobs\ConvertToVerticalVideo;
 use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Jobs\GenerateSermonClipTitle;
+use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Log;
@@ -30,13 +36,63 @@ class ViewSermonVideo extends ViewRecord
     }
 
     /**
-     * @return array<\Filament\Actions\Action>
+     * @return array<Action | ActionGroup>
      */
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make()
-                ->modalDescription('This will delete the sermon video record and all associated clips. The original video file will not be deleted.'),
+            ActionGroup::make([
+                Action::make('transcribe')
+                    ->label(fn () => $this->getRecord()->transcript_status === JobStatus::Completed ? 'Re-transcribe' : 'Transcribe')
+                    ->icon('heroicon-o-language')
+                    ->color('primary')
+                    ->requiresConfirmation()
+                    ->action(function () {
+                        TranscribeSermonVideo::dispatch($this->getRecord());
+
+                        Notification::make()
+                            ->title('Transcription queued')
+                            ->body('Transcription has been dispatched.')
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('convert_to_vertical')
+                    ->label(fn () => $this->getRecord()->vertical_video_status === JobStatus::Completed ? 'Re-convert to Vertical' : 'Convert to Vertical')
+                    ->icon('heroicon-o-device-phone-mobile')
+                    ->color('primary')
+                    ->requiresConfirmation()
+                    ->action(function () {
+                        ConvertToVerticalVideo::dispatch($this->getRecord());
+
+                        Notification::make()
+                            ->title('Vertical conversion queued')
+                            ->body('Vertical video conversion has been dispatched.')
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('framing')
+                    ->label('Framing')
+                    ->icon('heroicon-o-viewfinder-circle')
+                    ->color('primary')
+                    ->visible(fn (): bool => $this->getRecord()->preview_frame_path !== null)
+                    ->modalHeading('Video Framing')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->modalWidth('3xl')
+                    ->modalContent(fn (SermonVideo $record): \Illuminate\Contracts\View\View => view(
+                        'filament.resources.sermon-videos.video-framing-modal',
+                        ['record' => $record]
+                    )),
+
+                DeleteAction::make()
+                    ->modalDescription('This will delete the sermon video record and all associated clips. The original video file will not be deleted.'),
+            ])
+                ->icon('heroicon-o-cog-6-tooth')
+                ->label('')
+                ->color('gray')
+                ->button(),
         ];
     }
 
