@@ -10,8 +10,10 @@ use App\Jobs\ScanSermonVideos;
 use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\Width;
 
 class ListSermonVideos extends ListRecords
 {
@@ -23,7 +25,6 @@ class ListSermonVideos extends ListRecords
             Action::make('scan')
                 ->label('Scan for Videos')
                 ->icon('heroicon-o-arrow-path')
-                ->color('primary')
                 ->action(function () {
                     ScanSermonVideos::dispatch(verbose: true, includeRecent: true);
 
@@ -34,65 +35,131 @@ class ListSermonVideos extends ListRecords
                         ->send();
                 }),
 
-            Action::make('transcribe')
-                ->label('Transcribe All')
-                ->icon('heroicon-o-language')
-                ->color('primary')
-                ->visible(fn (): bool => SermonVideo::where('transcript_status', '!=', JobStatus::Completed)->exists())
-                ->requiresConfirmation()
-                ->action(function () {
-                    $videos = SermonVideo::where('transcript_status', '!=', JobStatus::Completed)->get();
+            ActionGroup::make([
+                ActionGroup::make([
+                    Action::make('transcribe')
+                        ->label('Re-transcribe All')
+                        ->icon('heroicon-o-language')
+                        ->requiresConfirmation()
+                        ->action(function () {
+                            $videos = SermonVideo::all();
 
-                    foreach ($videos as $video) {
-                        TranscribeSermonVideo::dispatch($video);
-                    }
+                            foreach ($videos as $video) {
+                                TranscribeSermonVideo::dispatch($video);
+                            }
 
-                    Notification::make()
-                        ->title('Transcription queued')
-                        ->body("Dispatched transcription for {$videos->count()} sermon video(s).")
-                        ->success()
-                        ->send();
-                }),
+                            Notification::make()
+                                ->title('Transcription queued')
+                                ->body("Dispatched transcription for {$videos->count()} sermon video(s).")
+                                ->success()
+                                ->send();
+                        }),
 
-            Action::make('convert_to_vertical')
-                ->label('Convert All to Vertical')
-                ->icon('heroicon-o-device-phone-mobile')
-                ->color('primary')
-                ->visible(fn (): bool => SermonVideo::where('vertical_video_status', '!=', JobStatus::Completed)->exists())
-                ->requiresConfirmation()
-                ->action(function () {
-                    $videos = SermonVideo::where('vertical_video_status', '!=', JobStatus::Completed)->get();
+                    Action::make('convert_to_vertical')
+                        ->label('Re-convert All to Vertical')
+                        ->icon('heroicon-o-device-phone-mobile')
+                        ->requiresConfirmation()
+                        ->action(function () {
+                            $videos = SermonVideo::all();
 
-                    foreach ($videos as $video) {
-                        ConvertToVerticalVideo::dispatch($video);
-                    }
+                            foreach ($videos as $video) {
+                                ConvertToVerticalVideo::dispatch($video);
+                            }
 
-                    Notification::make()
-                        ->title('Vertical conversion queued')
-                        ->body("Dispatched vertical conversion for {$videos->count()} sermon video(s).")
-                        ->success()
-                        ->send();
-                }),
+                            Notification::make()
+                                ->title('Vertical conversion queued')
+                                ->body("Dispatched vertical conversion for {$videos->count()} sermon video(s).")
+                                ->success()
+                                ->send();
+                        }),
 
-            Action::make('extract_frames')
-                ->label('Extract All Frames')
-                ->icon('heroicon-o-camera')
-                ->color('primary')
-                ->visible(fn (): bool => SermonVideo::whereNull('preview_frame_path')->exists())
-                ->requiresConfirmation()
-                ->action(function () {
-                    $videos = SermonVideo::whereNull('preview_frame_path')->get();
+                    Action::make('extract_frames')
+                        ->label('Re-extract All Frames')
+                        ->icon('heroicon-o-camera')
+                        ->requiresConfirmation()
+                        ->action(function () {
+                            $videos = SermonVideo::all();
 
-                    foreach ($videos as $video) {
-                        ExtractPreviewFrame::dispatch($video);
-                    }
+                            foreach ($videos as $video) {
+                                ExtractPreviewFrame::dispatch($video);
+                            }
 
-                    Notification::make()
-                        ->title('Frame extraction queued')
-                        ->body("Dispatched frame extraction for {$videos->count()} sermon video(s).")
-                        ->success()
-                        ->send();
-                }),
+                            Notification::make()
+                                ->title('Frame extraction queued')
+                                ->body("Dispatched frame extraction for {$videos->count()} sermon video(s).")
+                                ->success()
+                                ->send();
+                        }),
+                ])->dropdown(false),
+
+                ActionGroup::make([
+                    Action::make('transcribe_missing')
+                        ->label('Transcribe Missing')
+                        ->icon('heroicon-o-language')
+                        ->requiresConfirmation()
+                        ->visible(fn () => SermonVideo::where('transcript_status', '!=', JobStatus::Completed)->exists())
+                        ->action(function () {
+                            $videos = SermonVideo::where('transcript_status', '!=', JobStatus::Completed)
+                                ->get();
+
+                            foreach ($videos as $video) {
+                                TranscribeSermonVideo::dispatch($video);
+                            }
+
+                            Notification::make()
+                                ->title('Transcription queued')
+                                ->body("Dispatched transcription for {$videos->count()} sermon video(s).")
+                                ->success()
+                                ->send();
+                        }),
+
+                    Action::make('convert_missing_to_vertical')
+                        ->label('Convert Missing to Vertical')
+                        ->icon('heroicon-o-device-phone-mobile')
+                        ->requiresConfirmation()
+                        ->visible(fn () => SermonVideo::where('vertical_video_status', '!=', JobStatus::Completed)->exists())
+                        ->action(function () {
+                            $videos = SermonVideo::where('vertical_video_status', '!=', JobStatus::Completed)
+                                ->get();
+
+                            foreach ($videos as $video) {
+                                ConvertToVerticalVideo::dispatch($video);
+                            }
+
+                            Notification::make()
+                                ->title('Vertical conversion queued')
+                                ->body("Dispatched vertical conversion for {$videos->count()} sermon video(s).")
+                                ->success()
+                                ->send();
+                        }),
+
+                    Action::make('extract_missing_frames')
+                        ->label('Extract Missing Frames')
+                        ->icon('heroicon-o-camera')
+                        ->requiresConfirmation()
+                        ->visible(fn () => SermonVideo::whereNull('preview_frame_path')->exists())
+                        ->action(function () {
+                            $videos = SermonVideo::whereNull('preview_frame_path')
+                                ->get();
+
+                            foreach ($videos as $video) {
+                                ExtractPreviewFrame::dispatch($video);
+                            }
+
+                            Notification::make()
+                                ->title('Frame extraction queued')
+                                ->body("Dispatched frame extraction for {$videos->count()} sermon video(s).")
+                                ->success()
+                                ->send();
+                        }),
+                ])->dropdown(false),
+            ])
+                ->icon('heroicon-o-cog-6-tooth')
+                ->label('')
+                ->color('gray')
+                ->button()
+                ->dropdownWidth(Width::ExtraSmall)
+                ->dropdownOffset(16),
         ];
     }
 
