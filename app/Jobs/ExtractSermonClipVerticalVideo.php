@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Enums\JobStatus;
+use App\Events\SermonClipUpdated;
 use App\Models\SermonClip;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -45,6 +46,9 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 'clip_video_started_at' => now(),
                 'clip_video_completed_at' => null,
             ]);
+
+            broadcast(new SermonClipUpdated($sermonClip->id));
+
             if ($sermonVideo->vertical_video_status !== JobStatus::Completed || $sermonVideo->vertical_video_path === null) {
                 throw new \RuntimeException('Sermon video does not have a completed vertical video');
             }
@@ -91,6 +95,8 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 'clip_video_path' => $outputRelativePath,
                 'clip_video_completed_at' => now(),
             ]);
+
+            broadcast(new SermonClipUpdated($sermonClip->id));
         } catch (\Throwable $e) {
             Log::error('Sermon clip vertical video extraction failed', [
                 'sermon_clip_id' => $sermonClip->id,
@@ -102,6 +108,8 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 'clip_video_status' => JobStatus::Failed,
                 'clip_video_error' => $e->getMessage(),
             ]);
+
+            broadcast(new SermonClipUpdated($sermonClip->id));
         }
     }
 }

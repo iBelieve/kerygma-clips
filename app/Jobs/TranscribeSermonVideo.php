@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Enums\JobStatus;
+use App\Events\SermonVideoUpdated;
 use App\Models\SermonVideo;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -49,6 +50,8 @@ class TranscribeSermonVideo implements ShouldBeUnique, ShouldQueue
             'transcription_started_at' => now(),
             'transcription_completed_at' => null,
         ]);
+
+        broadcast(new SermonVideoUpdated($this->sermonVideo->id));
 
         $disk = Storage::disk('sermon_videos');
         $absolutePath = $disk->path($this->sermonVideo->raw_video_path);
@@ -101,6 +104,8 @@ class TranscribeSermonVideo implements ShouldBeUnique, ShouldQueue
                 'transcript' => $transcript,
                 'transcription_completed_at' => now(),
             ]);
+
+            broadcast(new SermonVideoUpdated($this->sermonVideo->id));
         } catch (\Throwable $e) {
             $isTimeout = $e instanceof ProcessTimedOutException;
 
@@ -113,6 +118,8 @@ class TranscribeSermonVideo implements ShouldBeUnique, ShouldQueue
                 'transcript_status' => $isTimeout ? JobStatus::TimedOut : JobStatus::Failed,
                 'transcript_error' => $e->getMessage(),
             ]);
+
+            broadcast(new SermonVideoUpdated($this->sermonVideo->id));
         } finally {
             $this->cleanupDirectory($outputDir);
         }
@@ -132,6 +139,8 @@ class TranscribeSermonVideo implements ShouldBeUnique, ShouldQueue
             'transcript_status' => $isTimeout ? JobStatus::TimedOut : JobStatus::Failed,
             'transcript_error' => $exception->getMessage(),
         ]);
+
+        broadcast(new SermonVideoUpdated($this->sermonVideo->id));
     }
 
     private function cleanupDirectory(string $dir): void

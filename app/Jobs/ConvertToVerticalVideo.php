@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Enums\JobStatus;
+use App\Events\SermonVideoUpdated;
 use App\Models\SermonVideo;
 use App\Services\VideoProbe;
 use Illuminate\Bus\Queueable;
@@ -50,6 +51,8 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
             'vertical_video_started_at' => now(),
             'vertical_video_completed_at' => null,
         ]);
+
+        broadcast(new SermonVideoUpdated($this->sermonVideo->id));
 
         $inputDisk = Storage::disk('sermon_videos');
         $outputDisk = Storage::disk('public');
@@ -108,6 +111,8 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
                 'vertical_video_completed_at' => now(),
             ]);
 
+            broadcast(new SermonVideoUpdated($this->sermonVideo->id));
+
             foreach ($this->sermonVideo->sermonClips as $clip) {
                 ExtractSermonClipVerticalVideo::dispatch($clip);
             }
@@ -123,6 +128,8 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
                 'vertical_video_status' => $isTimeout ? JobStatus::TimedOut : JobStatus::Failed,
                 'vertical_video_error' => $e->getMessage(),
             ]);
+
+            broadcast(new SermonVideoUpdated($this->sermonVideo->id));
         }
     }
 
@@ -140,5 +147,7 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
             'vertical_video_status' => $isTimeout ? JobStatus::TimedOut : JobStatus::Failed,
             'vertical_video_error' => $exception->getMessage(),
         ]);
+
+        broadcast(new SermonVideoUpdated($this->sermonVideo->id));
     }
 }
