@@ -3,11 +3,7 @@
 namespace App\Filament\Resources\SermonClips\Tables;
 
 use App\Enums\JobStatus;
-use App\Jobs\ExtractSermonClipVerticalVideo;
-use App\Jobs\GenerateSermonClipTitle;
 use App\Models\SermonClip;
-use Filament\Actions\Action;
-use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -96,44 +92,6 @@ class SermonClipsTable
                     ->since()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->recordActions([
-                Action::make('generate_title')
-                    ->label('Generate Title')
-                    ->icon('heroicon-o-sparkles')
-                    ->color('gray')
-                    ->requiresConfirmation()
-                    ->action(function (SermonClip $record) {
-                        GenerateSermonClipTitle::dispatch($record);
-
-                        Notification::make()
-                            ->title('Title generation queued')
-                            ->body('AI title generation has been dispatched.')
-                            ->success()
-                            ->send();
-                    }),
-
-                Action::make('extract_video')
-                    ->label(fn (SermonClip $record): string => $record->clip_video_status === JobStatus::Completed ? 'Regenerate Video' : 'Extract Video')
-                    ->icon('heroicon-o-film')
-                    ->color(fn (SermonClip $record): string => $record->clip_video_status === JobStatus::Completed ? 'warning' : 'primary')
-                    ->requiresConfirmation()
-                    ->action(function (SermonClip $record) {
-                        ExtractSermonClipVerticalVideo::dispatch($record);
-
-                        Notification::make()
-                            ->title('Clip extraction queued')
-                            ->body('Clip video extraction has been dispatched.')
-                            ->success()
-                            ->send();
-                    }),
-
-                Action::make('delete')
-                    ->label('Delete')
-                    ->icon('heroicon-o-trash')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(fn (SermonClip $record) => $record->delete()),
             ])
             ->defaultSort('created_at', 'desc')
             ->paginated([10]);
