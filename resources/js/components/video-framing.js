@@ -1,4 +1,4 @@
-export default function videoFraming({ cropCenter, videoId }) {
+export default function videoFraming({ cropCenter }) {
     return {
         cropCenter,
         originalCropCenter: cropCenter,
@@ -70,7 +70,7 @@ export default function videoFraming({ cropCenter, videoId }) {
 
         async save() {
             this.saving = true;
-            await this.$wire.updateVideoFraming(videoId, this.cropCenter);
+            await this.$wire.updateVideoFraming(this.cropCenter);
             this.originalCropCenter = this.cropCenter;
             this.saving = false;
         },

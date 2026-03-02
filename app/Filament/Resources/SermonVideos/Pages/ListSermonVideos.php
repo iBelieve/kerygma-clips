@@ -162,19 +162,4 @@ class ListSermonVideos extends ListRecords
                 ->dropdownOffset(16),
         ];
     }
-
-    public function updateVideoFraming(int $videoId, int $cropCenter): void
-    {
-        $video = SermonVideo::findOrFail($videoId);
-        $video->update(['vertical_video_crop_center' => $cropCenter]);
-        ConvertToVerticalVideo::dispatch($video);
-
-        Notification::make()
-            ->title('Framing updated')
-            ->body('Vertical video conversion has been re-queued.')
-            ->success()
-            ->send();
-
-        $this->unmountAction();
-    }
 }

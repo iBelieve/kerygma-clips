@@ -96,6 +96,22 @@ class ViewSermonVideo extends ViewRecord
         ];
     }
 
+    public function updateVideoFraming(int $cropCenter): void
+    {
+        $video = $this->getRecord();
+
+        $video->update(['vertical_video_crop_center' => $cropCenter]);
+        ConvertToVerticalVideo::dispatch($video);
+
+        Notification::make()
+            ->title('Framing updated')
+            ->body('Vertical video conversion has been re-queued.')
+            ->success()
+            ->send();
+
+        $this->unmountAction();
+    }
+
     /**
      * @return array{segments: list<array{start: float, end: float, text: string}>, clips: list<array{id: int, start: int, end: int}>}
      */

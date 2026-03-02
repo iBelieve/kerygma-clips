@@ -1,5 +1,5 @@
 <div
-    x-data="videoFraming({ cropCenter: @js($record->vertical_video_crop_center), videoId: @js($record->id) })"
+    x-data="videoFraming({ cropCenter: @js($record->vertical_video_crop_center) })"
     x-on:mousemove.window="onDrag($event)"
     x-on:mouseup.window="endDrag()"
     x-bind:class="{ 'select-none': dragging }"
