@@ -6,9 +6,9 @@ class CaptionGenerator
 {
     private const FONT_SIZE = 120;
 
-    private const OUTLINE_SIZE = 17;
+    private const OUTLINE_SIZE = 10;
 
-    private const MARGIN_VERTICAL = 250;
+    private const MARGIN_VERTICAL = 350;
 
     private const MARGIN_HORIZONTAL = 40;
 
