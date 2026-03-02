@@ -10,11 +10,11 @@ class CaptionGenerator
 
     private const MARGIN_VERTICAL = 350;
 
-    private const MARGIN_HORIZONTAL = 40;
+    private const MARGIN_HORIZONTAL = 80;
 
-    private const MAX_WORDS_PER_PHRASE = 5;
+    private const MAX_WORDS_PER_PHRASE = 10;
 
-    private const TARGET_WORDS_PER_PHRASE = 3;
+    private const TARGET_WORDS_PER_PHRASE = 6;
 
     private const MIN_WORDS_FOR_COMMA_BREAK = 3;
 
