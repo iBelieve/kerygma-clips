@@ -6,6 +6,37 @@ beforeEach(function () {
     $this->generator = new CaptionGenerator;
 });
 
+/**
+ * Extract all Dialogue lines from ASS output.
+ *
+ * @return array<int, string>
+ */
+function dialogueLines(string $ass): array
+{
+    preg_match_all('/^Dialogue: .+$/m', $ass, $matches);
+
+    return $matches[0];
+}
+
+/**
+ * Strip ASS override tags from text, returning plain words.
+ */
+function stripOverrides(string $text): string
+{
+    return preg_replace('/\{[^}]*\}/', '', $text);
+}
+
+/**
+ * Extract the text portion from a Dialogue line (everything after the 9th comma).
+ */
+function dialogueText(string $line): string
+{
+    // Dialogue: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
+    $parts = explode(',', $line, 10);
+
+    return $parts[9] ?? '';
+}
+
 test('it generates valid ASS structure with header, styles, and events', function () {
     $segments = [
         [
@@ -31,6 +62,40 @@ test('it generates valid ASS structure with header, styles, and events', functio
         ->toContain('Dialogue: 0,');
 });
 
+test('it emits one dialogue event per word with active word highlighted', function () {
+    $segments = [
+        [
+            'start' => 0.0,
+            'end' => 3.0,
+            'text' => 'Grace and mercy',
+            'words' => [
+                ['word' => 'Grace', 'start' => 0.0, 'end' => 0.5],
+                ['word' => 'and', 'start' => 0.6, 'end' => 0.8],
+                ['word' => 'mercy', 'start' => 0.9, 'end' => 1.5],
+            ],
+        ],
+    ];
+
+    $result = $this->generator->generateAss($segments, 0.0, 3.0);
+    $lines = dialogueLines($result);
+
+    // One dialogue event per word
+    expect($lines)->toHaveCount(3);
+
+    // First event: "Grace" is active (yellow outline), others are plain
+    expect($lines[0])
+        ->toContain('{\3c&H0000E5FF&}Grace{\3c&H00FFFFFF&}')
+        ->toContain(' and mercy');
+
+    // Second event: "and" is active
+    expect($lines[1])
+        ->toContain('Grace {\3c&H0000E5FF&}and{\3c&H00FFFFFF&} mercy');
+
+    // Third event: "mercy" is active
+    expect($lines[2])
+        ->toContain('Grace and {\3c&H0000E5FF&}mercy{\3c&H00FFFFFF&}');
+});
+
 test('it offsets timestamps relative to clip start', function () {
     $segments = [
         [
@@ -46,13 +111,16 @@ test('it offsets timestamps relative to clip start', function () {
     ];
 
     $result = $this->generator->generateAss($segments, 100.0, 105.0);
+    $lines = dialogueLines($result);
 
-    // Timestamps should be relative to clip start (0:00:00.00 based)
-    expect($result)
-        ->toContain('Dialogue: 0,0:00:00.00,0:00:01.50,Default,,0,0,0,,Grace and mercy');
+    // First word starts at 0:00:00.00 (100.0 - 100.0), ends at next word start 0:00:00.60
+    expect($lines[0])->toContain('0:00:00.00,0:00:00.60');
+
+    // Last word ends at phrase end 0:00:01.50
+    expect($lines[2])->toContain('0:00:00.90,0:00:01.50');
 });
 
-test('it groups words into phrases of approximately 5 words', function () {
+test('it groups words into phrases with target word count', function () {
     $words = [];
     for ($i = 0; $i < 15; $i++) {
         $words[] = ['word' => "word{$i}", 'start' => $i * 0.5, 'end' => $i * 0.5 + 0.4];
@@ -68,10 +136,22 @@ test('it groups words into phrases of approximately 5 words', function () {
     ];
 
     $result = $this->generator->generateAss($segments, 0.0, 8.0);
+    $lines = dialogueLines($result);
 
-    // Should produce 5 phrases of 3 words each
-    preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(5);
+    // 15 words → one dialogue event per word
+    expect($lines)->toHaveCount(15);
+
+    // First phrase has 6 words (target=6), so first 6 events share the same word set
+    $firstPhraseText = stripOverrides(dialogueText($lines[0]));
+    expect($firstPhraseText)->toBe('word0 word1 word2 word3 word4 word5');
+
+    // Second phrase starts at word6
+    $secondPhraseText = stripOverrides(dialogueText($lines[6]));
+    expect($secondPhraseText)->toBe('word6 word7 word8 word9 word10 word11');
+
+    // Third phrase: remaining 3 words
+    $thirdPhraseText = stripOverrides(dialogueText($lines[12]));
+    expect($thirdPhraseText)->toBe('word12 word13 word14');
 });
 
 test('it breaks phrases at sentence-ending punctuation', function () {
@@ -92,15 +172,18 @@ test('it breaks phrases at sentence-ending punctuation', function () {
     ];
 
     $result = $this->generator->generateAss($segments, 0.0, 5.0);
+    $lines = dialogueLines($result);
 
-    // Should break at periods and target word count
-    expect($result)
-        ->toContain('Hello world.')
-        ->toContain('This is a')
-        ->toContain('test.');
+    // 6 words → 6 events (2 in first phrase, 4 in second)
+    expect($lines)->toHaveCount(6);
 
-    preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(3);
+    // First phrase: "Hello world."
+    $phrase1 = stripOverrides(dialogueText($lines[0]));
+    expect($phrase1)->toBe('Hello world.');
+
+    // Second phrase: "This is a test."
+    $phrase2 = stripOverrides(dialogueText($lines[2]));
+    expect($phrase2)->toBe('This is a test.');
 });
 
 test('it breaks phrases at comma with 3+ words accumulated', function () {
@@ -122,14 +205,18 @@ test('it breaks phrases at comma with 3+ words accumulated', function () {
     ];
 
     $result = $this->generator->generateAss($segments, 0.0, 5.0);
+    $lines = dialogueLines($result);
 
-    expect($result)
-        ->toContain('Grace and mercy,')
-        ->toContain('and peace are')
-        ->toContain('yours');
+    // 7 words → 7 events (3 in first phrase, 4 in second)
+    expect($lines)->toHaveCount(7);
 
-    preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(3);
+    // First phrase breaks at comma: "Grace and mercy,"
+    $phrase1 = stripOverrides(dialogueText($lines[0]));
+    expect($phrase1)->toBe('Grace and mercy,');
+
+    // Second phrase: "and peace are yours"
+    $phrase2 = stripOverrides(dialogueText($lines[3]));
+    expect($phrase2)->toBe('and peace are yours');
 });
 
 test('it does not break at comma with fewer than 3 words', function () {
@@ -148,13 +235,13 @@ test('it does not break at comma with fewer than 3 words', function () {
     ];
 
     $result = $this->generator->generateAss($segments, 0.0, 3.0);
+    $lines = dialogueLines($result);
 
-    // "Yes," is only 1 word, so no break at comma — but target of 3 words triggers a break
-    preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(2);
-    expect($result)
-        ->toContain('Yes, indeed it')
-        ->toContain('is');
+    // "Yes," is only 1 word, no comma break; 4 words < target of 6 → single phrase
+    expect($lines)->toHaveCount(4);
+
+    $phrase = stripOverrides(dialogueText($lines[0]));
+    expect($phrase)->toBe('Yes, indeed it is');
 });
 
 test('it handles words without start timestamps', function () {
@@ -172,10 +259,12 @@ test('it handles words without start timestamps', function () {
     ];
 
     $result = $this->generator->generateAss($segments, 5.0, 10.0);
+    $lines = dialogueLines($result);
 
-    // Should not throw, should produce a dialogue line
-    expect($result)->toContain('Dialogue:');
-    expect($result)->toContain('Hello world today');
+    expect($lines)->toHaveCount(3);
+
+    $phrase = stripOverrides(dialogueText($lines[0]));
+    expect($phrase)->toBe('Hello world today');
 });
 
 test('it handles words without end timestamps', function () {
@@ -193,9 +282,12 @@ test('it handles words without end timestamps', function () {
     ];
 
     $result = $this->generator->generateAss($segments, 5.0, 10.0);
+    $lines = dialogueLines($result);
 
-    expect($result)->toContain('Dialogue:');
-    expect($result)->toContain('Hello world today');
+    expect($lines)->toHaveCount(3);
+
+    $phrase = stripOverrides(dialogueText($lines[0]));
+    expect($phrase)->toBe('Hello world today');
 });
 
 test('it handles segments with no words array', function () {
@@ -210,7 +302,9 @@ test('it handles segments with no words array', function () {
     $result = $this->generator->generateAss($segments, 0.0, 5.0);
 
     expect($result)->toContain('Dialogue:');
-    expect($result)->toContain('This is a');
+    // 8 words → events with active word highlighting
+    $lines = dialogueLines($result);
+    expect($lines)->toHaveCount(8);
 });
 
 test('it handles empty segments array', function () {
@@ -239,9 +333,9 @@ test('it handles single-word segments', function () {
 
     $result = $this->generator->generateAss($segments, 0.0, 1.0);
 
-    preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(1);
-    expect($result)->toContain('Amen');
+    $lines = dialogueLines($result);
+    expect($lines)->toHaveCount(1);
+    expect($lines[0])->toContain('{\3c&H0000E5FF&}Amen{\3c&H00FFFFFF&}');
 });
 
 test('it caps phrases at maximum word count', function () {
@@ -261,10 +355,22 @@ test('it caps phrases at maximum word count', function () {
     ];
 
     $result = $this->generator->generateAss($segments, 0.0, 6.25);
+    $lines = dialogueLines($result);
 
-    // With target of 3 words and hard cap of 5, 20 words should produce 7 phrases (6×3 + 1×2)
-    preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(7);
+    // 20 words → 20 dialogue events total
+    expect($lines)->toHaveCount(20);
+
+    // With target=6, phrases are: 6, 6, 6, 2
+    // Verify phrase boundaries by checking the word set in each phrase
+    $phrase1 = stripOverrides(dialogueText($lines[0]));
+    $phrase2 = stripOverrides(dialogueText($lines[6]));
+    $phrase3 = stripOverrides(dialogueText($lines[12]));
+    $phrase4 = stripOverrides(dialogueText($lines[18]));
+
+    expect($phrase1)->toBe('word0 word1 word2 word3 word4 word5');
+    expect($phrase2)->toBe('word6 word7 word8 word9 word10 word11');
+    expect($phrase3)->toBe('word12 word13 word14 word15 word16 word17');
+    expect($phrase4)->toBe('word18 word19');
 });
 
 test('it breaks phrases on silence gaps', function () {
@@ -285,13 +391,16 @@ test('it breaks phrases on silence gaps', function () {
     ];
 
     $result = $this->generator->generateAss($segments, 0.0, 5.0);
+    $lines = dialogueLines($result);
 
-    expect($result)
-        ->toContain('Hello world')
-        ->toContain('long pause here');
+    // 5 words → 5 events (2 in first phrase, 3 in second)
+    expect($lines)->toHaveCount(5);
 
-    preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(2);
+    $phrase1 = stripOverrides(dialogueText($lines[0]));
+    expect($phrase1)->toBe('Hello world');
+
+    $phrase2 = stripOverrides(dialogueText($lines[2]));
+    expect($phrase2)->toBe('long pause here');
 });
 
 test('it clamps phrase timing to clip bounds', function () {
@@ -311,7 +420,7 @@ test('it clamps phrase timing to clip bounds', function () {
     // Clip starts at 10.0, so "Before" starts before the clip
     $result = $this->generator->generateAss($segments, 10.0, 11.0);
 
-    // The phrase start should be clamped to 0:00:00.00
+    // The first word start should be clamped to 0:00:00.00
     expect($result)->toContain('0:00:00.00');
 });
 
@@ -400,13 +509,16 @@ test('it handles multiple segments', function () {
     ];
 
     $result = $this->generator->generateAss($segments, 10.0, 14.0);
+    $lines = dialogueLines($result);
 
-    // Words from both segments should appear (grouped into phrases of ~3 words)
-    // 7 total words => phrases of 3, 3, 1
-    preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(3);
-    expect($result)
-        ->toContain('First segment words')
-        ->toContain('here Second segment')
-        ->toContain('now');
+    // 7 total words < target of 6… wait, 7 > 6, so first phrase takes 6, second takes 1
+    expect($lines)->toHaveCount(7);
+
+    // First phrase: 6 words spanning both segments
+    $phrase1 = stripOverrides(dialogueText($lines[0]));
+    expect($phrase1)->toBe('First segment words here Second segment');
+
+    // Second phrase: remaining word
+    $phrase2 = stripOverrides(dialogueText($lines[6]));
+    expect($phrase2)->toBe('now');
 });

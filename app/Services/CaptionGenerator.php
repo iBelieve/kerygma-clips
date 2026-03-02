@@ -20,6 +20,12 @@ class CaptionGenerator
 
     private const SILENCE_GAP_THRESHOLD = 0.7;
 
+    /** Active word outline colour (ASS BGR format — yellow/amber). */
+    private const ACTIVE_WORD_COLOUR = '&H0000E5FF&';
+
+    /** Default outline colour (ASS BGR format — white). */
+    private const DEFAULT_OUTLINE_COLOUR = '&H00FFFFFF&';
+
     /**
      * Generate ASS subtitle content from transcript segments.
      *
@@ -58,10 +64,20 @@ class CaptionGenerator
         $events .= "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n";
 
         foreach ($phrases as $phrase) {
-            $start = $this->formatAssTimestamp($phrase['start']);
-            $end = $this->formatAssTimestamp($phrase['end']);
-            $text = $this->escapeAssText($phrase['text']);
-            $events .= "Dialogue: 0,{$start},{$end},Default,,0,0,0,,{$text}\n";
+            $phraseWords = $phrase['words'];
+
+            foreach ($phraseWords as $activeIndex => $activeWord) {
+                $start = $this->formatAssTimestamp($activeWord['start']);
+
+                // This word's event lasts until the next word starts, or phrase ends
+                $endTime = isset($phraseWords[$activeIndex + 1])
+                    ? $phraseWords[$activeIndex + 1]['start']
+                    : $phrase['end'];
+                $end = $this->formatAssTimestamp($endTime);
+
+                $text = $this->buildHighlightedText($phraseWords, $activeIndex);
+                $events .= "Dialogue: 0,{$start},{$end},Default,,0,0,0,,{$text}\n";
+            }
         }
 
         // Dedent the heredoc sections (they are indented for readability)
@@ -99,6 +115,28 @@ class CaptionGenerator
     }
 
     /**
+     * Build phrase text with ASS override tags highlighting the active word's outline.
+     *
+     * @param  array<int, array{word: string, start: float, end: float}>  $words
+     */
+    private function buildHighlightedText(array $words, int $activeIndex): string
+    {
+        $parts = [];
+
+        foreach ($words as $i => $word) {
+            $escaped = $this->escapeAssText($word['word']);
+
+            if ($i === $activeIndex) {
+                $parts[] = '{\3c'.self::ACTIVE_WORD_COLOUR.'}'.$escaped.'{\3c'.self::DEFAULT_OUTLINE_COLOUR.'}';
+            } else {
+                $parts[] = $escaped;
+            }
+        }
+
+        return implode(' ', $parts);
+    }
+
+    /**
      * Escape special ASS characters in dialogue text.
      */
     private function escapeAssText(string $text): string
@@ -114,7 +152,7 @@ class CaptionGenerator
      * Extract all words from the given segments and group them into short phrases.
      *
      * @param  array<int, array{start: float, end: float, text: string, words?: array<int, array{word: string, start?: float, end?: float, score?: float}>}>  $segments
-     * @return array<int, array{text: string, start: float, end: float}>
+     * @return array<int, array{text: string, start: float, end: float, words: array<int, array{word: string, start: float, end: float}>}>
      */
     private function buildPhrases(array $segments, float $clipStartTime, float $clipEndTime): array
     {
@@ -142,7 +180,11 @@ class CaptionGenerator
                 $phraseStart = $wordStart;
             }
             $phraseEnd = $wordEnd;
-            $currentWords[] = $word['word'];
+            $currentWords[] = [
+                'word' => $word['word'],
+                'start' => $wordStart,
+                'end' => $wordEnd,
+            ];
 
             $wordCount = count($currentWords);
             $isLast = ($i === count($words) - 1);
@@ -179,9 +221,10 @@ class CaptionGenerator
 
             if ($shouldBreak || $isLast) {
                 $phrases[] = [
-                    'text' => implode(' ', $currentWords),
+                    'text' => implode(' ', array_column($currentWords, 'word')),
                     'start' => $phraseStart,
                     'end' => $phraseEnd,
+                    'words' => $currentWords,
                 ];
                 $currentWords = [];
                 $phraseStart = null;
