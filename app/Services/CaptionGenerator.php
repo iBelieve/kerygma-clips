@@ -68,7 +68,7 @@ class CaptionGenerator
         $header = implode("\n", array_map('ltrim', explode("\n", $header)));
         $styles = implode("\n", array_map('ltrim', explode("\n", $styles)));
 
-        return $header . $styles . $events;
+        return $header.$styles.$events;
     }
 
     /**

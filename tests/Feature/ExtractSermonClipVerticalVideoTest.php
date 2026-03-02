@@ -439,7 +439,7 @@ test('job cleans up temporary ASS file after success', function () {
 
     (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
 
-    $tempFiles = glob(sys_get_temp_dir() . '/caption_*.ass');
+    $tempFiles = glob(sys_get_temp_dir().'/caption_*.ass');
     expect($tempFiles)->toBeEmpty();
 });
 
@@ -457,6 +457,6 @@ test('job cleans up temporary ASS file after failure', function () {
 
     (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
 
-    $tempFiles = glob(sys_get_temp_dir() . '/caption_*.ass');
+    $tempFiles = glob(sys_get_temp_dir().'/caption_*.ass');
     expect($tempFiles)->toBeEmpty();
 });

@@ -64,7 +64,7 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 $sermonClip->end_segment_index - $sermonClip->start_segment_index + 1
             );
             $assContent = $captionGenerator->generateAss($clipSegments, $startTime, $endTime);
-            $assPath = tempnam(sys_get_temp_dir(), 'caption_') . '.ass';
+            $assPath = tempnam(sys_get_temp_dir(), 'caption_').'.ass';
             file_put_contents($assPath, $assContent);
 
             $inputDisk = Storage::disk('public');
