@@ -20,11 +20,17 @@ class CaptionGenerator
 
     private const SILENCE_GAP_THRESHOLD = 0.7;
 
-    /** Active word text colour (ASS BGR format — yellow/amber). */
-    private const ACTIVE_WORD_COLOUR = '&H0000E5FF&';
+    /** Active word text colour (ASS BGR format — yellow 600). */
+    private const ACTIVE_WORD_COLOR = '&H0087D0&';
+
+    /** Active word text colour (ASS BGR format — yellow 50). */
+    private const ACTIVE_WORD_BORDER = '&HC2F9FE&';
 
     /** Default text colour (ASS BGR format — black). */
-    private const DEFAULT_TEXT_COLOUR = '&H00000000&';
+    private const DEFAULT_TEXT_COLOR = '&H00000000&';
+
+    /** Default text colour (ASS BGR format — white). */
+    private const DEFAULT_TEXT_BORDER = '&H00FFFFFF&';
 
     /**
      * Generate ASS subtitle content from transcript segments.
@@ -84,7 +90,7 @@ class CaptionGenerator
         $header = implode("\n", array_map('ltrim', explode("\n", $header)));
         $styles = implode("\n", array_map('ltrim', explode("\n", $styles)));
 
-        return $header.$styles.$events;
+        return $header . $styles . $events;
     }
 
     /**
@@ -127,7 +133,11 @@ class CaptionGenerator
             $escaped = $this->escapeAssText($word['word']);
 
             if ($i === $activeIndex) {
-                $parts[] = '{\1c'.self::ACTIVE_WORD_COLOUR.'}'.$escaped.'{\1c'.self::DEFAULT_TEXT_COLOUR.'}';
+                $parts[] = '{\1c' . self::ACTIVE_WORD_COLOR . '}' .
+                    '{\3c' . self::ACTIVE_WORD_BORDER . '}' .
+                    $escaped .
+                    '{\1c' . self::DEFAULT_TEXT_COLOR . '}' .
+                    '{\3c' . self::DEFAULT_TEXT_BORDER . '}';
             } else {
                 $parts[] = $escaped;
             }
