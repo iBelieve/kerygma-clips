@@ -84,16 +84,16 @@ test('it emits one dialogue event per word with active word highlighted', functi
 
     // First event: "Grace" is active (yellow outline), others are plain
     expect($lines[0])
-        ->toContain('{\3c&H0000E5FF&}Grace{\3c&H00FFFFFF&}')
+        ->toContain('{\1c&H0000E5FF&}Grace{\1c&H00000000&}')
         ->toContain(' and mercy');
 
     // Second event: "and" is active
     expect($lines[1])
-        ->toContain('Grace {\3c&H0000E5FF&}and{\3c&H00FFFFFF&} mercy');
+        ->toContain('Grace {\1c&H0000E5FF&}and{\1c&H00000000&} mercy');
 
     // Third event: "mercy" is active
     expect($lines[2])
-        ->toContain('Grace and {\3c&H0000E5FF&}mercy{\3c&H00FFFFFF&}');
+        ->toContain('Grace and {\1c&H0000E5FF&}mercy{\1c&H00000000&}');
 });
 
 test('it offsets timestamps relative to clip start', function () {
@@ -335,7 +335,7 @@ test('it handles single-word segments', function () {
 
     $lines = dialogueLines($result);
     expect($lines)->toHaveCount(1);
-    expect($lines[0])->toContain('{\3c&H0000E5FF&}Amen{\3c&H00FFFFFF&}');
+    expect($lines[0])->toContain('{\1c&H0000E5FF&}Amen{\1c&H00000000&}');
 });
 
 test('it caps phrases at maximum word count', function () {

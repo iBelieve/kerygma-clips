@@ -20,11 +20,11 @@ class CaptionGenerator
 
     private const SILENCE_GAP_THRESHOLD = 0.7;
 
-    /** Active word outline colour (ASS BGR format — yellow/amber). */
+    /** Active word text colour (ASS BGR format — yellow/amber). */
     private const ACTIVE_WORD_COLOUR = '&H0000E5FF&';
 
-    /** Default outline colour (ASS BGR format — white). */
-    private const DEFAULT_OUTLINE_COLOUR = '&H00FFFFFF&';
+    /** Default text colour (ASS BGR format — black). */
+    private const DEFAULT_TEXT_COLOUR = '&H00000000&';
 
     /**
      * Generate ASS subtitle content from transcript segments.
@@ -115,7 +115,7 @@ class CaptionGenerator
     }
 
     /**
-     * Build phrase text with ASS override tags highlighting the active word's outline.
+     * Build phrase text with ASS override tags highlighting the active word's text colour.
      *
      * @param  array<int, array{word: string, start: float, end: float}>  $words
      */
@@ -127,7 +127,7 @@ class CaptionGenerator
             $escaped = $this->escapeAssText($word['word']);
 
             if ($i === $activeIndex) {
-                $parts[] = '{\3c'.self::ACTIVE_WORD_COLOUR.'}'.$escaped.'{\3c'.self::DEFAULT_OUTLINE_COLOUR.'}';
+                $parts[] = '{\1c'.self::ACTIVE_WORD_COLOUR.'}'.$escaped.'{\1c'.self::DEFAULT_TEXT_COLOUR.'}';
             } else {
                 $parts[] = $escaped;
             }
