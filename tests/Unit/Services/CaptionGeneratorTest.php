@@ -52,7 +52,7 @@ test('it offsets timestamps relative to clip start', function () {
         ->toContain('Dialogue: 0,0:00:00.00,0:00:01.50,Default,,0,0,0,,Grace and mercy');
 });
 
-test('it groups words into phrases of approximately 5 words', function () {
+test('it groups words into phrases of approximately 6 words', function () {
     $words = [];
     for ($i = 0; $i < 15; $i++) {
         $words[] = ['word' => "word{$i}", 'start' => $i * 0.5, 'end' => $i * 0.5 + 0.4];
@@ -69,9 +69,9 @@ test('it groups words into phrases of approximately 5 words', function () {
 
     $result = $this->generator->generateAss($segments, 0.0, 8.0);
 
-    // Should produce 5 phrases of 3 words each
+    // Should produce 3 phrases: 6 + 6 + 3 words
     preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(5);
+    expect(count($matches[0]))->toBe(3);
 });
 
 test('it breaks phrases at sentence-ending punctuation', function () {
@@ -93,14 +93,13 @@ test('it breaks phrases at sentence-ending punctuation', function () {
 
     $result = $this->generator->generateAss($segments, 0.0, 5.0);
 
-    // Should break at periods and target word count
+    // Should break at periods: "Hello world." then "This is a test."
     expect($result)
         ->toContain('Hello world.')
-        ->toContain('This is a')
-        ->toContain('test.');
+        ->toContain('This is a test.');
 
     preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(3);
+    expect(count($matches[0]))->toBe(2);
 });
 
 test('it breaks phrases at comma with 3+ words accumulated', function () {
@@ -123,13 +122,13 @@ test('it breaks phrases at comma with 3+ words accumulated', function () {
 
     $result = $this->generator->generateAss($segments, 0.0, 5.0);
 
+    // Comma break after 3 words, remaining 4 words < target(6) → single phrase
     expect($result)
         ->toContain('Grace and mercy,')
-        ->toContain('and peace are')
-        ->toContain('yours');
+        ->toContain('and peace are yours');
 
     preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(3);
+    expect(count($matches[0]))->toBe(2);
 });
 
 test('it does not break at comma with fewer than 3 words', function () {
@@ -149,12 +148,11 @@ test('it does not break at comma with fewer than 3 words', function () {
 
     $result = $this->generator->generateAss($segments, 0.0, 3.0);
 
-    // "Yes," is only 1 word, so no break at comma — but target of 3 words triggers a break
+    // "Yes," is only 1 word, so no break at comma — and 4 words < target(6), so all in one phrase
     preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(2);
+    expect(count($matches[0]))->toBe(1);
     expect($result)
-        ->toContain('Yes, indeed it')
-        ->toContain('is');
+        ->toContain('Yes, indeed it is');
 });
 
 test('it handles words without start timestamps', function () {
@@ -262,9 +260,9 @@ test('it caps phrases at maximum word count', function () {
 
     $result = $this->generator->generateAss($segments, 0.0, 6.25);
 
-    // With target of 3 words and hard cap of 5, 20 words should produce 7 phrases (6×3 + 1×2)
+    // With target of 6 words and hard cap of 10, 20 words should produce 4 phrases (3×6 + 1×2)
     preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(7);
+    expect(count($matches[0]))->toBe(4);
 });
 
 test('it breaks phrases on silence gaps', function () {
@@ -401,12 +399,11 @@ test('it handles multiple segments', function () {
 
     $result = $this->generator->generateAss($segments, 10.0, 14.0);
 
-    // Words from both segments should appear (grouped into phrases of ~3 words)
-    // 7 total words => phrases of 3, 3, 1
+    // Words from both segments should appear (grouped into phrases of ~6 words)
+    // 7 total words => phrases of 6 + 1
     preg_match_all('/Dialogue:/', $result, $matches);
-    expect(count($matches[0]))->toBe(3);
+    expect(count($matches[0]))->toBe(2);
     expect($result)
-        ->toContain('First segment words')
-        ->toContain('here Second segment')
+        ->toContain('First segment words here Second segment')
         ->toContain('now');
 });
