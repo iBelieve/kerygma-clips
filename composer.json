@@ -13,6 +13,7 @@
         "filament/filament": "^4.5",
         "laravel/ai": "^0.2.1",
         "laravel/framework": "^12.0",
+        "laravel/reverb": "^1.8",
         "laravel/tinker": "^2.10.1"
     },
     "require-dev": {
@@ -53,7 +54,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fbbf24,#fdba74,#86efac\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan queue:listen --queue=transcription --timeout=3600 --tries=1\" \"php artisan queue:listen --queue=video-processing --timeout=7200 --tries=1\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,transcription,video,logs,vite --kill-others"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fbbf24,#fdba74,#86efac,#7dd3fc\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan queue:listen --queue=transcription --timeout=3600 --tries=1\" \"php artisan queue:listen --queue=video-processing --timeout=7200 --tries=1\" \"php artisan pail --timeout=0\" \"npm run dev\" \"php artisan reverb:start\" --names=server,queue,transcription,video,logs,vite,reverb --kill-others"
         ],
         "analyze": [
             "./vendor/bin/phpstan analyse"

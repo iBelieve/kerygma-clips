@@ -15,6 +15,17 @@ class ListSermonClips extends ListRecords
 {
     protected static string $resource = SermonClipResource::class;
 
+    /**
+     * @return array<string, string>
+     */
+    protected function getListeners(): array
+    {
+        return [
+            'echo-private:sermon-updates,SermonClipUpdated' => '$refresh',
+            'echo-private:sermon-updates,SermonVideoUpdated' => '$refresh',
+        ];
+    }
+
     protected function getHeaderActions(): array
     {
         return [

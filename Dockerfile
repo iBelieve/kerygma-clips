@@ -51,6 +51,8 @@ COPY --link resources/views resources/views
 COPY --link --from=composer /app/app app
 COPY --link --from=composer /app/vendor vendor
 
+ARG VITE_REVERB_APP_KEY=""
+
 RUN npm run build
 
 ##### Python Dependencies #####

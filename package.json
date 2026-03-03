@@ -17,9 +17,11 @@
         "@tailwindcss/vite": "^4.2.0",
         "axios": "^1.11.0",
         "concurrently": "^9.0.1",
+        "laravel-echo": "^2.3.0",
         "laravel-vite-plugin": "^2.0.0",
         "lint-staged": "^16.2.7",
         "prettier": "^3.7.4",
+        "pusher-js": "^8.4.0",
         "tailwindcss": "^4.2.0",
         "vite": "^7.0.7"
     }
