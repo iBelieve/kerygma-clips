@@ -116,3 +116,66 @@ test('edit page can save the title', function () {
 
     expect($clip->refresh()->title)->toBe('New Title');
 });
+
+test('getTranscriptText returns joined segment text', function () {
+    $video = createVideoWithTranscript();
+    $clip = $video->sermonClips()->create([
+        'start_segment_index' => 2,
+        'end_segment_index' => 4,
+    ]);
+
+    expect($clip->getTranscriptText())->toBe('Segment 2 Segment 3 Segment 4');
+});
+
+test('description is auto-populated on creation', function () {
+    $video = createVideoWithTranscript();
+    $clip = $video->sermonClips()->create([
+        'start_segment_index' => 1,
+        'end_segment_index' => 3,
+    ]);
+
+    expect($clip->description)->toBe('Segment 1 Segment 2 Segment 3');
+});
+
+test('description is not overwritten on update', function () {
+    $video = createVideoWithTranscript();
+    $clip = $video->sermonClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 2,
+    ]);
+
+    $clip->update(['description' => 'Custom description']);
+
+    Livewire::test(EditSermonClip::class, ['record' => $clip->id])
+        ->fillForm(['title' => 'Updated Title'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($clip->refresh()->description)->toBe('Custom description');
+});
+
+test('edit page has description field', function () {
+    $video = createVideoWithTranscript();
+    $clip = $video->sermonClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+    ]);
+
+    Livewire::test(EditSermonClip::class, ['record' => $clip->id])
+        ->assertFormFieldExists('description');
+});
+
+test('reset description action restores transcript text', function () {
+    $video = createVideoWithTranscript();
+    $clip = $video->sermonClips()->create([
+        'start_segment_index' => 2,
+        'end_segment_index' => 4,
+    ]);
+
+    $clip->update(['description' => 'Custom text']);
+
+    Livewire::test(EditSermonClip::class, ['record' => $clip->id])
+        ->assertFormSet(['description' => 'Custom text'])
+        ->callFormComponentAction('description', 'resetDescription')
+        ->assertFormSet(['description' => 'Segment 2 Segment 3 Segment 4']);
+});

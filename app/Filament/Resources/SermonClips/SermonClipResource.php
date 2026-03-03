@@ -7,8 +7,11 @@ use App\Filament\Resources\SermonClips\Pages\ListSermonClips;
 use App\Filament\Resources\SermonClips\Tables\SermonClipsTable;
 use App\Models\SermonClip;
 use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
@@ -25,6 +28,18 @@ class SermonClipResource extends Resource
             ->components([
                 TextInput::make('title')
                     ->label('Title'),
+
+                Textarea::make('description')
+                    ->label('Description')
+                    ->autosize()
+                    ->hintAction(
+                        Action::make('resetDescription')
+                            ->label('Reset to Transcript')
+                            ->icon(Heroicon::OutlinedArrowPath)
+                            ->action(function (Set $set, SermonClip $record) {
+                                $set('description', $record->getTranscriptText());
+                            })
+                    ),
             ]);
     }
 
