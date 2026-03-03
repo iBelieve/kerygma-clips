@@ -75,7 +75,7 @@ class EditSermonClip extends EditRecord
     }
 
     /**
-     * @return list<array{type: string, timestamp?: string, text?: string, label?: string}>
+     * @return list<array{type: string, timestamp?: string, text?: string, label?: string, segmentIndex?: int, words?: list<array{word: string, start?: float, end?: float, score?: float}>}>
      */
     #[Computed]
     public function transcriptRows(): array
@@ -101,7 +101,7 @@ class EditSermonClip extends EditRecord
         $rows = [];
         $previousEnd = null;
 
-        foreach ($clipSegments as $segment) {
+        foreach ($clipSegments as $localIndex => $segment) {
             if ($previousEnd !== null) {
                 $gap = $segment['start'] - $previousEnd;
                 if ($gap > 2) {
@@ -116,12 +116,77 @@ class EditSermonClip extends EditRecord
                 'type' => 'segment',
                 'timestamp' => $this->formatTimestamp($segment['start'], $useHours),
                 'text' => trim($segment['text']),
+                'segmentIndex' => $clip->start_segment_index + $localIndex,
+                'words' => $segment['words'] ?? [],
             ];
 
             $previousEnd = $segment['end'];
         }
 
         return $rows;
+    }
+
+    /**
+     * Update the word texts for a transcript segment.
+     *
+     * @param  list<string>  $words  The updated word texts (one per existing word)
+     */
+    public function updateSegmentWords(int $segmentIndex, array $words): void
+    {
+        $clip = $this->getRecord();
+
+        if ($segmentIndex < $clip->start_segment_index || $segmentIndex > $clip->end_segment_index) {
+            return;
+        }
+
+        $sermonVideo = $clip->sermonVideo;
+        $transcript = $sermonVideo->transcript;
+        $segment = $transcript['segments'][$segmentIndex] ?? null;
+
+        if ($segment === null) {
+            return;
+        }
+
+        $existingWords = $segment['words'] ?? [];
+
+        if (count($words) !== count($existingWords)) {
+            return;
+        }
+
+        // Trim and validate no empty words
+        $words = array_map('trim', $words);
+        foreach ($words as $word) {
+            if ($word === '') {
+                return;
+            }
+        }
+
+        // Update each word's text
+        foreach ($existingWords as $i => $existingWord) {
+            $transcript['segments'][$segmentIndex]['words'][$i]['word'] = $words[$i];
+
+            // Sync the corresponding entry in word_segments (matched by start timestamp)
+            if (isset($transcript['word_segments']) && isset($existingWord['start'])) {
+                foreach ($transcript['word_segments'] as $j => $ws) {
+                    if (isset($ws['start']) && $ws['start'] === $existingWord['start']) {
+                        $transcript['word_segments'][$j]['word'] = $words[$i];
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Rebuild segment text (leading space matches WhisperX format)
+        $transcript['segments'][$segmentIndex]['text'] = ' '.implode(' ', $words);
+
+        $sermonVideo->update(['transcript' => $transcript]);
+
+        unset($this->transcriptRows);
+
+        Notification::make()
+            ->title('Segment updated')
+            ->success()
+            ->send();
     }
 
     private function formatTimestamp(float $seconds, bool $useHours): string
