@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\JobStatus;
 use App\Models\SermonClip;
+use App\Services\CaptionGenerator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -33,10 +34,11 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
         $this->onQueue('video-processing');
     }
 
-    public function handle(): void
+    public function handle(CaptionGenerator $captionGenerator): void
     {
         $sermonClip = $this->sermonClip;
         $sermonVideo = $sermonClip->sermonVideo;
+        $assPath = null;
 
         try {
             $sermonClip->update([
@@ -51,7 +53,19 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
 
             $sermonClip->refresh();
             $startTime = $sermonClip->starts_at;
+            $endTime = $sermonClip->ends_at;
             $duration = $sermonClip->duration;
+
+            // Generate ASS captions from transcript word-level data
+            $segments = $sermonVideo->transcript['segments'] ?? [];
+            $clipSegments = array_slice(
+                $segments,
+                $sermonClip->start_segment_index,
+                $sermonClip->end_segment_index - $sermonClip->start_segment_index + 1
+            );
+            $assContent = $captionGenerator->generateAss($clipSegments, $startTime, $endTime);
+            $assPath = tempnam(sys_get_temp_dir(), 'caption_').'.ass';
+            file_put_contents($assPath, $assContent);
 
             $inputDisk = Storage::disk('public');
             $inputPath = $inputDisk->path($sermonVideo->vertical_video_path);
@@ -65,12 +79,14 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 mkdir($outputDir, 0755, true);
             }
 
+            $fontsDir = resource_path('fonts');
+
             $result = Process::timeout(300)->run([
                 'ffmpeg',
                 '-ss', (string) $startTime,
                 '-i', $inputPath,
                 '-t', (string) $duration,
-                '-vf', 'setpts=PTS-STARTPTS',
+                '-vf', "ass={$assPath}:fontsdir={$fontsDir},setpts=PTS-STARTPTS",
                 '-af', 'asetpts=PTS-STARTPTS',
                 '-c:v', 'libx264',
                 '-preset', 'medium',
@@ -102,6 +118,10 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
                 'clip_video_status' => JobStatus::Failed,
                 'clip_video_error' => $e->getMessage(),
             ]);
+        } finally {
+            if ($assPath !== null && file_exists($assPath)) {
+                unlink($assPath);
+            }
         }
     }
 }

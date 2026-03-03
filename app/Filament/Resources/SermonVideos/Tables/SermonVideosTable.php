@@ -3,11 +3,9 @@
 namespace App\Filament\Resources\SermonVideos\Tables;
 
 use App\Enums\JobStatus;
-use App\Jobs\ConvertToVerticalVideo;
-use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
-use Filament\Actions\Action;
-use Filament\Notifications\Notification;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -107,59 +105,11 @@ class SermonVideosTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->recordActions([
-                Action::make('transcribe')
-                    ->label('Transcribe')
-                    ->icon('heroicon-o-language')
-                    ->color('primary')
-                    ->visible(fn (SermonVideo $record): bool => $record->transcript_status !== JobStatus::Completed)
-                    ->requiresConfirmation()
-                    ->action(function (SermonVideo $record) {
-                        TranscribeSermonVideo::dispatch($record);
-
-                        Notification::make()
-                            ->title('Transcription queued')
-                            ->body('Transcription has been dispatched.')
-                            ->success()
-                            ->send();
-                    }),
-
-                Action::make('convert_to_vertical')
-                    ->label('Convert to Vertical')
-                    ->icon('heroicon-o-device-phone-mobile')
-                    ->color('primary')
-                    ->visible(fn (SermonVideo $record): bool => $record->vertical_video_status !== JobStatus::Completed)
-                    ->requiresConfirmation()
-                    ->action(function (SermonVideo $record) {
-                        ConvertToVerticalVideo::dispatch($record);
-
-                        Notification::make()
-                            ->title('Vertical conversion queued')
-                            ->body('Vertical video conversion has been dispatched.')
-                            ->success()
-                            ->send();
-                    }),
-
-                Action::make('framing')
-                    ->label('Framing')
-                    ->icon('heroicon-o-viewfinder-circle')
-                    ->color('primary')
-                    ->visible(fn (SermonVideo $record): bool => $record->preview_frame_path !== null)
-                    ->modalHeading('Video Framing')
-                    ->modalSubmitAction(false)
-                    ->modalCancelActionLabel('Close')
-                    ->modalWidth('3xl')
-                    ->modalContent(fn (SermonVideo $record): \Illuminate\Contracts\View\View => view(
-                        'filament.resources.sermon-videos.video-framing-modal',
-                        ['record' => $record]
-                    )),
-
-                Action::make('delete')
-                    ->label('Delete')
-                    ->icon('heroicon-o-trash')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalDescription('This will delete the sermon video record and all associated clips. The original video file will not be deleted.')
-                    ->action(fn (SermonVideo $record) => $record->delete()),
+                ActionGroup::make([
+                    DeleteAction::make()
+                        ->modalDescription('This will delete the sermon video record and all associated clips. The original video file will not be deleted.'),
+                ])
+                    ->color('gray'),
             ])
             ->defaultSort('date', 'desc')
             ->paginated([10]);

@@ -8,7 +8,10 @@ use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Jobs\GenerateSermonClipTitle;
 use App\Jobs\PublishSermonClipToFacebook;
 use App\Models\SermonClip;
+use App\Services\FacebookReelsService;
+use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Textarea;
@@ -29,42 +32,11 @@ class EditSermonClip extends EditRecord
     protected string $view = 'filament.resources.sermon-clips.edit-sermon-clip';
 
     /**
-     * @return array<Action|DeleteAction>
+     * @return array<Action|ActionGroup>
      */
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('generate_title')
-                ->label('Generate Title')
-                ->icon('heroicon-o-sparkles')
-                ->color('gray')
-                ->requiresConfirmation()
-                ->action(function () {
-                    GenerateSermonClipTitle::dispatch($this->getRecord());
-
-                    Notification::make()
-                        ->title('Title generation queued')
-                        ->body('AI title generation has been dispatched.')
-                        ->success()
-                        ->send();
-                }),
-
-            Action::make('extract_video')
-                ->label('Extract Video')
-                ->icon('heroicon-o-film')
-                ->color('primary')
-                ->visible(fn (): bool => $this->getRecord()->clip_video_status !== JobStatus::Completed)
-                ->requiresConfirmation()
-                ->action(function () {
-                    ExtractSermonClipVerticalVideo::dispatch($this->getRecord());
-
-                    Notification::make()
-                        ->title('Clip extraction queued')
-                        ->body('Clip video extraction has been dispatched.')
-                        ->success()
-                        ->send();
-                }),
-
             Action::make('publish_to_facebook')
                 ->label('Publish to Facebook')
                 ->icon('heroicon-o-arrow-up-tray')
@@ -100,7 +72,74 @@ class EditSermonClip extends EditRecord
                         ->send();
                 }),
 
-            DeleteAction::make(),
+            ActionGroup::make([
+                Action::make('generate_title')
+                    ->label('Generate Title')
+                    ->icon('heroicon-o-sparkles')
+                    ->action(function () {
+                        GenerateSermonClipTitle::dispatch($this->getRecord());
+
+                        Notification::make()
+                            ->title('Title generation queued')
+                            ->body('AI title generation has been dispatched.')
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('extract_video')
+                    ->label(fn () => $this->getRecord()->clip_video_status === JobStatus::Completed ? 'Re-extract Video' : 'Extract Video')
+                    ->icon('heroicon-o-film')
+                    ->action(function () {
+                        ExtractSermonClipVerticalVideo::dispatch($this->getRecord());
+
+                        Notification::make()
+                            ->title('Clip extraction queued')
+                            ->body('Clip video extraction has been dispatched.')
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('check_reel_status')
+                    ->label('Check Reel Status')
+                    ->icon('heroicon-o-arrow-path')
+                    ->visible(fn (): bool => $this->getRecord()->fb_reel_status === JobStatus::Completed && $this->getRecord()->fb_reel_id !== null)
+                    ->action(function () {
+                        $record = $this->getRecord();
+
+                        try {
+                            $facebook = app(FacebookReelsService::class);
+                            $status = $facebook->getStatus($record->fb_reel_id);
+
+                            if ($record->fb_reel_published_at === null && isset($status['created_time'])) {
+                                $record->update([
+                                    'fb_reel_published_at' => CarbonImmutable::parse($status['created_time']),
+                                ]);
+                            }
+
+                            $videoStatus = $status['status']['video_status'] ?? 'unknown';
+
+                            Notification::make()
+                                ->title('Reel status: '.$videoStatus)
+                                ->body($record->fb_reel_published_at
+                                    ? 'Published at: '.$record->fb_reel_published_at->timezone('America/Chicago')->format('M j, Y g:i A')
+                                    : 'Not yet published')
+                                ->info()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title('Failed to check status')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
+                DeleteAction::make(),
+            ])
+                ->icon('heroicon-o-cog-6-tooth')
+                ->label('')
+                ->color('gray')
+                ->button(),
         ];
     }
 
