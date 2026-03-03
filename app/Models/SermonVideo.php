@@ -17,6 +17,10 @@ class SermonVideo extends Model
 
     protected $fillable = [
         'title',
+        'subtitle',
+        'scripture',
+        'preacher',
+        'color',
         'raw_video_path',
         'transcript_status',
         'transcript',
