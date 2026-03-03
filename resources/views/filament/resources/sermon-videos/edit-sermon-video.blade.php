@@ -1,4 +1,6 @@
 <x-filament-panels::page>
+    {{ $this->content }}
+
     @if (count($this->transcriptData['segments']))
         <div
             x-data="viewTranscript(@js($this->transcriptData))"

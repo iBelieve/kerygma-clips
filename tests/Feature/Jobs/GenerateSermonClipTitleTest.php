@@ -1,7 +1,7 @@
 <?php
 
 use App\Ai\Agents\SermonClipTitleGenerator;
-use App\Filament\Resources\SermonVideos\Pages\ViewSermonVideo;
+use App\Filament\Resources\SermonVideos\Pages\EditSermonVideo;
 use App\Jobs\GenerateSermonClipTitle;
 use App\Models\SermonVideo;
 use App\Models\User;
@@ -130,7 +130,7 @@ test('creating a clip dispatches GenerateSermonClipTitle', function () {
 
     $video = buildTitleTestSermonVideo();
 
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 2, 5);
 
     Queue::assertPushed(GenerateSermonClipTitle::class, function ($job) {
@@ -149,7 +149,7 @@ test('updating a clip with changed boundaries dispatches GenerateSermonClipTitle
         'end_segment_index' => 5,
     ]);
 
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('updateClip', $clip->id, 3, 6);
 
     Queue::assertPushed(GenerateSermonClipTitle::class);
@@ -165,7 +165,7 @@ test('updating a clip without changing boundaries does not dispatch GenerateSerm
         'end_segment_index' => 5,
     ]);
 
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('updateClip', $clip->id, 2, 5);
 
     Queue::assertNotPushed(GenerateSermonClipTitle::class);
