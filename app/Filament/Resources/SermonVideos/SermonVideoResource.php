@@ -24,7 +24,7 @@ class SermonVideoResource extends Resource
     {
         return $schema->components([
             TextInput::make('title'),
-            Grid::make(2)->schema([
+            Grid::make(2)->columnStart(1)->schema([
                 TextInput::make('subtitle'),
                 TextInput::make('scripture'),
             ]),
