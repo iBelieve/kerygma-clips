@@ -3,6 +3,7 @@
 use App\Jobs\ExtractPreviewFrame;
 use App\Jobs\ScanSermonVideos;
 use App\Models\SermonVideo;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -110,6 +111,7 @@ test('job does not overwrite existing frame path on failure', function () {
 
 test('scan dispatches frame extraction for videos without frames', function () {
     Queue::fake();
+    Http::fake();
 
     $videoWithFrame = SermonVideo::factory()->create([
         'preview_frame_path' => 'frames/existing.jpg',

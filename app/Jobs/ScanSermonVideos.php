@@ -12,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -63,8 +64,6 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
             if ($this->verbose) {
                 Log::warning('No video files found on the sermon_videos disk.');
             }
-
-            return;
         }
 
         $existingPaths = SermonVideo::whereIn('raw_video_path', $videoFiles)
@@ -157,8 +156,81 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
             Log::info("Dispatched preview frame extraction for {$missingFrames->count()} sermon videos.");
         }
 
+        $this->hydrateSermonMetadata();
+
         if ($this->verbose) {
             Log::info("Scan complete: {$created} created, {$skipped} skipped.");
+        }
+    }
+
+    private function hydrateSermonMetadata(): void
+    {
+        $metadataFields = ['title', 'subtitle', 'scripture', 'preacher', 'color'];
+
+        try {
+            $response = Http::get('https://mluther.org/api/sermons');
+
+            if ($response->failed()) {
+                Log::warning('Failed to fetch sermons API: HTTP '.$response->status());
+
+                return;
+            }
+
+            /** @var array<int, array{date: string, title: string, subtitle: string, scripture: string, color: string, preacher: string}> $sermonsData */
+            $sermonsData = $response->json('data', []);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to fetch sermons API: '.$e->getMessage());
+
+            return;
+        }
+
+        $sermons = collect($sermonsData)->map(fn (array $sermon) => [
+            ...$sermon,
+            'parsed_date' => Carbon::parse($sermon['date']),
+        ]);
+
+        $recentVideos = SermonVideo::latest('date')->take(10)->get();
+        foreach ($recentVideos as $video) {
+            $nullFields = array_filter($metadataFields, fn (string $field) => $video->{$field} === null);
+
+            if (empty($nullFields)) {
+                continue;
+            }
+
+            $videoDate = $video->date->setTimezone(self::TIMEZONE)->format('Y-m-d');
+
+            $sameDaySermons = $sermons->filter(
+                fn (array $sermon) => $sermon['parsed_date']->setTimezone(self::TIMEZONE)->format('Y-m-d') === $videoDate
+            );
+
+            if ($sameDaySermons->isEmpty()) {
+                continue;
+            }
+
+            $videoTimestamp = $video->date->getTimestamp();
+
+            $closestSermon = $sameDaySermons->reduce(function (?array $prev, array $curr) use ($videoTimestamp) {
+                if ($prev === null) {
+                    return $curr;
+                }
+
+                return abs($curr['parsed_date']->getTimestamp() - $videoTimestamp)
+                    < abs($prev['parsed_date']->getTimestamp() - $videoTimestamp)
+                    ? $curr
+                    : $prev;
+            });
+
+            foreach ($nullFields as $field) {
+                if (isset($closestSermon[$field])) {
+                    $video->{$field} = $closestSermon[$field];
+                }
+            }
+
+            $video->save();
+        }
+
+        if ($this->verbose) {
+            Log::info('Sermon metadata hydration complete.');
         }
     }
 

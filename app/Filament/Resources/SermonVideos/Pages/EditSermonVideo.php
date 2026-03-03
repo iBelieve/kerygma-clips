@@ -13,21 +13,21 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\ViewRecord;
+use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Computed;
 
 /**
- * @extends ViewRecord<SermonVideo>
+ * @extends EditRecord<SermonVideo>
  *
  * @method SermonVideo getRecord()
  */
-class ViewSermonVideo extends ViewRecord
+class EditSermonVideo extends EditRecord
 {
     protected static string $resource = SermonVideoResource::class;
 
-    protected string $view = 'filament.resources.sermon-videos.view-sermon-video';
+    protected string $view = 'filament.resources.sermon-videos.edit-sermon-video';
 
     public function getTitle(): string|Htmlable
     {

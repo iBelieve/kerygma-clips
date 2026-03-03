@@ -35,7 +35,7 @@ test('hovering a segment highlights it and clicking creates a clip', function ()
 
     $this->browse(function (Browser $browser) use ($user, $sermonVideo) {
         $browser->loginAs($user)
-            ->visit("/sermon-videos/{$sermonVideo->id}")
+            ->visit("/sermon-videos/{$sermonVideo->id}/edit")
             ->waitFor('@transcript-table')
             ->assertSeeIn('@transcript-table', 'Welcome to today\'s sermon.')
             ->assertSeeIn('@transcript-table', 'Let us begin with a reading.');
