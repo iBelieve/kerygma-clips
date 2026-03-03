@@ -25,6 +25,7 @@ class SermonClip extends Model
         'pause_before',
         'pause_after',
         'title',
+        'description',
         'clip_video_status',
         'clip_video_path',
         'clip_video_error',
@@ -94,8 +95,29 @@ class SermonClip extends Model
         ];
     }
 
+    public function getTranscriptText(): string
+    {
+        $segments = $this->sermonVideo->transcript['segments'] ?? [];
+
+        return collect($segments)
+            ->slice(
+                $this->start_segment_index,
+                $this->end_segment_index - $this->start_segment_index + 1
+            )
+            ->pluck('text')
+            ->map(fn (string $text): string => trim($text))
+            ->filter()
+            ->join(' ');
+    }
+
     protected static function booted(): void
     {
+        static::creating(function (SermonClip $clip): void {
+            if ($clip->description === null) {
+                $clip->description = $clip->getTranscriptText();
+            }
+        });
+
         static::saving(function (SermonClip $clip): void {
             $sermonVideo = $clip->sermonVideo;
             $segments = $sermonVideo->transcript['segments'] ?? [];

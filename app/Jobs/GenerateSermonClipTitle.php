@@ -26,17 +26,7 @@ class GenerateSermonClipTitle implements ShouldQueue
 
     public function handle(): void
     {
-        $segments = $this->sermonClip->sermonVideo->transcript['segments'] ?? [];
-
-        $clipText = collect($segments)
-            ->slice(
-                $this->sermonClip->start_segment_index,
-                $this->sermonClip->end_segment_index - $this->sermonClip->start_segment_index + 1
-            )
-            ->pluck('text')
-            ->map(fn (string $text): string => trim($text))
-            ->filter()
-            ->join(' ');
+        $clipText = $this->sermonClip->getTranscriptText();
 
         if ($clipText === '') {
             Log::warning('GenerateSermonClipTitle: no transcript text found for clip', [
