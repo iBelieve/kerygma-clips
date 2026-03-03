@@ -8,11 +8,10 @@
     <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
         {{-- Video player --}}
         @if ($clip->clip_video_path)
-            <div class="shrink-0">
+            <div class="shrink-0 rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10 overflow-hidden">
                 <video
                     controls
-                    preload="metadata"
-                    class="w-full max-w-xs rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10"
+                    class="w-full max-w-xs"
                     src="{{ Storage::disk('public')->url($clip->clip_video_path) }}"
                 ></video>
             </div>

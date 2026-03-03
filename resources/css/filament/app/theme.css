@@ -2,3 +2,11 @@
 
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
+
+.fi-btn:not(.fi-color) {
+    @apply ring-gray-950/20;
+}
+
+.fi-btn:not(.fi-color) .fi-icon {
+    @apply text-gray-600;
+}
