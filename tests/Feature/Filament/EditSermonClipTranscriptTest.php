@@ -97,7 +97,7 @@ test('updateSegmentWords rebuilds segment text from words', function () {
         ->call('updateSegmentWords', 1, ['"Grace', 'and', 'mercy."']);
 
     $transcript = $video->refresh()->transcript;
-    expect($transcript['segments'][1]['text'])->toBe(' "Grace and mercy."');
+    expect($transcript['segments'][1]['text'])->toBe('"Grace and mercy."');
 });
 
 test('updateSegmentWords syncs word_segments entries', function () {

@@ -176,8 +176,8 @@ class EditSermonClip extends EditRecord
             }
         }
 
-        // Rebuild segment text (leading space matches WhisperX format)
-        $transcript['segments'][$segmentIndex]['text'] = ' '.implode(' ', $words);
+        // Rebuild segment text from updated words
+        $transcript['segments'][$segmentIndex]['text'] = implode(' ', $words);
 
         $sermonVideo->update(['transcript' => $transcript]);
 

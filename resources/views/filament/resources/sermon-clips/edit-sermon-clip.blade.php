@@ -26,7 +26,15 @@
                             <table class="w-full">
                                 <tbody>
                                     @foreach ($this->transcriptRows as $row)
-                                        <tr>
+                                        <tr
+                                            @if ($row['type'] === 'segment' && count($row['words'] ?? []) > 0)
+                                                x-on:click="openModal({{ $row['segmentIndex'] }}, @js($row['words']))"
+                                                role="button"
+                                            @endif
+                                            @class([
+                                                'cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5' => $row['type'] === 'segment' && count($row['words'] ?? []) > 0,
+                                            ])
+                                        >
                                             @if ($row['type'] === 'gap')
                                                 <td colspan="2" class="px-4 sm:px-6">
                                                     <div class="flex items-center gap-3 py-2">
@@ -41,16 +49,7 @@
                                                 <td class="whitespace-nowrap py-1 pe-3 ps-4 align-baseline text-end text-xs tabular-nums text-gray-500 sm:ps-6 dark:text-gray-400">
                                                     {{ $row['timestamp'] }}
                                                 </td>
-                                                <td
-                                                    @if (count($row['words'] ?? []) > 0)
-                                                        x-on:click="openModal({{ $row['segmentIndex'] }}, @js($row['words']))"
-                                                        role="button"
-                                                    @endif
-                                                    @class([
-                                                        'w-full py-1 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white',
-                                                        'cursor-pointer rounded hover:bg-gray-50 dark:hover:bg-white/5' => count($row['words'] ?? []) > 0,
-                                                    ])
-                                                >
+                                                <td class="w-full py-1 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white">
                                                     {{ $row['text'] }}
                                                 </td>
                                             @endif
