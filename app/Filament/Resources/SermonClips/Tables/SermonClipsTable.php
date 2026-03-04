@@ -15,7 +15,7 @@ class SermonClipsTable
             ->columns([
                 TextColumn::make('sermonVideo.date')
                     ->label('Sermon Date')
-                    ->dateTime('M j, Y g:i A')
+                    ->dateTime('D, M j, Y g:i A')
                     ->timezone('America/Chicago')
                     ->sortable(),
 
