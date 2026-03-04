@@ -66,7 +66,20 @@ class SermonClipResource extends Resource
                         ->dehydrated(false)
                         ->formatStateUsing(fn (Get $get, SermonClip $record): string => $record->buildDescription(
                             $get('excerpt') ?? '',
-                        )),
+                        ))
+                        ->hintAction(
+                            Action::make('copyDescription')
+                                ->label('Copy')
+                                ->icon(Heroicon::OutlinedClipboardDocument)
+                                ->alpineClickHandler(<<<'JS'
+                                    const text = $wire.get('data.generated_description')
+                                    window.navigator.clipboard.writeText(text)
+                                    $tooltip('Copied!', {
+                                        theme: $store.theme,
+                                        timeout: 2000,
+                                    })
+                                    JS)
+                        ),
                 ]),
             ]);
     }
