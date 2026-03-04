@@ -127,34 +127,34 @@ test('getTranscriptText returns joined segment text', function () {
     expect($clip->getTranscriptText())->toBe('Segment 2 Segment 3 Segment 4');
 });
 
-test('description is auto-populated on creation', function () {
+test('excerpt is auto-populated on creation', function () {
     $video = createVideoWithTranscript();
     $clip = $video->sermonClips()->create([
         'start_segment_index' => 1,
         'end_segment_index' => 3,
     ]);
 
-    expect($clip->description)->toBe('Segment 1 Segment 2 Segment 3');
+    expect($clip->excerpt)->toBe('Segment 1 Segment 2 Segment 3');
 });
 
-test('description is not overwritten on update', function () {
+test('excerpt is not overwritten on update', function () {
     $video = createVideoWithTranscript();
     $clip = $video->sermonClips()->create([
         'start_segment_index' => 0,
         'end_segment_index' => 2,
     ]);
 
-    $clip->update(['description' => 'Custom description']);
+    $clip->update(['excerpt' => 'Custom excerpt']);
 
     Livewire::test(EditSermonClip::class, ['record' => $clip->id])
         ->fillForm(['title' => 'Updated Title'])
         ->call('save')
         ->assertHasNoFormErrors();
 
-    expect($clip->refresh()->description)->toBe('Custom description');
+    expect($clip->refresh()->excerpt)->toBe('Custom excerpt');
 });
 
-test('edit page has description field', function () {
+test('edit page has excerpt field', function () {
     $video = createVideoWithTranscript();
     $clip = $video->sermonClips()->create([
         'start_segment_index' => 0,
@@ -162,20 +162,20 @@ test('edit page has description field', function () {
     ]);
 
     Livewire::test(EditSermonClip::class, ['record' => $clip->id])
-        ->assertFormFieldExists('description');
+        ->assertFormFieldExists('excerpt');
 });
 
-test('reset description action restores transcript text', function () {
+test('reset excerpt action restores transcript text', function () {
     $video = createVideoWithTranscript();
     $clip = $video->sermonClips()->create([
         'start_segment_index' => 2,
         'end_segment_index' => 4,
     ]);
 
-    $clip->update(['description' => 'Custom text']);
+    $clip->update(['excerpt' => 'Custom text']);
 
     Livewire::test(EditSermonClip::class, ['record' => $clip->id])
-        ->assertFormSet(['description' => 'Custom text'])
-        ->callFormComponentAction('description', 'resetDescription')
-        ->assertFormSet(['description' => 'Segment 2 Segment 3 Segment 4']);
+        ->assertFormSet(['excerpt' => 'Custom text'])
+        ->callFormComponentAction('excerpt', 'resetExcerpt')
+        ->assertFormSet(['excerpt' => 'Segment 2 Segment 3 Segment 4']);
 });

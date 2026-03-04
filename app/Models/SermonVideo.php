@@ -62,6 +62,24 @@ class SermonVideo extends Model
         return $this->hasMany(SermonClip::class);
     }
 
+    /**
+     * Get the subtitle normalized for use in a sentence context.
+     *
+     * If the subtitle starts with a minor word (the, a, an), it is lowercased.
+     */
+    public function getNormalizedSubtitle(): ?string
+    {
+        if ($this->subtitle === null) {
+            return null;
+        }
+
+        return preg_replace_callback(
+            '/^(The|A|An)\b/u',
+            fn (array $matches) => lcfirst($matches[1]),
+            $this->subtitle,
+        );
+    }
+
     protected $casts = [
         'date' => 'immutable_datetime',
         'transcript_status' => JobStatus::class,
