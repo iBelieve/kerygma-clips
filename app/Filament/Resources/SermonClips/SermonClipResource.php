@@ -76,11 +76,20 @@ class SermonClipResource extends Resource
                                 ->icon(Heroicon::OutlinedClipboardDocument)
                                 ->alpineClickHandler(<<<'JS'
                                     const text = $wire.get('data.generated_description')
-                                    window.navigator.clipboard.writeText(text)
-                                    $tooltip('Copied!', {
-                                        theme: $store.theme,
-                                        timeout: 2000,
-                                    })
+                                    const showTooltip = () => $tooltip('Copied!', { theme: $store.theme, timeout: 2000 })
+                                    if (navigator.clipboard) {
+                                        navigator.clipboard.writeText(text).then(showTooltip)
+                                    } else {
+                                        const ta = document.createElement('textarea')
+                                        ta.value = text
+                                        ta.style.position = 'fixed'
+                                        ta.style.left = '-9999px'
+                                        document.body.appendChild(ta)
+                                        ta.select()
+                                        document.execCommand('copy')
+                                        document.body.removeChild(ta)
+                                        showTooltip()
+                                    }
                                     JS)
                         ),
                 ]),
