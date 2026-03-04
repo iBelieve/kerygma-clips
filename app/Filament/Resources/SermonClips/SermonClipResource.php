@@ -62,12 +62,12 @@ class SermonClipResource extends Resource
                         ->extraAttributes(['class' => 'bg-white dark:bg-white/5'])
                         ->extraInputAttributes([
                             'class' => 'text-gray-950 dark:text-white',
-                            'style' => '-webkit-text-fill-color: initial;'
+                            'style' => '-webkit-text-fill-color: initial;',
                         ])
                         ->autosize()
                         ->disabled()
                         ->dehydrated(false)
-                        ->formatStateUsing(fn(Get $get, SermonClip $record): string => $record->buildDescription(
+                        ->formatStateUsing(fn (Get $get, SermonClip $record): string => $record->buildDescription(
                             $get('excerpt') ?? '',
                         ))
                         ->hintAction(
