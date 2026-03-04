@@ -56,8 +56,7 @@ class PublishSermonClipToFacebook implements ShouldQueue
             }
 
             $title = $sermonClip->title ?? '';
-            $description = $sermonClip->fb_reel_description
-                ?? $sermonClip->buildDescription($sermonClip->excerpt ?? '');
+            $description = $sermonClip->buildDescription($sermonClip->excerpt ?? '');
 
             $scheduledTimestamp = $sermonClip->fb_reel_scheduled_for?->getTimestamp();
 

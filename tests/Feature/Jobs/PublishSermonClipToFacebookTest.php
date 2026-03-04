@@ -141,27 +141,7 @@ test('job fails when facebook api errors', function () {
     expect($clip->fb_reel_error)->toContain('Facebook API error');
 });
 
-test('job uses custom description when set', function () {
-    $mock = Mockery::mock(FacebookReelsService::class);
-    $mock->shouldReceive('initialize')->andReturn('video_123');
-    $mock->shouldReceive('upload');
-    $mock->shouldReceive('publish')
-        ->withArgs(function (string $videoId, string $title, string $description) {
-            return $title === 'A Great Sermon Clip'
-                && $description === 'Custom caption for the reel';
-        })
-        ->once();
-    app()->instance(FacebookReelsService::class, $mock);
-
-    $video = createFbTestVideo();
-    $clip = createFbTestClip($video, [
-        'fb_reel_description' => 'Custom caption for the reel',
-    ]);
-
-    (new PublishSermonClipToFacebook($clip))->handle(app(FacebookReelsService::class));
-});
-
-test('job falls back to buildDescription when no custom description set', function () {
+test('job sends title and buildDescription as separate fields', function () {
     $mock = Mockery::mock(FacebookReelsService::class);
     $mock->shouldReceive('initialize')->andReturn('video_123');
     $mock->shouldReceive('upload');

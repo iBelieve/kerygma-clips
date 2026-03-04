@@ -34,7 +34,6 @@ class SermonClip extends Model
         'fb_reel_status',
         'fb_reel_id',
         'fb_reel_error',
-        'fb_reel_description',
         'fb_reel_started_at',
         'fb_reel_completed_at',
         'fb_reel_published_at',

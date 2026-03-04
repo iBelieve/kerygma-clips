@@ -14,7 +14,6 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\Support\Htmlable;
@@ -43,10 +42,6 @@ class EditSermonClip extends EditRecord
                 ->color('primary')
                 ->visible(fn (): bool => $this->getRecord()->canPublishToFacebook())
                 ->schema([
-                    Textarea::make('fb_reel_description')
-                        ->label('Description')
-                        ->default(fn (): string => $this->getRecord()->buildDescription($this->getRecord()->excerpt ?? ''))
-                        ->rows(6),
                     DateTimePicker::make('fb_reel_scheduled_for')
                         ->label('Schedule for (optional)')
                         ->native(false)
@@ -57,7 +52,6 @@ class EditSermonClip extends EditRecord
                     $record = $this->getRecord();
 
                     $record->update([
-                        'fb_reel_description' => $data['fb_reel_description'] ?? null,
                         'fb_reel_scheduled_for' => $data['fb_reel_scheduled_for'] ?? null,
                     ]);
 
