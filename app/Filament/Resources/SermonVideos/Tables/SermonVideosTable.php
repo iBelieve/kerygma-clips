@@ -17,12 +17,17 @@ class SermonVideosTable
             ->columns([
                 TextColumn::make('date')
                     ->label('Date & Time')
-                    ->dateTime('M j, Y g:i A')
+                    ->dateTime('D, M j, Y g:i A')
                     ->timezone('America/Chicago')
                     ->sortable(),
 
                 TextColumn::make('title')
                     ->label('Title')
+                    ->placeholder("\u{2014}")
+                    ->searchable(),
+
+                TextColumn::make('subtitle')
+                    ->label('Subtitle')
                     ->placeholder("\u{2014}")
                     ->searchable(),
 

@@ -25,6 +25,7 @@ class SermonClip extends Model
         'pause_before',
         'pause_after',
         'title',
+        'excerpt',
         'clip_video_status',
         'clip_video_path',
         'clip_video_error',
@@ -107,8 +108,64 @@ class SermonClip extends Model
         ];
     }
 
+    public function buildDescription(string $excerpt): string
+    {
+        $subtitle = $this->sermonVideo->getMidsentenceSubtitle();
+        $scripture = $this->sermonVideo->scripture;
+        $preacher = $this->sermonVideo->preacher;
+        $callToAction = Settings::instance()->call_to_action;
+
+        $lines = [$excerpt, ''];
+
+        $sermonLine = 'Clip from a sermon';
+        $hasDetail = $scripture || $subtitle || $preacher;
+
+        if ($scripture) {
+            $sermonLine .= " on {$scripture}";
+        }
+        if ($subtitle) {
+            $sermonLine .= " for {$subtitle}";
+        }
+        if ($preacher) {
+            $sermonLine .= " by {$preacher}";
+        }
+        $sermonLine .= '.';
+
+        if ($hasDetail) {
+            $lines[] = $sermonLine;
+        }
+
+        if ($callToAction) {
+            $lines[] = '';
+            $lines[] = $callToAction;
+        }
+
+        return implode("\n", $lines);
+    }
+
+    public function getTranscriptText(): string
+    {
+        $segments = $this->sermonVideo->transcript['segments'] ?? [];
+
+        return collect($segments)
+            ->slice(
+                $this->start_segment_index,
+                $this->end_segment_index - $this->start_segment_index + 1
+            )
+            ->pluck('text')
+            ->map(fn (string $text): string => trim($text))
+            ->filter()
+            ->join(' ');
+    }
+
     protected static function booted(): void
     {
+        static::creating(function (SermonClip $clip): void {
+            if ($clip->excerpt === null) {
+                $clip->excerpt = $clip->getTranscriptText();
+            }
+        });
+
         static::saving(function (SermonClip $clip): void {
             $sermonVideo = $clip->sermonVideo;
             $segments = $sermonVideo->transcript['segments'] ?? [];

@@ -1,6 +1,6 @@
 <?php
 
-use App\Filament\Resources\SermonVideos\Pages\ViewSermonVideo;
+use App\Filament\Resources\SermonVideos\Pages\EditSermonVideo;
 use App\Jobs\GenerateSermonClipTitle;
 use App\Models\SermonClip;
 use App\Models\SermonVideo;
@@ -52,7 +52,7 @@ function makeSermonVideo(int $segmentCount = 30): SermonVideo
 test('createClip sets starts_at, ends_at, and duration from segment times', function () {
     $video = makeSermonVideo(30); // segments: 0–5s, 5–10s, … each 5s
 
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 2, 5);
 
     $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
@@ -72,7 +72,7 @@ test('updateClip updates starts_at, ends_at, and duration from segment times', f
     ]);
 
     // Shrink to segments 3–4
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('updateClip', $clip->id, 3, 4);
 
     $clip->refresh();
@@ -93,7 +93,7 @@ test('createClip truncates end to avoid overlapping a following clip', function 
         'end_segment_index' => 12,
     ]);
 
-    $clips = Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    $clips = Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 5, 15)
         ->get('transcriptData')['clips'];
 
@@ -113,7 +113,7 @@ test('createClip rejects when start is inside an existing clip', function () {
         'end_segment_index' => 10,
     ]);
 
-    $clips = Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    $clips = Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 7, 15)
         ->get('transcriptData')['clips'];
 
@@ -127,7 +127,7 @@ test('createClip rejects when start is inside an existing clip', function () {
 test('createClip rejects when duration exceeds 90 seconds', function () {
     $video = makeSermonVideo(30);
 
-    $clips = Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    $clips = Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 0, 29)
         ->get('transcriptData')['clips'];
 
@@ -138,7 +138,7 @@ test('createClip rejects when duration exceeds 90 seconds', function () {
 test('createClip rejects when segment indices are out of bounds', function () {
     $video = makeSermonVideo(10);
 
-    $clips = Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    $clips = Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 5, 20)
         ->get('transcriptData')['clips'];
 
@@ -148,7 +148,7 @@ test('createClip rejects when segment indices are out of bounds', function () {
 test('createClip swaps start and end when reversed', function () {
     $video = makeSermonVideo(30);
 
-    $clips = Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    $clips = Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 5, 2)
         ->get('transcriptData')['clips'];
 
@@ -174,7 +174,7 @@ test('createClip can create a clip between two existing clips', function () {
     ]);
 
     // Try to create clip at 5-12 — should truncate end to 9
-    $clips = Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    $clips = Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 5, 12)
         ->get('transcriptData')['clips'];
 
@@ -202,7 +202,7 @@ test('updateClip rejects when it would overlap another clip', function () {
     ]);
 
     // Try to expand clip2 to overlap clip1
-    $clips = Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    $clips = Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('updateClip', $clip2->id, 4, 15)
         ->get('transcriptData')['clips'];
 
@@ -222,7 +222,7 @@ test('updateClip rejects when duration exceeds 90 seconds', function () {
     ]);
 
     // Try to expand to 0-29 (150s)
-    $clips = Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    $clips = Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('updateClip', $clip->id, 0, 29)
         ->get('transcriptData')['clips'];
 
@@ -241,7 +241,7 @@ test('updateClip rejects when segment indices are out of bounds', function () {
         'end_segment_index' => 5,
     ]);
 
-    $clips = Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    $clips = Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('updateClip', $clip->id, 2, 20)
         ->get('transcriptData')['clips'];
 
@@ -260,7 +260,7 @@ test('updateClip can shrink a clip without issues', function () {
         'end_segment_index' => 15,
     ]);
 
-    $clips = Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    $clips = Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('updateClip', $clip->id, 7, 12)
         ->get('transcriptData')['clips'];
 
@@ -284,7 +284,7 @@ test('updateClip can expand toward a neighboring clip without overlapping', func
     ]);
 
     // Expand clip1 end to 9 (adjacent but not overlapping)
-    $clips = Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    $clips = Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('updateClip', $clip1->id, 0, 9)
         ->get('transcriptData')['clips'];
 
@@ -335,7 +335,7 @@ test('createClip calculates pause_before and pause_after from segment gaps', fun
     // Segments with 2s gaps: [0-4], [6-10], [12-16], [18-22], [24-28]
     $video = makeGappedSermonVideo(5, 2.0);
 
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 1, 3);
 
     $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
@@ -354,7 +354,7 @@ test('createClip calculates partial pause when gap is less than 2s', function ()
     // Segments with 1s gaps: [0-4], [5-9], [10-14], [15-19], [20-24]
     $video = makeGappedSermonVideo(5, 1.0);
 
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 1, 3);
 
     $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
@@ -372,7 +372,7 @@ test('createClip calculates partial pause when gap is less than 2s', function ()
 test('createClip sets zero pause when segments are contiguous', function () {
     $video = makeSermonVideo(30); // contiguous segments, no gaps
 
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 2, 5);
 
     $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
@@ -388,7 +388,7 @@ test('createClip calculates pause_before from start of video for first segment',
     // Segments with 2s gaps, but first segment starts at 0.0
     $video = makeGappedSermonVideo(5, 2.0);
 
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 0, 1);
 
     $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
@@ -404,7 +404,7 @@ test('createClip calculates pause_after from video duration for last segment', f
     // Video duration = 5 * 6 + 10 = 40
     $video = makeGappedSermonVideo(5, 2.0);
 
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 3, 4);
 
     $clip = SermonClip::where('sermon_video_id', $video->id)->sole();
@@ -427,7 +427,7 @@ test('updateClip recalculates pause values', function () {
         ->pause_after->toBe(0.5);
 
     // Move clip to segments 2-4
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('updateClip', $clip->id, 2, 4);
 
     $clip->refresh();

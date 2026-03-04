@@ -6,6 +6,7 @@ use App\Jobs\ScanSermonVideos;
 use App\Jobs\TranscribeSermonVideo;
 use App\Models\SermonVideo;
 use App\Services\VideoProbe;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
@@ -14,6 +15,9 @@ uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 beforeEach(function () {
     Storage::fake('sermon_videos');
     Queue::fake([TranscribeSermonVideo::class, ConvertToVerticalVideo::class]);
+
+    $this->sermonsApiResponse = Http::response(['data' => []]);
+    Http::fake(fn () => $this->sermonsApiResponse);
 
     $this->mock(VideoProbe::class, function ($mock) {
         $mock->shouldReceive('getDurationInSeconds')
@@ -32,7 +36,7 @@ test('it creates a sermon video entry for a valid video file', function () {
     expect($video->raw_video_path)->toBe('2025-12-10 18-53-50.m4v');
     expect($video->title)->toBeNull();
     expect($video->transcript_status)->toBe(JobStatus::Pending);
-    expect($video->date->format('Y-m-d H:i:s'))->toBe('2025-12-11 00:53:50');
+    expect($video->date->format('Y-m-d H:i:s'))->toBe('2025-12-11 01:00:00');
     expect($video->duration)->toBe(3600);
 });
 
@@ -253,4 +257,119 @@ test('it uses default crop center when no previous sermon videos exist', functio
 
     $video = SermonVideo::where('raw_video_path', '2025-12-10 18-53-50.mp4')->first();
     expect($video->vertical_video_crop_center)->toBe(50);
+});
+
+test('it populates sermon metadata from the API', function () {
+    $video = SermonVideo::factory()->create([
+        'title' => null,
+        'subtitle' => null,
+        'scripture' => null,
+        'preacher' => null,
+        'color' => null,
+        'date' => Carbon\Carbon::parse('2025-12-10 18:53:50', 'America/Chicago')->utc(),
+    ]);
+
+    $this->sermonsApiResponse = Http::response(['data' => [
+        [
+            'id' => 'abc-123',
+            'date' => '2025-12-11T00:30:00.000000Z',
+            'title' => 'The Good Shepherd',
+            'subtitle' => 'Third Sunday of Advent',
+            'scripture' => 'John 10:1-18',
+            'color' => 'blue',
+            'preacher' => 'Pastor Smith',
+            'sermon_excerpt' => null,
+        ],
+    ]]);
+
+    ScanSermonVideos::dispatchSync();
+
+    $video->refresh();
+    expect($video->title)->toBe('The Good Shepherd');
+    expect($video->subtitle)->toBe('Third Sunday of Advent');
+    expect($video->scripture)->toBe('John 10:1-18');
+    expect($video->color)->toBe('blue');
+    expect($video->preacher)->toBe('Pastor Smith');
+});
+
+test('it preserves existing non-null metadata fields', function () {
+    $video = SermonVideo::factory()->create([
+        'title' => 'Existing Title',
+        'subtitle' => null,
+        'scripture' => null,
+        'preacher' => null,
+        'color' => null,
+        'date' => Carbon\Carbon::parse('2025-12-10 18:53:50', 'America/Chicago')->utc(),
+    ]);
+
+    $this->sermonsApiResponse = Http::response(['data' => [
+        [
+            'id' => 'abc-123',
+            'date' => '2025-12-11T00:30:00.000000Z',
+            'title' => 'API Title',
+            'subtitle' => 'Third Sunday of Advent',
+            'scripture' => 'John 10:1-18',
+            'color' => 'blue',
+            'preacher' => 'Pastor Smith',
+            'sermon_excerpt' => null,
+        ],
+    ]]);
+
+    ScanSermonVideos::dispatchSync();
+
+    $video->refresh();
+    expect($video->title)->toBe('Existing Title');
+    expect($video->subtitle)->toBe('Third Sunday of Advent');
+    expect($video->scripture)->toBe('John 10:1-18');
+});
+
+test('it handles sermons API failure gracefully', function () {
+    SermonVideo::factory()->create([
+        'title' => null,
+        'date' => now(),
+    ]);
+
+    $this->sermonsApiResponse = Http::response('Server Error', 500);
+
+    ScanSermonVideos::dispatchSync();
+
+    $video = SermonVideo::first();
+    expect($video->title)->toBeNull();
+});
+
+test('it matches the closest sermon when multiple exist on the same date', function () {
+    $video = SermonVideo::factory()->create([
+        'title' => null,
+        'subtitle' => null,
+        'date' => Carbon\Carbon::parse('2025-12-10 18:53:50', 'America/Chicago')->utc(),
+    ]);
+
+    $this->sermonsApiResponse = Http::response(['data' => [
+        [
+            'id' => 'far-sermon',
+            'date' => '2025-12-11T02:00:00.000000Z',
+            'title' => 'Far Sermon',
+            'subtitle' => 'Far Subtitle',
+            'scripture' => 'Genesis 1:1',
+            'color' => 'green',
+            'preacher' => 'Pastor Far',
+            'sermon_excerpt' => null,
+        ],
+        [
+            'id' => 'close-sermon',
+            'date' => '2025-12-11T00:30:00.000000Z',
+            'title' => 'Close Sermon',
+            'subtitle' => 'Close Subtitle',
+            'scripture' => 'John 3:16',
+            'color' => 'purple',
+            'preacher' => 'Pastor Close',
+            'sermon_excerpt' => null,
+        ],
+    ]]);
+
+    ScanSermonVideos::dispatchSync();
+
+    $video->refresh();
+    expect($video->title)->toBe('Close Sermon');
+    expect($video->subtitle)->toBe('Close Subtitle');
 });

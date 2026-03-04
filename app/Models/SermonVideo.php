@@ -17,6 +17,10 @@ class SermonVideo extends Model
 
     protected $fillable = [
         'title',
+        'subtitle',
+        'scripture',
+        'preacher',
+        'color',
         'raw_video_path',
         'transcript_status',
         'transcript',
@@ -56,6 +60,24 @@ class SermonVideo extends Model
     public function sermonClips(): HasMany
     {
         return $this->hasMany(SermonClip::class);
+    }
+
+    /**
+     * Get the subtitle normalized for use mid-sentence.
+     *
+     * If the subtitle starts with a minor word (the, a, an), it is lowercased.
+     */
+    public function getMidsentenceSubtitle(): ?string
+    {
+        if ($this->subtitle === null) {
+            return null;
+        }
+
+        return preg_replace_callback(
+            '/^(The|A|An)\b/u',
+            fn (array $matches) => lcfirst($matches[1]),
+            $this->subtitle,
+        );
     }
 
     protected $casts = [

@@ -1,12 +1,14 @@
 <?php
 
 use App\Services\VideoProbe;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 test('the scan command runs synchronously', function () {
     Storage::fake('sermon_videos');
+    Http::fake();
 
     $this->mock(VideoProbe::class, function ($mock) {
         $mock->shouldReceive('getDurationInSeconds')

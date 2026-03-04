@@ -1,6 +1,6 @@
 <?php
 
-use App\Filament\Resources\SermonVideos\Pages\ViewSermonVideo;
+use App\Filament\Resources\SermonVideos\Pages\EditSermonVideo;
 use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Models\SermonVideo;
 use App\Models\User;
@@ -45,7 +45,7 @@ function buildSermonVideo(int $segmentCount = 30): SermonVideo
 test('createClip dispatches ExtractSermonClipVerticalVideo job', function () {
     $video = buildSermonVideo();
 
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 2, 5);
 
     Queue::assertPushed(ExtractSermonClipVerticalVideo::class, function ($job) use ($video) {
@@ -62,7 +62,7 @@ test('updateClip dispatches ExtractSermonClipVerticalVideo job', function () {
         'end_segment_index' => 5,
     ]);
 
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('updateClip', $clip->id, 3, 6);
 
     Queue::assertPushed(ExtractSermonClipVerticalVideo::class, function ($job) use ($clip) {
@@ -82,7 +82,7 @@ test('createClip does not dispatch job when clip is rejected', function () {
     ]);
 
     // Try to create a clip starting inside the existing one (rejected)
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('createClip', 7, 15);
 
     // Only the original clip creation dispatch, not the rejected one
@@ -103,7 +103,7 @@ test('updateClip does not dispatch job when update is rejected due to overlap', 
     ]);
 
     // Try to expand clip2 to overlap clip1 (rejected)
-    Livewire::test(ViewSermonVideo::class, ['record' => $video->id])
+    Livewire::test(EditSermonVideo::class, ['record' => $video->id])
         ->call('updateClip', $clip2->id, 4, 15);
 
     Queue::assertNotPushed(ExtractSermonClipVerticalVideo::class);
