@@ -59,6 +59,8 @@ class SermonClipResource extends Resource
 
                     Textarea::make('generated_description')
                         ->label('Description')
+                        ->extraAttributes(['class' => 'bg-white'])
+                        ->extraInputAttributes(['class' => 'text-gray-950!', 'style' => '-webkit-text-fill-color: initial;'])
                         ->autosize()
                         ->disabled()
                         ->dehydrated(false)
