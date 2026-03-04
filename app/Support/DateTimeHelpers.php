@@ -2,22 +2,22 @@
 
 namespace App\Support;
 
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 
 class DateTimeHelpers
 {
-    public static function roundToNearestHalfHour(Carbon $date): Carbon
+    public static function roundToNearestHalfHour(CarbonImmutable $date): CarbonImmutable
     {
         $minutes = $date->minute;
         $seconds = $date->second;
         $totalMinutes = $minutes + ($seconds / 60);
 
         if ($totalMinutes < 15) {
-            return $date->copy()->minute(0)->second(0);
+            return $date->minute(0)->second(0);
         } elseif ($totalMinutes < 45) {
-            return $date->copy()->minute(30)->second(0);
+            return $date->minute(30)->second(0);
         } else {
-            return $date->copy()->addHour()->minute(0)->second(0);
+            return $date->addHour()->minute(0)->second(0);
         }
     }
 }

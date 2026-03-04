@@ -7,6 +7,7 @@ use App\Models\SermonVideo;
 use App\Services\VideoProbe;
 use App\Support\DateTimeHelpers;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -235,7 +236,7 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
         }
     }
 
-    private function parseDateFromFilename(string $file): ?Carbon
+    private function parseDateFromFilename(string $file): ?CarbonImmutable
     {
         $name = pathinfo($file, PATHINFO_FILENAME);
 
@@ -247,7 +248,7 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
         $timeStr = str_replace('-', ':', $matches[2]);
 
         return DateTimeHelpers::roundToNearestHalfHour(
-            Carbon::parse("{$dateStr} {$timeStr}", self::TIMEZONE)
+            CarbonImmutable::parse("{$dateStr} {$timeStr}", self::TIMEZONE)
         );
     }
 }
