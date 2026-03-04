@@ -61,7 +61,7 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
             $clipStartSeconds = (int) floor($startTime);
             $outputRelativePath = sprintf(
                 'clips/%s_%02d-%02d.mp4',
-                $sermonDate->format('Y-m-d_H-i'),
+                $sermonDate->format('Y-m-d_Hi'),
                 intdiv($clipStartSeconds, 60),
                 $clipStartSeconds % 60,
             );
