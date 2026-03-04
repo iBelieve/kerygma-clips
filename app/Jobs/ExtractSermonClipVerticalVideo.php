@@ -56,6 +56,22 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
             $endTime = $sermonClip->ends_at;
             $duration = $sermonClip->duration;
 
+            // Build the output path: clips/YYYY-MM-DD_HHMM_MMSS.mp4
+            $sermonDate = $sermonVideo->date->timezone('America/Chicago');
+            $clipStartSeconds = (int) floor($startTime);
+            $outputRelativePath = sprintf(
+                'clips/%s_%02d%02d.mp4',
+                $sermonDate->format('Y-m-d_Hi'),
+                intdiv($clipStartSeconds, 60),
+                $clipStartSeconds % 60,
+            );
+
+            // Delete the previous clip file if the path changed (e.g., timing was adjusted)
+            $oldPath = $sermonClip->clip_video_path;
+            if ($oldPath !== null && $oldPath !== $outputRelativePath) {
+                Storage::disk('public')->delete($oldPath);
+            }
+
             // Generate ASS captions from transcript word-level data
             $segments = $sermonVideo->transcript['segments'] ?? [];
             $clipSegments = array_slice(
@@ -71,7 +87,6 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
             $inputPath = $inputDisk->path($sermonVideo->vertical_video_path);
 
             $outputDisk = Storage::disk('public');
-            $outputRelativePath = "clips/{$sermonClip->id}.mp4";
             $outputAbsolutePath = $outputDisk->path($outputRelativePath);
 
             $outputDir = dirname($outputAbsolutePath);
