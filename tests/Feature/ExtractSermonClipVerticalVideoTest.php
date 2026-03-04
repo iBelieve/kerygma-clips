@@ -63,7 +63,7 @@ test('job extracts clip from vertical video successfully', function () {
 
     $clip->refresh();
     expect($clip->clip_video_status)->toBe(JobStatus::Completed);
-    expect($clip->clip_video_path)->toBe('clips/2025-06-15_1000_00-10.mp4');
+    expect($clip->clip_video_path)->toBe('clips/2025-06-15_1000_0010.mp4');
     expect($clip->clip_video_error)->toBeNull();
 });
 
