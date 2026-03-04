@@ -2,7 +2,7 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\Setting;
+use App\Models\Settings;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
@@ -14,11 +14,15 @@ use Filament\Support\Icons\Heroicon;
 /**
  * @property Schema $form
  */
-class Settings extends Page
+class ManageSettings extends Page
 {
+    protected static ?string $navigationLabel = 'Settings';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
     protected static ?int $navigationSort = 99;
+
+    protected static ?string $title = 'Settings';
 
     protected string $view = 'filament.pages.settings';
 
@@ -28,7 +32,7 @@ class Settings extends Page
     public function mount(): void
     {
         $this->form->fill([
-            'call_to_action' => Setting::instance()->call_to_action,
+            'call_to_action' => Settings::instance()->call_to_action,
         ]);
     }
 
@@ -47,7 +51,7 @@ class Settings extends Page
     {
         $data = $this->form->getState();
 
-        Setting::instance()->update($data);
+        Settings::instance()->update($data);
 
         Notification::make()
             ->title('Settings saved')

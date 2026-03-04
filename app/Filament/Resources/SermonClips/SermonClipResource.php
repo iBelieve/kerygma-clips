@@ -7,7 +7,7 @@ use App\Filament\Resources\SermonClips\Pages\ListSermonClips;
 use App\Filament\Resources\SermonClips\Tables\SermonClipsTable;
 use App\Models\SermonClip;
 use App\Models\SermonVideo;
-use App\Models\Setting;
+use App\Models\Settings;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
@@ -79,7 +79,7 @@ class SermonClipResource extends Resource
         $subtitle = $sermonVideo->getNormalizedSubtitle();
         $scripture = $sermonVideo->scripture;
         $preacher = $sermonVideo->preacher;
-        $callToAction = Setting::instance()->call_to_action;
+        $callToAction = Settings::instance()->call_to_action;
 
         $lines = [$excerpt, ''];
 

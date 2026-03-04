@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Setting extends Model
+class Settings extends Model
 {
     protected $fillable = [
         'call_to_action',
