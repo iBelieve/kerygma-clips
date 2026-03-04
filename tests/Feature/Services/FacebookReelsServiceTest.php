@@ -57,13 +57,14 @@ test('publish sends correct payload for immediate publish', function () {
     ]);
 
     $service = new FacebookReelsService('page_123', 'token_xyz');
-    $service->publish('vid_abc123', 'My awesome reel');
+    $service->publish('vid_abc123', 'Reel Title', 'My awesome reel');
 
     Http::assertSent(function ($request) {
         return str_contains($request->url(), 'page_123/video_reels')
             && $request['upload_phase'] === 'finish'
             && $request['video_id'] === 'vid_abc123'
             && $request['video_state'] === 'PUBLISHED'
+            && $request['title'] === 'Reel Title'
             && $request['description'] === 'My awesome reel'
             && ! isset($request['scheduled_publish_time']);
     });
@@ -76,7 +77,7 @@ test('publish sends scheduled payload with timestamp', function () {
 
     $timestamp = 1740826800;
     $service = new FacebookReelsService('page_123', 'token_xyz');
-    $service->publish('vid_abc123', 'Scheduled reel', $timestamp);
+    $service->publish('vid_abc123', 'Scheduled Title', 'Scheduled reel', $timestamp);
 
     Http::assertSent(function ($request) use ($timestamp) {
         return str_contains($request->url(), 'page_123/video_reels')

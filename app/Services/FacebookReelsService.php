@@ -53,12 +53,13 @@ class FacebookReelsService
      *
      * @throws RequestException
      */
-    public function publish(string $videoId, string $description, ?int $scheduledPublishTime = null): void
+    public function publish(string $videoId, string $title, string $description, ?int $scheduledPublishTime = null): void
     {
         $payload = [
             'upload_phase' => 'finish',
             'video_id' => $videoId,
             'video_state' => 'PUBLISHED',
+            'title' => $title,
             'description' => $description,
             'access_token' => $this->pageAccessToken,
         ];

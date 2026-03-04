@@ -44,9 +44,9 @@ class EditSermonClip extends EditRecord
                 ->visible(fn (): bool => $this->getRecord()->canPublishToFacebook())
                 ->schema([
                     Textarea::make('fb_reel_description')
-                        ->label('Caption')
-                        ->default(fn (): ?string => $this->getRecord()->title)
-                        ->rows(3),
+                        ->label('Description')
+                        ->default(fn (): string => $this->getRecord()->buildDescription($this->getRecord()->excerpt ?? ''))
+                        ->rows(6),
                     DateTimePicker::make('fb_reel_scheduled_for')
                         ->label('Schedule for (optional)')
                         ->native(false)

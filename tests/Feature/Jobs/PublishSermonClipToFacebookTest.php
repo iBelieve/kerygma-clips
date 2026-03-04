@@ -146,8 +146,9 @@ test('job uses custom description when set', function () {
     $mock->shouldReceive('initialize')->andReturn('video_123');
     $mock->shouldReceive('upload');
     $mock->shouldReceive('publish')
-        ->withArgs(function (string $videoId, string $description) {
-            return $description === 'Custom caption for the reel';
+        ->withArgs(function (string $videoId, string $title, string $description) {
+            return $title === 'A Great Sermon Clip'
+                && $description === 'Custom caption for the reel';
         })
         ->once();
     app()->instance(FacebookReelsService::class, $mock);
@@ -160,13 +161,15 @@ test('job uses custom description when set', function () {
     (new PublishSermonClipToFacebook($clip))->handle(app(FacebookReelsService::class));
 });
 
-test('job falls back to title when no description set', function () {
+test('job falls back to buildDescription when no custom description set', function () {
     $mock = Mockery::mock(FacebookReelsService::class);
     $mock->shouldReceive('initialize')->andReturn('video_123');
     $mock->shouldReceive('upload');
     $mock->shouldReceive('publish')
-        ->withArgs(function (string $videoId, string $description) {
-            return $description === 'A Great Sermon Clip';
+        ->withArgs(function (string $videoId, string $title, string $description) {
+            return $title === 'A Great Sermon Clip'
+                && str_contains($description, 'Segment 0')
+                && str_contains($description, 'Segment 3');
         })
         ->once();
     app()->instance(FacebookReelsService::class, $mock);
@@ -184,7 +187,7 @@ test('job passes scheduled timestamp to service', function () {
     $mock->shouldReceive('initialize')->andReturn('video_123');
     $mock->shouldReceive('upload');
     $mock->shouldReceive('publish')
-        ->withArgs(function (string $videoId, string $description, ?int $scheduledPublishTime) use ($scheduledTime) {
+        ->withArgs(function (string $videoId, string $title, string $description, ?int $scheduledPublishTime) use ($scheduledTime) {
             return $scheduledPublishTime === $scheduledTime->getTimestamp();
         })
         ->once();

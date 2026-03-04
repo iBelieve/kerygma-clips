@@ -55,13 +55,15 @@ class PublishSermonClipToFacebook implements ShouldQueue
                 throw new \RuntimeException("Clip video file not found: {$sermonClip->clip_video_path}");
             }
 
-            $description = $sermonClip->fb_reel_description ?? $sermonClip->title ?? '';
+            $title = $sermonClip->title ?? '';
+            $description = $sermonClip->fb_reel_description
+                ?? $sermonClip->buildDescription($sermonClip->excerpt ?? '');
 
             $scheduledTimestamp = $sermonClip->fb_reel_scheduled_for?->getTimestamp();
 
             $videoId = $facebook->initialize();
             $facebook->upload($videoId, $filePath);
-            $facebook->publish($videoId, $description, $scheduledTimestamp);
+            $facebook->publish($videoId, $title, $description, $scheduledTimestamp);
 
             $sermonClip->update([
                 'fb_reel_status' => JobStatus::Completed,
