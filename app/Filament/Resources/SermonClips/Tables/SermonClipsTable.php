@@ -24,6 +24,11 @@ class SermonClipsTable
                     ->placeholder("\u{2014}")
                     ->searchable(),
 
+                TextColumn::make('sermonVideo.subtitle')
+                    ->label('Subtitle')
+                    ->placeholder("\u{2014}")
+                    ->searchable(),
+
                 TextColumn::make('starts_at')
                     ->label('Start Time')
                     ->placeholder("\u{2014}")
