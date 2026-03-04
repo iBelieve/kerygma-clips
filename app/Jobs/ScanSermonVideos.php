@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Enums\JobStatus;
 use App\Models\SermonVideo;
 use App\Services\VideoProbe;
+use App\Support\DateTimeHelpers;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -245,6 +246,8 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
         $dateStr = $matches[1];
         $timeStr = str_replace('-', ':', $matches[2]);
 
-        return Carbon::parse("{$dateStr} {$timeStr}", self::TIMEZONE);
+        return DateTimeHelpers::roundToNearestHalfHour(
+            Carbon::parse("{$dateStr} {$timeStr}", self::TIMEZONE)
+        );
     }
 }
