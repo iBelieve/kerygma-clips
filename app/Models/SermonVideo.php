@@ -63,11 +63,11 @@ class SermonVideo extends Model
     }
 
     /**
-     * Get the subtitle normalized for use in a sentence context.
+     * Get the subtitle normalized for use mid-sentence.
      *
      * If the subtitle starts with a minor word (the, a, an), it is lowercased.
      */
-    public function getNormalizedSubtitle(): ?string
+    public function getMidsentenceSubtitle(): ?string
     {
         if ($this->subtitle === null) {
             return null;
