@@ -43,6 +43,7 @@ function createVideoWithVerticalAndTranscript(int $segmentCount = 10): SermonVid
         'vertical_video_path' => 'vertical/test-video.mp4',
         'transcript' => ['segments' => $segments],
         'duration' => $segmentCount * 5,
+        'date' => '2025-06-15 15:00:00', // 10:00 AM America/Chicago (CDT)
     ]);
 }
 
@@ -62,7 +63,7 @@ test('job extracts clip from vertical video successfully', function () {
 
     $clip->refresh();
     expect($clip->clip_video_status)->toBe(JobStatus::Completed);
-    expect($clip->clip_video_path)->toBe("clips/{$clip->id}.mp4");
+    expect($clip->clip_video_path)->toBe('clips/2025-06-15_10-00_00-10.mp4');
     expect($clip->clip_video_error)->toBeNull();
 });
 
@@ -459,4 +460,38 @@ test('job cleans up temporary ASS file after failure', function () {
 
     $tempFiles = glob(sys_get_temp_dir().'/caption_*.ass');
     expect($tempFiles)->toBeEmpty();
+});
+
+test('job deletes old clip file when path changes on re-extraction', function () {
+    Process::fake(['*' => Process::result()]);
+
+    $video = createVideoWithVerticalAndTranscript();
+    Storage::disk('public')->put($video->vertical_video_path, 'fake-vertical-content');
+
+    $clip = SermonClip::factory()->create([
+        'sermon_video_id' => $video->id,
+        'start_segment_index' => 2,
+        'end_segment_index' => 5,
+    ]);
+
+    // First extraction
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
+    $clip->refresh();
+    $oldPath = $clip->clip_video_path;
+
+    // Simulate the old file existing on disk
+    Storage::disk('public')->put($oldPath, 'old-clip-content');
+
+    // Change timing by adjusting segment indices
+    $clip->update([
+        'start_segment_index' => 4,
+        'end_segment_index' => 7,
+    ]);
+
+    // Second extraction
+    (new ExtractSermonClipVerticalVideo($clip))->handle(new CaptionGenerator);
+    $clip->refresh();
+
+    expect($clip->clip_video_path)->not->toBe($oldPath);
+    Storage::disk('public')->assertMissing($oldPath);
 });
