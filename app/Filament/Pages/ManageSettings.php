@@ -8,11 +8,15 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\EmbeddedSchema;
+use Filament\Schemas\Components\Form;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 
 /**
- * @property Schema $form
+ * @property-read Schema $form
  */
 class ManageSettings extends Page
 {
@@ -23,8 +27,6 @@ class ManageSettings extends Page
     protected static ?int $navigationSort = 99;
 
     protected static ?string $title = 'Settings';
-
-    protected string $view = 'filament.pages.settings';
 
     /** @var array<string, mixed> */
     public ?array $data = [];
@@ -47,6 +49,14 @@ class ManageSettings extends Page
             ]);
     }
 
+    public function content(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                $this->getFormContentComponent(),
+            ]);
+    }
+
     public function save(): void
     {
         $data = $this->form->getState();
@@ -57,6 +67,17 @@ class ManageSettings extends Page
             ->title('Settings saved')
             ->success()
             ->send();
+    }
+
+    protected function getFormContentComponent(): Component
+    {
+        return Form::make([EmbeddedSchema::make('form')])
+            ->id('form')
+            ->livewireSubmitHandler('save')
+            ->footer([
+                Actions::make($this->getFormActions())
+                    ->alignment($this->getFormActionsAlignment()),
+            ]);
     }
 
     /**
