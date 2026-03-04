@@ -56,7 +56,7 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
             $endTime = $sermonClip->ends_at;
             $duration = $sermonClip->duration;
 
-            // Build the output path: clips/YYYY-MM-DD_HH-MM_MM-SS.mp4
+            // Build the output path: clips/YYYY-MM-DD_HHMM_MMSS.mp4
             $sermonDate = $sermonVideo->date->timezone('America/Chicago');
             $clipStartSeconds = (int) floor($startTime);
             $outputRelativePath = sprintf(
