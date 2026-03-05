@@ -183,8 +183,18 @@ class EditSermonClip extends EditRecord
 
         unset($this->transcriptRows);
 
+        $shouldReExport = in_array($clip->clip_video_status, [
+            JobStatus::Completed,
+            JobStatus::Processing,
+        ], true);
+
+        if ($shouldReExport) {
+            ExtractSermonClipVerticalVideo::dispatch($clip);
+        }
+
         Notification::make()
             ->title('Segment updated')
+            ->body($shouldReExport ? 'Clip video re-export has been queued.' : null)
             ->success()
             ->send();
     }
