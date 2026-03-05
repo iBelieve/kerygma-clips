@@ -6,15 +6,17 @@ use App\Enums\JobStatus;
 use App\Models\SermonClip;
 use App\Services\CaptionGenerator;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 
-class ExtractSermonClipVerticalVideo implements ShouldQueue
+class ExtractSermonClipVerticalVideo implements ShouldBeUniqueUntilProcessing, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -32,6 +34,21 @@ class ExtractSermonClipVerticalVideo implements ShouldQueue
         public SermonClip $sermonClip
     ) {
         $this->onQueue('video-processing');
+    }
+
+    public function uniqueId(): int
+    {
+        return $this->sermonClip->id;
+    }
+
+    /**
+     * @return list<WithoutOverlapping>
+     */
+    public function middleware(): array
+    {
+        return [
+            new WithoutOverlapping((string) $this->sermonClip->id),
+        ];
     }
 
     public function handle(CaptionGenerator $captionGenerator): void

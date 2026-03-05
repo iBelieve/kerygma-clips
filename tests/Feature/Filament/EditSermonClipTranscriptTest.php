@@ -1,8 +1,11 @@
 <?php
 
+use App\Enums\JobStatus;
 use App\Filament\Resources\SermonClips\Pages\EditSermonClip;
+use App\Jobs\ExtractSermonClipVerticalVideo;
 use App\Models\SermonVideo;
 use App\Models\User;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -167,6 +170,81 @@ test('updateSegmentWords rejects empty word text', function () {
         ->call('updateSegmentWords', 1, ['Word', '', '1']);
 
     expect($video->refresh()->transcript)->toBe($originalTranscript);
+});
+
+test('updateSegmentWords dispatches re-export when clip video is completed', function () {
+    Queue::fake();
+
+    $video = makeVideoWithWords();
+    $clip = $video->sermonClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 2,
+        'clip_video_status' => JobStatus::Completed,
+    ]);
+
+    Livewire::test(EditSermonClip::class, ['record' => $clip->id])
+        ->call('updateSegmentWords', 1, ['Changed', 'the', 'words']);
+
+    Queue::assertPushed(ExtractSermonClipVerticalVideo::class, function ($job) use ($clip) {
+        return $job->sermonClip->id === $clip->id;
+    });
+});
+
+test('updateSegmentWords dispatches re-export when clip video is processing', function () {
+    Queue::fake();
+
+    $video = makeVideoWithWords();
+    $clip = $video->sermonClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 2,
+        'clip_video_status' => JobStatus::Processing,
+    ]);
+
+    Livewire::test(EditSermonClip::class, ['record' => $clip->id])
+        ->call('updateSegmentWords', 1, ['Changed', 'the', 'words']);
+
+    Queue::assertPushed(ExtractSermonClipVerticalVideo::class, function ($job) use ($clip) {
+        return $job->sermonClip->id === $clip->id;
+    });
+});
+
+test('updateSegmentWords does not dispatch re-export for non-exportable statuses', function (
+    ?JobStatus $status
+) {
+    Queue::fake();
+
+    $video = makeVideoWithWords();
+    $clip = $video->sermonClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 2,
+        'clip_video_status' => $status,
+    ]);
+
+    Livewire::test(EditSermonClip::class, ['record' => $clip->id])
+        ->call('updateSegmentWords', 1, ['Changed', 'the', 'words']);
+
+    Queue::assertNotPushed(ExtractSermonClipVerticalVideo::class);
+})->with([
+    'pending' => [JobStatus::Pending],
+    'failed' => [JobStatus::Failed],
+    'timed out' => [JobStatus::TimedOut],
+]);
+
+test('updateSegmentWords does not dispatch re-export when validation fails', function () {
+    Queue::fake();
+
+    $video = makeVideoWithWords();
+    $clip = $video->sermonClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 2,
+        'clip_video_status' => JobStatus::Completed,
+    ]);
+
+    // Mismatched word count — should fail validation and not dispatch
+    Livewire::test(EditSermonClip::class, ['record' => $clip->id])
+        ->call('updateSegmentWords', 1, ['Only', 'two']);
+
+    Queue::assertNotPushed(ExtractSermonClipVerticalVideo::class);
 });
 
 test('updateSegmentWords preserves word timestamps', function () {
