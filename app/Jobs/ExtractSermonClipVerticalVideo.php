@@ -47,7 +47,7 @@ class ExtractSermonClipVerticalVideo implements ShouldBeUniqueUntilProcessing, S
     public function middleware(): array
     {
         return [
-            new WithoutOverlapping((string) $this->sermonClip->id),
+            new WithoutOverlapping('extract-clip-'.$this->sermonClip->id),
         ];
     }
 
