@@ -380,7 +380,7 @@ test('job does not dispatch clip extraction when video has no clips', function (
 
 // --- Command Tests ---
 
-test('job skips cropping for already-vertical video', function () {
+test('job copies streams without re-encoding for 1080x1920 video', function () {
     Process::fake(['*' => Process::result()]);
 
     $this->mock(VideoProbe::class, function ($mock) {
@@ -401,20 +401,19 @@ test('job skips cropping for already-vertical video', function () {
 
     Process::assertRan(function ($process) {
         $command = $process->command;
-        $vfIndex = array_search('-vf', $command);
 
-        return $vfIndex !== false
-            && $command[$vfIndex + 1] === 'scale=1080:1920'
-            && ! str_contains($command[$vfIndex + 1], 'crop=');
+        return in_array('-c', $command)
+            && in_array('copy', $command)
+            && ! in_array('-vf', $command);
     });
 });
 
-test('job skips cropping for narrower-than-vertical video', function () {
+test('job scales without cropping for vertical video not at target size', function () {
     Process::fake(['*' => Process::result()]);
 
     $this->mock(VideoProbe::class, function ($mock) {
         $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 720, 'height' => 1920]);
+            ->andReturn(['width' => 720, 'height' => 1280]);
     });
 
     $video = Video::factory()->create([
@@ -430,7 +429,8 @@ test('job skips cropping for narrower-than-vertical video', function () {
         $vfIndex = array_search('-vf', $command);
 
         return $vfIndex !== false
-            && $command[$vfIndex + 1] === 'scale=1080:1920';
+            && $command[$vfIndex + 1] === 'scale=1080:1920'
+            && ! str_contains($command[$vfIndex + 1], 'crop=');
     });
 });
 
