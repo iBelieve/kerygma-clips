@@ -40,15 +40,30 @@ test('it returns null when ffprobe returns non-numeric output', function () {
     expect($duration)->toBeNull();
 });
 
-test('it returns video dimensions from ffprobe output', function () {
+test('it returns video dimensions from ffprobe json output', function () {
     Process::fake([
-        '*' => Process::result(output: '1920x1080'),
+        '*' => Process::result(output: json_encode([
+            'streams' => [['width' => 1920, 'height' => 1080]],
+        ])),
     ]);
 
     $probe = new VideoProbe;
     $dimensions = $probe->getVideoDimensions('/path/to/video.mp4');
 
     expect($dimensions)->toBe(['width' => 1920, 'height' => 1080]);
+});
+
+test('it returns dimensions for vertical video', function () {
+    Process::fake([
+        '*' => Process::result(output: json_encode([
+            'streams' => [['width' => 1080, 'height' => 1920]],
+        ])),
+    ]);
+
+    $probe = new VideoProbe;
+    $dimensions = $probe->getVideoDimensions('/path/to/video.mov');
+
+    expect($dimensions)->toBe(['width' => 1080, 'height' => 1920]);
 });
 
 test('it returns null when ffprobe returns no dimensions', function () {
@@ -62,22 +77,25 @@ test('it returns null when ffprobe returns no dimensions', function () {
     expect($dimensions)->toBeNull();
 });
 
-test('it parses dimensions from first line when ffprobe returns multi-line output', function () {
-    // iPhone .mov files can have multiple video streams, producing extra ffprobe output
+test('it returns null when ffprobe returns no streams', function () {
     Process::fake([
-        '*' => Process::result(output: "1080x1920\n1080x1920"),
+        '*' => Process::result(output: json_encode(['streams' => []])),
     ]);
 
     $probe = new VideoProbe;
-    $dimensions = $probe->getVideoDimensions('/path/to/video.mov');
+    $dimensions = $probe->getVideoDimensions('/path/to/video.mp4');
 
-    expect($dimensions)->toBe(['width' => 1080, 'height' => 1920]);
+    expect($dimensions)->toBeNull();
 });
 
-test('it handles ffprobe output with trailing separator from extra streams', function () {
-    // Some .mov files produce output like "1080x1920\n" with partial extra lines
+test('it uses only first stream when ffprobe returns multiple streams', function () {
     Process::fake([
-        '*' => Process::result(output: "1080x1920\nx"),
+        '*' => Process::result(output: json_encode([
+            'streams' => [
+                ['width' => 1080, 'height' => 1920],
+                ['width' => 320, 'height' => 240],
+            ],
+        ])),
     ]);
 
     $probe = new VideoProbe;
