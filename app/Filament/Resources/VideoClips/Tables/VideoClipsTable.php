@@ -19,13 +19,16 @@ class VideoClipsTable
                     ->timezone('America/Chicago')
                     ->sortable(),
 
-                TextColumn::make('title')
-                    ->label('Title')
+                TextColumn::make('video')
+                    ->label('Video')
                     ->placeholder("\u{2014}")
+                    ->getStateUsing(
+                        fn (?VideoClip $record) => $record->video->subtitle ?? $record->video->title
+                    )
                     ->searchable(),
 
-                TextColumn::make('video.subtitle')
-                    ->label('Subtitle')
+                TextColumn::make('title')
+                    ->label('Title')
                     ->placeholder("\u{2014}")
                     ->searchable(),
 
