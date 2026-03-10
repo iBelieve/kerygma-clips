@@ -26,6 +26,8 @@ class VideoResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
+            TextInput::make('title')
+                ->required(fn (string $operation): bool => $operation === 'create'),
             FileUpload::make('raw_video_path')
                 ->label('Video File')
                 ->disk('local')
@@ -34,8 +36,6 @@ class VideoResource extends Resource
                 ->preserveFilenames()
                 ->required()
                 ->visibleOn('create'),
-            TextInput::make('title')
-                ->required(fn (string $operation): bool => $operation === 'create'),
             Grid::make(2)->columnStart(1)->schema([
                 TextInput::make('subtitle'),
                 TextInput::make('scripture'),
