@@ -13,7 +13,7 @@ use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Storage;
 
-class UploadVideo extends CreateRecord
+class CreateVideo extends CreateRecord
 {
     protected static string $resource = VideoResource::class;
 

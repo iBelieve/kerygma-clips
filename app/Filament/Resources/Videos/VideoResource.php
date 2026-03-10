@@ -5,7 +5,7 @@ namespace App\Filament\Resources\Videos;
 use App\Enums\VideoType;
 use App\Filament\Resources\Videos\Pages\EditVideo;
 use App\Filament\Resources\Videos\Pages\ListVideos;
-use App\Filament\Resources\Videos\Pages\UploadVideo;
+use App\Filament\Resources\Videos\Pages\CreateVideo;
 use App\Filament\Resources\Videos\Tables\VideosTable;
 use App\Models\Video;
 use BackedEnum;
@@ -56,7 +56,7 @@ class VideoResource extends Resource
     {
         return [
             'index' => ListVideos::route('/'),
-            'upload' => UploadVideo::route('/upload'),
+            'create' => CreateVideo::route('/upload'),
             'edit' => EditVideo::route('/{record}/edit'),
         ];
     }
