@@ -13,7 +13,7 @@ class ScanSermonVideos extends Command
                             {--queue : Dispatch the scan to the queue instead of running synchronously}
                             {--include-recent : Include recently modified files that would normally be skipped}';
 
-    protected $description = 'Scan the sermon_videos disk for new video files and create SermonVideo entries';
+    protected $description = 'Scan the sermon_videos disk for new video files and create video entries';
 
     public function handle(): int
     {

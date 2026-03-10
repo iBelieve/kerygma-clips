@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Enums\JobStatus;
-use App\Models\SermonVideo;
+use App\Models\Video;
 use App\Services\VideoProbe;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -32,19 +32,19 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
     public int $tries = 1;
 
     public function __construct(
-        public SermonVideo $sermonVideo
+        public Video $video
     ) {
         $this->onQueue('video-processing');
     }
 
     public function uniqueId(): int
     {
-        return $this->sermonVideo->id;
+        return $this->video->id;
     }
 
     public function handle(VideoProbe $videoProbe): void
     {
-        $this->sermonVideo->update([
+        $this->video->update([
             'vertical_video_status' => JobStatus::Processing,
             'vertical_video_error' => null,
             'vertical_video_started_at' => now(),
@@ -53,7 +53,7 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
 
         $inputDisk = Storage::disk('sermon_videos');
         $outputDisk = Storage::disk('public');
-        $absolutePath = $inputDisk->path($this->sermonVideo->raw_video_path);
+        $absolutePath = $inputDisk->path($this->video->raw_video_path);
 
         try {
             $dimensions = $videoProbe->getVideoDimensions($absolutePath);
@@ -70,11 +70,11 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
             $cropHeight = $sourceHeight;
             $cropWidth = min((int) round($sourceHeight * 9 / 16), $sourceWidth);
 
-            $cropCenter = $this->sermonVideo->vertical_video_crop_center ?? 50;
+            $cropCenter = $this->video->vertical_video_crop_center ?? 50;
             $centerX = (int) round($sourceWidth * $cropCenter / 100);
             $cropX = max(0, min($centerX - intdiv($cropWidth, 2), $sourceWidth - $cropWidth));
 
-            $inputFilename = pathinfo($this->sermonVideo->raw_video_path, PATHINFO_FILENAME);
+            $inputFilename = pathinfo($this->video->raw_video_path, PATHINFO_FILENAME);
             $outputRelativePath = "vertical/{$inputFilename}.mp4";
             $outputAbsolutePath = $outputDisk->path($outputRelativePath);
 
@@ -102,24 +102,24 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
                 throw new \RuntimeException($result->errorOutput() ?: $result->output());
             }
 
-            $this->sermonVideo->update([
+            $this->video->update([
                 'vertical_video_status' => JobStatus::Completed,
                 'vertical_video_path' => $outputRelativePath,
                 'vertical_video_completed_at' => now(),
             ]);
 
-            foreach ($this->sermonVideo->sermonClips as $clip) {
-                ExtractSermonClipVerticalVideo::dispatch($clip);
+            foreach ($this->video->videoClips as $clip) {
+                ExtractVideoClipVerticalVideo::dispatch($clip);
             }
         } catch (\Throwable $e) {
             $isTimeout = $e instanceof ProcessTimedOutException;
 
             Log::error('Vertical video conversion failed', [
-                'video_path' => $this->sermonVideo->raw_video_path,
+                'video_path' => $this->video->raw_video_path,
                 'exception' => $e,
             ]);
 
-            $this->sermonVideo->update([
+            $this->video->update([
                 'vertical_video_status' => $isTimeout ? JobStatus::TimedOut : JobStatus::Failed,
                 'vertical_video_error' => $e->getMessage(),
             ]);
@@ -128,7 +128,7 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
 
     public function failed(\Throwable $exception): void
     {
-        if ($this->sermonVideo->vertical_video_status !== JobStatus::Processing) {
+        if ($this->video->vertical_video_status !== JobStatus::Processing) {
             return;
         }
 
@@ -136,7 +136,7 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
             || $exception instanceof ProcessTimedOutException
             || $exception instanceof \Symfony\Component\Process\Exception\ProcessTimedOutException;
 
-        $this->sermonVideo->update([
+        $this->video->update([
             'vertical_video_status' => $isTimeout ? JobStatus::TimedOut : JobStatus::Failed,
             'vertical_video_error' => $exception->getMessage(),
         ]);

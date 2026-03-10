@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\SermonVideo;
+use App\Models\Video;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -20,23 +20,23 @@ class ExtractPreviewFrame implements ShouldBeUnique, ShouldQueue
     public int $tries = 1;
 
     public function __construct(
-        public SermonVideo $sermonVideo
+        public Video $video
     ) {}
 
     public function uniqueId(): int
     {
-        return $this->sermonVideo->id;
+        return $this->video->id;
     }
 
     public function handle(): void
     {
         $inputDisk = Storage::disk('sermon_videos');
         $outputDisk = Storage::disk('public');
-        $absolutePath = $inputDisk->path($this->sermonVideo->raw_video_path);
+        $absolutePath = $inputDisk->path($this->video->raw_video_path);
 
-        $seekTime = max(0, (int) floor(($this->sermonVideo->duration ?? 0) / 2));
+        $seekTime = max(0, (int) floor(($this->video->duration ?? 0) / 2));
 
-        $inputFilename = pathinfo($this->sermonVideo->raw_video_path, PATHINFO_FILENAME);
+        $inputFilename = pathinfo($this->video->raw_video_path, PATHINFO_FILENAME);
         $outputRelativePath = "frames/{$inputFilename}.jpg";
         $outputAbsolutePath = $outputDisk->path($outputRelativePath);
 
@@ -59,12 +59,12 @@ class ExtractPreviewFrame implements ShouldBeUnique, ShouldQueue
                 throw new \RuntimeException($result->errorOutput() ?: $result->output());
             }
 
-            $this->sermonVideo->update([
+            $this->video->update([
                 'preview_frame_path' => $outputRelativePath,
             ]);
         } catch (\Throwable $e) {
             Log::warning('Preview frame extraction failed', [
-                'video_path' => $this->sermonVideo->raw_video_path,
+                'video_path' => $this->video->raw_video_path,
                 'exception' => $e,
             ]);
         }

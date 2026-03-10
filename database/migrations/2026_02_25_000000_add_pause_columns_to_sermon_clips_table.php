@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\SermonClip;
+use App\Models\VideoClip;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +40,7 @@ return new class extends Migration
         foreach ($clips as $clip) {
             $segments = json_decode($clip->transcript, true)['segments'] ?? [];
 
-            $timing = SermonClip::calculatePauseTiming(
+            $timing = VideoClip::calculatePauseTiming(
                 $clip->start_segment_index,
                 $clip->end_segment_index,
                 $segments,
