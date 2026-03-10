@@ -1,6 +1,7 @@
 <?php
 
 use App\Filament\Resources\Videos\Pages\ListVideos;
+use App\Filament\Resources\Videos\Pages\UploadVideo;
 use App\Filament\Resources\Videos\VideoResource;
 use App\Jobs\ScanSermonVideos;
 use App\Models\User;
@@ -51,4 +52,9 @@ test('it dispatches scan job from header action', function () {
 
 test('it can create videos via upload', function () {
     expect(VideoResource::canCreate())->toBeTrue();
+});
+
+test('it can render the upload page', function () {
+    Livewire::test(UploadVideo::class)
+        ->assertSuccessful();
 });

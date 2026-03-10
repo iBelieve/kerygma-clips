@@ -380,6 +380,109 @@ test('job does not dispatch clip extraction when video has no clips', function (
 
 // --- Command Tests ---
 
+test('job skips cropping for already-vertical video', function () {
+    Process::fake(['*' => Process::result()]);
+
+    $this->mock(VideoProbe::class, function ($mock) {
+        $mock->shouldReceive('getVideoDimensions')
+            ->andReturn(['width' => 1080, 'height' => 1920]);
+    });
+
+    $video = Video::factory()->create([
+        'vertical_video_status' => JobStatus::Pending,
+    ]);
+
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+
+    (new ConvertToVerticalVideo($video))->handle(app(VideoProbe::class));
+
+    $video->refresh();
+    expect($video->vertical_video_status)->toBe(JobStatus::Completed);
+
+    Process::assertRan(function ($process) {
+        $command = $process->command;
+        $vfIndex = array_search('-vf', $command);
+
+        return $vfIndex !== false
+            && $command[$vfIndex + 1] === 'scale=1080:1920'
+            && ! str_contains($command[$vfIndex + 1], 'crop=');
+    });
+});
+
+test('job skips cropping for narrower-than-vertical video', function () {
+    Process::fake(['*' => Process::result()]);
+
+    $this->mock(VideoProbe::class, function ($mock) {
+        $mock->shouldReceive('getVideoDimensions')
+            ->andReturn(['width' => 720, 'height' => 1920]);
+    });
+
+    $video = Video::factory()->create([
+        'vertical_video_status' => JobStatus::Pending,
+    ]);
+
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+
+    (new ConvertToVerticalVideo($video))->handle(app(VideoProbe::class));
+
+    Process::assertRan(function ($process) {
+        $command = $process->command;
+        $vfIndex = array_search('-vf', $command);
+
+        return $vfIndex !== false
+            && $command[$vfIndex + 1] === 'scale=1080:1920';
+    });
+});
+
+test('job crops square video', function () {
+    Process::fake(['*' => Process::result()]);
+
+    $this->mock(VideoProbe::class, function ($mock) {
+        $mock->shouldReceive('getVideoDimensions')
+            ->andReturn(['width' => 1080, 'height' => 1080]);
+    });
+
+    $video = Video::factory()->create([
+        'vertical_video_status' => JobStatus::Pending,
+    ]);
+
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+
+    (new ConvertToVerticalVideo($video))->handle(app(VideoProbe::class));
+
+    Process::assertRan(function ($process) {
+        $command = $process->command;
+        $vfIndex = array_search('-vf', $command);
+
+        return $vfIndex !== false && str_contains($command[$vfIndex + 1], 'crop=');
+    });
+});
+
+test('job reads from local disk for uploaded videos', function () {
+    Process::fake(['*' => Process::result()]);
+    Storage::fake('local');
+
+    $this->mock(VideoProbe::class, function ($mock) {
+        $mock->shouldReceive('getVideoDimensions')
+            ->andReturn(['width' => 1080, 'height' => 1920]);
+    });
+
+    $video = Video::factory()->create([
+        'type' => \App\Enums\VideoType::Upload,
+        'raw_video_path' => 'uploads/test-video.mp4',
+        'vertical_video_status' => JobStatus::Pending,
+    ]);
+
+    Storage::disk('local')->put('uploads/test-video.mp4', 'fake-content');
+
+    (new ConvertToVerticalVideo($video))->handle(app(VideoProbe::class));
+
+    $video->refresh();
+    expect($video->vertical_video_status)->toBe(JobStatus::Completed);
+});
+
+// --- Command Tests ---
+
 test('command runs conversion synchronously', function () {
     Process::fake(['*' => Process::result()]);
 
