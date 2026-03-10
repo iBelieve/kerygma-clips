@@ -54,7 +54,9 @@ class VideoProbe
             return null;
         }
 
-        $output = trim($result->output());
+        // Take only the first line — some files (e.g. iPhone .mov) have
+        // multiple video streams, causing ffprobe to output extra lines.
+        $output = strtok(trim($result->output()), "\n");
 
         if (! preg_match('/^(\d+)x(\d+)$/', $output, $matches)) {
             Log::warning("ffprobe returned unexpected dimensions for {$absolutePath}: {$output}");
