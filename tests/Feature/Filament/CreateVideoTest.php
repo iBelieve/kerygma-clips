@@ -90,6 +90,21 @@ test('it requires a video file', function () {
         ->assertHasFormErrors(['raw_video_path' => 'required']);
 });
 
+test('it accepts large video files', function () {
+    // 50 MB file — above the old 12 MB Livewire default, should not be rejected
+    $file = UploadedFile::fake()->create('large-video.mp4', 50_000, 'video/mp4');
+
+    Livewire::test(CreateVideo::class)
+        ->fillForm([
+            'title' => 'Large Video',
+            'raw_video_path' => [$file],
+        ])
+        ->call('create')
+        ->assertHasNoFormErrors();
+
+    expect(Video::first()->title)->toBe('Large Video');
+});
+
 test('it sets the date to now', function () {
     $this->freezeTime();
     $file = UploadedFile::fake()->create('test-video.mp4', 1024, 'video/mp4');
