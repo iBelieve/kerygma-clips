@@ -25,7 +25,8 @@ class ListVideos extends ListRecords
         return [
             CreateAction::make()
                 ->label('Upload Video')
-                ->icon('heroicon-o-arrow-up-tray'),
+                ->icon('heroicon-o-arrow-up-tray')
+                ->url(fn (): string => VideoResource::getUrl('upload')),
 
             Action::make('scan')
                 ->label('Scan for Videos')
