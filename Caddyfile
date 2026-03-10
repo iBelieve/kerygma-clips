@@ -11,5 +11,9 @@
 :{$PORT} {
     root * /app/public
 	encode zstd gzip
+
+	@reverb path /app/*
+	reverse_proxy @reverb localhost:8080
+
 	php_server
 }

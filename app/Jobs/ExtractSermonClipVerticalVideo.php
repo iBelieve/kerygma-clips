@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Enums\JobStatus;
+use App\Events\SermonClipUpdated;
 use App\Models\SermonClip;
 use App\Services\CaptionGenerator;
 use Illuminate\Bus\Queueable;
@@ -64,6 +65,9 @@ class ExtractSermonClipVerticalVideo implements ShouldBeUniqueUntilProcessing, S
                 'clip_video_started_at' => now(),
                 'clip_video_completed_at' => null,
             ]);
+
+            broadcast(new SermonClipUpdated($sermonClip->id));
+
             if ($sermonVideo->vertical_video_status !== JobStatus::Completed || $sermonVideo->vertical_video_path === null) {
                 throw new \RuntimeException('Sermon video does not have a completed vertical video');
             }
@@ -139,6 +143,8 @@ class ExtractSermonClipVerticalVideo implements ShouldBeUniqueUntilProcessing, S
                 'clip_video_path' => $outputRelativePath,
                 'clip_video_completed_at' => now(),
             ]);
+
+            broadcast(new SermonClipUpdated($sermonClip->id));
         } catch (\Throwable $e) {
             Log::error('Sermon clip vertical video extraction failed', [
                 'sermon_clip_id' => $sermonClip->id,
@@ -150,6 +156,8 @@ class ExtractSermonClipVerticalVideo implements ShouldBeUniqueUntilProcessing, S
                 'clip_video_status' => JobStatus::Failed,
                 'clip_video_error' => $e->getMessage(),
             ]);
+
+            broadcast(new SermonClipUpdated($sermonClip->id));
         } finally {
             if ($assPath !== null && file_exists($assPath)) {
                 unlink($assPath);
