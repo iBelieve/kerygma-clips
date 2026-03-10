@@ -11,6 +11,7 @@ use App\Jobs\TranscribeVideo;
 use App\Models\Video;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\Width;
@@ -22,6 +23,10 @@ class ListVideos extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            CreateAction::make()
+                ->label('Upload Video')
+                ->icon('heroicon-o-arrow-up-tray'),
+
             Action::make('scan')
                 ->label('Scan for Videos')
                 ->icon('heroicon-o-arrow-path')

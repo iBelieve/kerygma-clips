@@ -30,7 +30,7 @@ class ExtractPreviewFrame implements ShouldBeUnique, ShouldQueue
 
     public function handle(): void
     {
-        $inputDisk = Storage::disk('sermon_videos');
+        $inputDisk = $this->video->rawVideoDisk();
         $outputDisk = Storage::disk('public');
         $absolutePath = $inputDisk->path($this->video->raw_video_path);
 

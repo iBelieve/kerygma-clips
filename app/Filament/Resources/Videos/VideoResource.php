@@ -2,11 +2,14 @@
 
 namespace App\Filament\Resources\Videos;
 
+use App\Enums\VideoType;
 use App\Filament\Resources\Videos\Pages\EditVideo;
 use App\Filament\Resources\Videos\Pages\ListVideos;
+use App\Filament\Resources\Videos\Pages\UploadVideo;
 use App\Filament\Resources\Videos\Tables\VideosTable;
 use App\Models\Video;
 use BackedEnum;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
@@ -23,15 +26,24 @@ class VideoResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('title'),
+            FileUpload::make('raw_video_path')
+                ->label('Video File')
+                ->disk('local')
+                ->directory('uploads')
+                ->acceptedFileTypes(['video/*'])
+                ->preserveFilenames()
+                ->required()
+                ->visibleOn('create'),
+            TextInput::make('title')
+                ->required(fn (string $operation): bool => $operation === 'create'),
             Grid::make(2)->columnStart(1)->schema([
                 TextInput::make('subtitle'),
                 TextInput::make('scripture'),
-            ]),
+            ])->visible(fn (?Video $record): bool => $record?->type === VideoType::Sermon),
             Grid::make(2)->schema([
                 TextInput::make('preacher'),
                 TextInput::make('color'),
-            ]),
+            ])->visible(fn (?Video $record): bool => $record?->type === VideoType::Sermon),
         ]);
     }
 
@@ -44,12 +56,8 @@ class VideoResource extends Resource
     {
         return [
             'index' => ListVideos::route('/'),
+            'upload' => UploadVideo::route('/upload'),
             'edit' => EditVideo::route('/{record}/edit'),
         ];
-    }
-
-    public static function canCreate(): bool
-    {
-        return false;
     }
 }

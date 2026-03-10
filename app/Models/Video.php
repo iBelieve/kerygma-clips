@@ -53,6 +53,22 @@ class Video extends Model
             if ($video->preview_frame_path) {
                 Storage::disk('public')->delete($video->preview_frame_path);
             }
+
+            // Delete the raw file for uploaded videos (sermons keep their originals)
+            if ($video->type === VideoType::Upload && $video->raw_video_path) {
+                $video->rawVideoDisk()->delete($video->raw_video_path);
+            }
+        });
+    }
+
+    /**
+     * Get the filesystem disk where the raw video file is stored.
+     */
+    public function rawVideoDisk(): \Illuminate\Contracts\Filesystem\Filesystem
+    {
+        return Storage::disk(match ($this->type) {
+            VideoType::Upload => 'local',
+            default => 'sermon_videos',
         });
     }
 

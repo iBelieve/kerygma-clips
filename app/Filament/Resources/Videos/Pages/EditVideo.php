@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Videos\Pages;
 
 use App\Enums\JobStatus;
+use App\Enums\VideoType;
 use App\Filament\Resources\Videos\VideoResource;
 use App\Jobs\ConvertToVerticalVideo;
 use App\Jobs\ExtractVideoClipVerticalVideo;
@@ -87,7 +88,10 @@ class EditVideo extends EditRecord
                     )),
 
                 DeleteAction::make()
-                    ->modalDescription('This will delete the video record and all associated clips. The original video file will not be deleted.'),
+                    ->modalDescription(fn (Video $record): string => $record->type === VideoType::Upload
+                        ? 'This will delete the video record, all associated clips, and the uploaded video file.'
+                        : 'This will delete the video record and all associated clips. The original video file will not be deleted.'
+                    ),
             ])
                 ->icon('heroicon-o-cog-6-tooth')
                 ->label('')

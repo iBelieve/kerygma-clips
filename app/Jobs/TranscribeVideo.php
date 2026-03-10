@@ -50,7 +50,7 @@ class TranscribeVideo implements ShouldBeUnique, ShouldQueue
             'transcription_completed_at' => null,
         ]);
 
-        $disk = Storage::disk('sermon_videos');
+        $disk = $this->video->rawVideoDisk();
         $absolutePath = $disk->path($this->video->raw_video_path);
 
         $outputDir = sys_get_temp_dir().'/whisperx_'.$this->video->id;

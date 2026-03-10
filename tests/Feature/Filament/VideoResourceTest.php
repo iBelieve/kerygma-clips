@@ -49,6 +49,6 @@ test('it dispatches scan job from header action', function () {
     });
 });
 
-test('it cannot create sermon videos', function () {
-    expect(VideoResource::canCreate())->toBeFalse();
+test('it can create videos via upload', function () {
+    expect(VideoResource::canCreate())->toBeTrue();
 });

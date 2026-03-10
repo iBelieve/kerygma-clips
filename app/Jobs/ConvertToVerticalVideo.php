@@ -51,7 +51,7 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
             'vertical_video_completed_at' => null,
         ]);
 
-        $inputDisk = Storage::disk('sermon_videos');
+        $inputDisk = $this->video->rawVideoDisk();
         $outputDisk = Storage::disk('public');
         $absolutePath = $inputDisk->path($this->video->raw_video_path);
 
@@ -67,12 +67,21 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
             $sourceWidth = $dimensions['width'];
             $sourceHeight = $dimensions['height'];
 
-            $cropHeight = $sourceHeight;
-            $cropWidth = min((int) round($sourceHeight * 9 / 16), $sourceWidth);
+            // Use integer cross-multiplication to avoid float inexactness
+            $isAlreadyVertical = $sourceWidth * 16 <= $sourceHeight * 9;
 
-            $cropCenter = $this->video->vertical_video_crop_center ?? 50;
-            $centerX = (int) round($sourceWidth * $cropCenter / 100);
-            $cropX = max(0, min($centerX - intdiv($cropWidth, 2), $sourceWidth - $cropWidth));
+            if ($isAlreadyVertical) {
+                $videoFilter = 'scale=1080:1920';
+            } else {
+                $cropHeight = $sourceHeight;
+                $cropWidth = min((int) round($sourceHeight * 9 / 16), $sourceWidth);
+
+                $cropCenter = $this->video->vertical_video_crop_center ?? 50;
+                $centerX = (int) round($sourceWidth * $cropCenter / 100);
+                $cropX = max(0, min($centerX - intdiv($cropWidth, 2), $sourceWidth - $cropWidth));
+
+                $videoFilter = "crop={$cropWidth}:{$cropHeight}:{$cropX}:0,scale=1080:1920";
+            }
 
             $inputFilename = pathinfo($this->video->raw_video_path, PATHINFO_FILENAME);
             $outputRelativePath = "vertical/{$inputFilename}.mp4";
@@ -87,7 +96,7 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
             $result = Process::timeout(7200)->run([
                 'ffmpeg',
                 '-i', $absolutePath,
-                '-vf', "crop={$cropWidth}:{$cropHeight}:{$cropX}:0,scale=1080:1920",
+                '-vf', $videoFilter,
                 '-c:v', 'libx264',
                 '-preset', 'medium',
                 '-crf', '23',
