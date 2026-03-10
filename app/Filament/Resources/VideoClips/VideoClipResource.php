@@ -25,12 +25,6 @@ class VideoClipResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedScissors;
 
-    protected static ?string $navigationLabel = 'Video Clips';
-
-    protected static ?string $modelLabel = 'Video Clip';
-
-    protected static ?string $pluralModelLabel = 'Video Clips';
-
     public static function form(Schema $schema): Schema
     {
         return $schema
