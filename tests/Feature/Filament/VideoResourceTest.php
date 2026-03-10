@@ -3,8 +3,8 @@
 use App\Filament\Resources\Videos\Pages\ListVideos;
 use App\Filament\Resources\Videos\VideoResource;
 use App\Jobs\ScanSermonVideos;
-use App\Models\Video;
 use App\Models\User;
+use App\Models\Video;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 

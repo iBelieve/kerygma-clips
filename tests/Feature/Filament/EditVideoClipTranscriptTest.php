@@ -3,8 +3,8 @@
 use App\Enums\JobStatus;
 use App\Filament\Resources\VideoClips\Pages\EditVideoClip;
 use App\Jobs\ExtractVideoClipVerticalVideo;
-use App\Models\Video;
 use App\Models\User;
+use App\Models\Video;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 

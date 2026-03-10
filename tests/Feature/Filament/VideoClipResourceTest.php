@@ -5,8 +5,8 @@ use App\Filament\Resources\VideoClips\Pages\EditVideoClip;
 use App\Filament\Resources\VideoClips\Pages\ListVideoClips;
 use App\Filament\Resources\VideoClips\VideoClipResource;
 use App\Jobs\ExtractVideoClipVerticalVideo;
-use App\Models\Video;
 use App\Models\User;
+use App\Models\Video;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 

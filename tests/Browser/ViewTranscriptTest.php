@@ -1,9 +1,9 @@
 <?php
 
 use App\Enums\JobStatus;
-use App\Models\VideoClip;
-use App\Models\Video;
 use App\Models\User;
+use App\Models\Video;
+use App\Models\VideoClip;
 use Laravel\Dusk\Browser;
 
 test('hovering a segment highlights it and clicking creates a clip', function () {

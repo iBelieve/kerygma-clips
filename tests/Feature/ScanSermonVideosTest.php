@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Video;
 use App\Services\VideoProbe;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;

@@ -3,8 +3,8 @@
 use App\Ai\Agents\VideoClipTitleGenerator;
 use App\Filament\Resources\Videos\Pages\EditVideo;
 use App\Jobs\GenerateVideoClipTitle;
-use App\Models\Video;
 use App\Models\User;
+use App\Models\Video;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 

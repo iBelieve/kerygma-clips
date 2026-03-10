@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\VideoClip;
-use App\Models\Video;
 use App\Models\Settings;
+use App\Models\Video;
+use App\Models\VideoClip;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 

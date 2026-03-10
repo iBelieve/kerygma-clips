@@ -2,8 +2,8 @@
 
 use App\Enums\JobStatus;
 use App\Jobs\ExtractVideoClipVerticalVideo;
-use App\Models\VideoClip;
 use App\Models\Video;
+use App\Models\VideoClip;
 use App\Services\CaptionGenerator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;

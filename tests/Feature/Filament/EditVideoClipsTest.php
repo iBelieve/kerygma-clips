@@ -2,9 +2,9 @@
 
 use App\Filament\Resources\Videos\Pages\EditVideo;
 use App\Jobs\GenerateVideoClipTitle;
-use App\Models\VideoClip;
-use App\Models\Video;
 use App\Models\User;
+use App\Models\Video;
+use App\Models\VideoClip;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
