@@ -1,15 +1,15 @@
 <?php
 
 use App\Enums\JobStatus;
-use App\Models\SermonClip;
-use App\Models\SermonVideo;
+use App\Models\VideoClip;
+use App\Models\Video;
 use App\Models\User;
 use Laravel\Dusk\Browser;
 
 test('hovering a segment highlights it and clicking creates a clip', function () {
     $user = User::factory()->create();
 
-    $sermonVideo = SermonVideo::factory()->create([
+    $video = Video::factory()->create([
         'transcript_status' => JobStatus::Completed,
         'duration' => 120,
         'transcript' => [
@@ -33,9 +33,9 @@ test('hovering a segment highlights it and clicking creates a clip', function ()
         ],
     ]);
 
-    $this->browse(function (Browser $browser) use ($user, $sermonVideo) {
+    $this->browse(function (Browser $browser) use ($user, $video) {
         $browser->loginAs($user)
-            ->visit("/sermon-videos/{$sermonVideo->id}/edit")
+            ->visit("/videos/{$video->id}/edit")
             ->waitFor('@transcript-table')
             ->assertSeeIn('@transcript-table', 'Welcome to today\'s sermon.')
             ->assertSeeIn('@transcript-table', 'Let us begin with a reading.');
@@ -66,9 +66,9 @@ test('hovering a segment highlights it and clicking creates a clip', function ()
     });
 
     // Verify the clip was persisted in the database
-    expect(SermonClip::where('sermon_video_id', $sermonVideo->id)->count())->toBe(1);
+    expect(VideoClip::where('video_id', $video->id)->count())->toBe(1);
 
-    $clip = SermonClip::where('sermon_video_id', $sermonVideo->id)->first();
+    $clip = VideoClip::where('video_id', $video->id)->first();
     expect($clip->start_segment_index)->toBe(4);
     expect($clip->end_segment_index)->toBe(10);
 });

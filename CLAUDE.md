@@ -179,7 +179,7 @@ The application uses dedicated queue workers for long-running jobs. Each queue m
 | Queue | Worker | Timeout | Purpose |
 |---|---|---|---|
 | `default` | `worker` | 60s | General background jobs |
-| `transcription` | `transcription` | 3600s | WhisperX sermon video transcription |
+| `transcription` | `transcription` | 3600s | WhisperX video transcription |
 | `video-processing` | `video-processing` | 7200s | Vertical video conversion (ffmpeg) |
 
 When adding a new queue, update all three places:
@@ -226,11 +226,11 @@ When a Filament resource page (e.g. `ViewRecord`, `EditRecord`) needs typed acce
 ```php
 // Good: @method annotation on the class
 /**
- * @extends ViewRecord<SermonVideo>
+ * @extends ViewRecord<Video>
  *
- * @method SermonVideo getRecord()
+ * @method Video getRecord()
  */
-class ViewSermonVideo extends ViewRecord
+class ViewVideo extends ViewRecord
 {
     public function getTitle(): string|Htmlable
     {
@@ -241,7 +241,7 @@ class ViewSermonVideo extends ViewRecord
 // Bad: @var with local variable
 public function getTitle(): string|Htmlable
 {
-    /** @var SermonVideo $record */
+    /** @var Video $record */
     $record = $this->getRecord();
     return $record->title;
 }

@@ -3,8 +3,8 @@
 use App\Enums\JobStatus;
 use App\Jobs\ConvertToVerticalVideo;
 use App\Jobs\ScanSermonVideos;
-use App\Jobs\TranscribeSermonVideo;
-use App\Models\SermonVideo;
+use App\Jobs\TranscribeVideo;
+use App\Models\Video;
 use App\Services\VideoProbe;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -14,7 +14,7 @@ uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 beforeEach(function () {
     Storage::fake('sermon_videos');
-    Queue::fake([TranscribeSermonVideo::class, ConvertToVerticalVideo::class]);
+    Queue::fake([TranscribeVideo::class, ConvertToVerticalVideo::class]);
 
     $this->sermonsApiResponse = Http::response(['data' => []]);
     Http::fake(fn () => $this->sermonsApiResponse);
@@ -30,9 +30,9 @@ test('it creates a sermon video entry for a valid video file', function () {
 
     ScanSermonVideos::dispatchSync();
 
-    expect(SermonVideo::count())->toBe(1);
+    expect(Video::count())->toBe(1);
 
-    $video = SermonVideo::first();
+    $video = Video::first();
     expect($video->raw_video_path)->toBe('2025-12-10 18-53-50.m4v');
     expect($video->title)->toBeNull();
     expect($video->transcript_status)->toBe(JobStatus::Pending);
@@ -45,7 +45,7 @@ test('it skips files that are too recently modified', function () {
 
     ScanSermonVideos::dispatchSync();
 
-    expect(SermonVideo::count())->toBe(0);
+    expect(Video::count())->toBe(0);
 });
 
 test('it includes recently modified files when includeRecent is true', function () {
@@ -53,20 +53,20 @@ test('it includes recently modified files when includeRecent is true', function 
 
     ScanSermonVideos::dispatchSync(includeRecent: true);
 
-    expect(SermonVideo::count())->toBe(1);
+    expect(Video::count())->toBe(1);
 });
 
 test('it skips files that already have a sermon video entry', function () {
     createOldVideoFile('2025-12-10 18-53-50.mp4');
 
-    SermonVideo::create([
+    Video::create([
         'raw_video_path' => '2025-12-10 18-53-50.mp4',
         'date' => now(),
     ]);
 
     ScanSermonVideos::dispatchSync();
 
-    expect(SermonVideo::count())->toBe(1);
+    expect(Video::count())->toBe(1);
 });
 
 test('it skips non-video files', function () {
@@ -75,7 +75,7 @@ test('it skips non-video files', function () {
 
     ScanSermonVideos::dispatchSync();
 
-    expect(SermonVideo::count())->toBe(0);
+    expect(Video::count())->toBe(0);
 });
 
 test('it skips video files with non-date filenames', function () {
@@ -83,7 +83,7 @@ test('it skips video files with non-date filenames', function () {
 
     ScanSermonVideos::dispatchSync();
 
-    expect(SermonVideo::count())->toBe(0);
+    expect(Video::count())->toBe(0);
 });
 
 test('it processes multiple video files in a single run', function () {
@@ -93,7 +93,7 @@ test('it processes multiple video files in a single run', function () {
 
     ScanSermonVideos::dispatchSync();
 
-    expect(SermonVideo::count())->toBe(3);
+    expect(Video::count())->toBe(3);
 });
 
 test('it creates sermon video with null duration when ffprobe fails', function () {
@@ -106,7 +106,7 @@ test('it creates sermon video with null duration when ffprobe fails', function (
 
     ScanSermonVideos::dispatchSync();
 
-    $video = SermonVideo::first();
+    $video = Video::first();
     expect($video)->not->toBeNull();
     expect($video->duration)->toBeNull();
 });
@@ -116,8 +116,8 @@ test('it dispatches transcription job for new sermon video', function () {
 
     ScanSermonVideos::dispatchSync();
 
-    Queue::assertPushed(TranscribeSermonVideo::class, function ($job) {
-        return $job->sermonVideo->raw_video_path === '2025-12-10 18-53-50.mp4';
+    Queue::assertPushed(TranscribeVideo::class, function ($job) {
+        return $job->video->raw_video_path === '2025-12-10 18-53-50.mp4';
     });
 });
 
@@ -126,8 +126,8 @@ test('it does not dispatch transcription job when transcribe is false', function
 
     ScanSermonVideos::dispatchSync(transcribe: false);
 
-    expect(SermonVideo::count())->toBe(1);
-    Queue::assertNotPushed(TranscribeSermonVideo::class);
+    expect(Video::count())->toBe(1);
+    Queue::assertNotPushed(TranscribeVideo::class);
 });
 
 test('it dispatches vertical video conversion job for new sermon video', function () {
@@ -136,7 +136,7 @@ test('it dispatches vertical video conversion job for new sermon video', functio
     ScanSermonVideos::dispatchSync();
 
     Queue::assertPushed(ConvertToVerticalVideo::class, function ($job) {
-        return $job->sermonVideo->raw_video_path === '2025-12-10 18-53-50.mp4';
+        return $job->video->raw_video_path === '2025-12-10 18-53-50.mp4';
     });
 });
 
@@ -145,7 +145,7 @@ test('it does not dispatch vertical video conversion job when convertToVertical 
 
     ScanSermonVideos::dispatchSync(convertToVertical: false);
 
-    expect(SermonVideo::count())->toBe(1);
+    expect(Video::count())->toBe(1);
     Queue::assertNotPushed(ConvertToVerticalVideo::class);
 });
 
@@ -153,50 +153,50 @@ test('it dispatches transcription for existing pending sermon videos', function 
     createOldVideoFile('already-imported.mp4');
     createOldVideoFile('already-transcribed.mp4');
 
-    $pending = SermonVideo::factory()->create([
+    $pending = Video::factory()->create([
         'raw_video_path' => 'already-imported.mp4',
         'transcript_status' => JobStatus::Pending,
     ]);
 
-    $completed = SermonVideo::factory()->create([
+    $completed = Video::factory()->create([
         'raw_video_path' => 'already-transcribed.mp4',
         'transcript_status' => JobStatus::Completed,
     ]);
 
     ScanSermonVideos::dispatchSync();
 
-    Queue::assertPushed(TranscribeSermonVideo::class, function ($job) use ($pending) {
-        return $job->sermonVideo->id === $pending->id;
+    Queue::assertPushed(TranscribeVideo::class, function ($job) use ($pending) {
+        return $job->video->id === $pending->id;
     });
 
-    Queue::assertNotPushed(TranscribeSermonVideo::class, function ($job) use ($completed) {
-        return $job->sermonVideo->id === $completed->id;
+    Queue::assertNotPushed(TranscribeVideo::class, function ($job) use ($completed) {
+        return $job->video->id === $completed->id;
     });
 });
 
 test('it does not dispatch transcription for pending videos when transcribe is false', function () {
     createOldVideoFile('already-imported.mp4');
 
-    SermonVideo::factory()->create([
+    Video::factory()->create([
         'raw_video_path' => 'already-imported.mp4',
         'transcript_status' => JobStatus::Pending,
     ]);
 
     ScanSermonVideos::dispatchSync(transcribe: false);
 
-    Queue::assertNotPushed(TranscribeSermonVideo::class);
+    Queue::assertNotPushed(TranscribeVideo::class);
 });
 
 test('it dispatches vertical video conversion for existing pending sermon videos', function () {
     createOldVideoFile('already-imported.mp4');
     createOldVideoFile('already-converted.mp4');
 
-    $pending = SermonVideo::factory()->create([
+    $pending = Video::factory()->create([
         'raw_video_path' => 'already-imported.mp4',
         'vertical_video_status' => JobStatus::Pending,
     ]);
 
-    $completed = SermonVideo::factory()->create([
+    $completed = Video::factory()->create([
         'raw_video_path' => 'already-converted.mp4',
         'vertical_video_status' => JobStatus::Completed,
     ]);
@@ -204,18 +204,18 @@ test('it dispatches vertical video conversion for existing pending sermon videos
     ScanSermonVideos::dispatchSync();
 
     Queue::assertPushed(ConvertToVerticalVideo::class, function ($job) use ($pending) {
-        return $job->sermonVideo->id === $pending->id;
+        return $job->video->id === $pending->id;
     });
 
     Queue::assertNotPushed(ConvertToVerticalVideo::class, function ($job) use ($completed) {
-        return $job->sermonVideo->id === $completed->id;
+        return $job->video->id === $completed->id;
     });
 });
 
 test('it does not dispatch vertical video conversion for pending videos when convertToVertical is false', function () {
     createOldVideoFile('already-imported.mp4');
 
-    SermonVideo::factory()->create([
+    Video::factory()->create([
         'raw_video_path' => 'already-imported.mp4',
         'vertical_video_status' => JobStatus::Pending,
     ]);
@@ -228,16 +228,16 @@ test('it does not dispatch vertical video conversion for pending videos when con
 test('it handles empty disk with no video files', function () {
     ScanSermonVideos::dispatchSync();
 
-    expect(SermonVideo::count())->toBe(0);
+    expect(Video::count())->toBe(0);
 });
 
 test('it inherits vertical_video_crop_center from the most recent sermon video by date', function () {
-    SermonVideo::factory()->create([
+    Video::factory()->create([
         'date' => now()->subDays(2),
         'vertical_video_crop_center' => 30,
     ]);
 
-    SermonVideo::factory()->create([
+    Video::factory()->create([
         'date' => now()->subDay(),
         'vertical_video_crop_center' => 75,
     ]);
@@ -246,7 +246,7 @@ test('it inherits vertical_video_crop_center from the most recent sermon video b
 
     ScanSermonVideos::dispatchSync();
 
-    $newVideo = SermonVideo::where('raw_video_path', '2025-12-10 18-53-50.mp4')->first();
+    $newVideo = Video::where('raw_video_path', '2025-12-10 18-53-50.mp4')->first();
     expect($newVideo->vertical_video_crop_center)->toBe(75);
 });
 
@@ -255,12 +255,12 @@ test('it uses default crop center when no previous sermon videos exist', functio
 
     ScanSermonVideos::dispatchSync();
 
-    $video = SermonVideo::where('raw_video_path', '2025-12-10 18-53-50.mp4')->first();
+    $video = Video::where('raw_video_path', '2025-12-10 18-53-50.mp4')->first();
     expect($video->vertical_video_crop_center)->toBe(50);
 });
 
 test('it populates sermon metadata from the API', function () {
-    $video = SermonVideo::factory()->create([
+    $video = Video::factory()->create([
         'title' => null,
         'subtitle' => null,
         'scripture' => null,
@@ -293,7 +293,7 @@ test('it populates sermon metadata from the API', function () {
 });
 
 test('it preserves existing non-null metadata fields', function () {
-    $video = SermonVideo::factory()->create([
+    $video = Video::factory()->create([
         'title' => 'Existing Title',
         'subtitle' => null,
         'scripture' => null,
@@ -324,7 +324,7 @@ test('it preserves existing non-null metadata fields', function () {
 });
 
 test('it handles sermons API failure gracefully', function () {
-    SermonVideo::factory()->create([
+    Video::factory()->create([
         'title' => null,
         'date' => now(),
     ]);
@@ -333,12 +333,12 @@ test('it handles sermons API failure gracefully', function () {
 
     ScanSermonVideos::dispatchSync();
 
-    $video = SermonVideo::first();
+    $video = Video::first();
     expect($video->title)->toBeNull();
 });
 
 test('it matches the closest sermon when multiple exist on the same date', function () {
-    $video = SermonVideo::factory()->create([
+    $video = Video::factory()->create([
         'title' => null,
         'subtitle' => null,
         'date' => Carbon\Carbon::parse('2025-12-10 18:53:50', 'America/Chicago')->utc(),

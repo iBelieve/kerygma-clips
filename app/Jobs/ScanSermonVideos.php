@@ -3,7 +3,8 @@
 namespace App\Jobs;
 
 use App\Enums\JobStatus;
-use App\Models\SermonVideo;
+use App\Enums\VideoType;
+use App\Models\Video;
 use App\Services\VideoProbe;
 use App\Support\DateTimeHelpers;
 use Carbon\Carbon;
@@ -51,7 +52,7 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
         $disk = Storage::disk('sermon_videos');
         $files = $disk->files();
 
-        $latestCropCenter = SermonVideo::query()
+        $latestCropCenter = Video::query()
             ->whereNotNull('vertical_video_crop_center')
             ->latest('date')
             ->value('vertical_video_crop_center');
@@ -68,7 +69,7 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
             }
         }
 
-        $existingPaths = SermonVideo::whereIn('raw_video_path', $videoFiles)
+        $existingPaths = Video::whereIn('raw_video_path', $videoFiles)
             ->pluck('raw_video_path')
             ->flip()
             ->all();
@@ -109,7 +110,8 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
             $absolutePath = $disk->path($file);
             $duration = $videoProbe->getDurationInSeconds($absolutePath);
 
-            $sermonVideo = SermonVideo::create([
+            Video::create([
+                'type' => VideoType::Sermon,
                 'raw_video_path' => $file,
                 'date' => $date->utc(),
                 'duration' => $duration,
@@ -125,37 +127,37 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
         }
 
         if ($this->transcribe) {
-            $pending = SermonVideo::where('transcript_status', JobStatus::Pending)->get();
+            $pending = Video::where('transcript_status', JobStatus::Pending)->get();
 
-            foreach ($pending as $sermonVideo) {
-                TranscribeSermonVideo::dispatch($sermonVideo);
+            foreach ($pending as $video) {
+                TranscribeVideo::dispatch($video);
             }
 
             if ($this->verbose && $pending->isNotEmpty()) {
-                Log::info("Dispatched transcription for {$pending->count()} pending sermon videos.");
+                Log::info("Dispatched transcription for {$pending->count()} pending videos.");
             }
         }
 
         if ($this->convertToVertical) {
-            $pendingVertical = SermonVideo::where('vertical_video_status', JobStatus::Pending)->get();
+            $pendingVertical = Video::where('vertical_video_status', JobStatus::Pending)->get();
 
-            foreach ($pendingVertical as $sermonVideo) {
-                ConvertToVerticalVideo::dispatch($sermonVideo);
+            foreach ($pendingVertical as $video) {
+                ConvertToVerticalVideo::dispatch($video);
             }
 
             if ($this->verbose && $pendingVertical->isNotEmpty()) {
-                Log::info("Dispatched vertical video conversion for {$pendingVertical->count()} pending sermon videos.");
+                Log::info("Dispatched vertical video conversion for {$pendingVertical->count()} pending videos.");
             }
         }
 
-        $missingFrames = SermonVideo::whereNull('preview_frame_path')->get();
+        $missingFrames = Video::whereNull('preview_frame_path')->get();
 
-        foreach ($missingFrames as $sermonVideo) {
-            ExtractPreviewFrame::dispatch($sermonVideo);
+        foreach ($missingFrames as $video) {
+            ExtractPreviewFrame::dispatch($video);
         }
 
         if ($this->verbose && $missingFrames->isNotEmpty()) {
-            Log::info("Dispatched preview frame extraction for {$missingFrames->count()} sermon videos.");
+            Log::info("Dispatched preview frame extraction for {$missingFrames->count()} videos.");
         }
 
         $this->hydrateSermonMetadata();
@@ -191,7 +193,7 @@ class ScanSermonVideos implements ShouldBeUnique, ShouldQueue
             'parsed_date' => Carbon::parse($sermon['date']),
         ]);
 
-        $recentVideos = SermonVideo::latest('date')->take(10)->get();
+        $recentVideos = Video::where('type', VideoType::Sermon)->latest('date')->take(10)->get();
         foreach ($recentVideos as $video) {
             $nullFields = array_filter($metadataFields, fn (string $field) => $video->{$field} === null);
 

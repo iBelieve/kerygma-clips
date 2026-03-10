@@ -2,7 +2,7 @@
 
 use App\Jobs\ExtractPreviewFrame;
 use App\Jobs\ScanSermonVideos;
-use App\Models\SermonVideo;
+use App\Models\Video;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Queue;
@@ -18,7 +18,7 @@ beforeEach(function () {
 test('job extracts preview frame successfully', function () {
     Process::fake(['*' => Process::result()]);
 
-    $video = SermonVideo::factory()->create([
+    $video = Video::factory()->create([
         'duration' => 600,
     ]);
 
@@ -34,7 +34,7 @@ test('job extracts preview frame successfully', function () {
 test('job uses video midpoint for seek time', function () {
     Process::fake(['*' => Process::result()]);
 
-    $video = SermonVideo::factory()->create([
+    $video = Video::factory()->create([
         'duration' => 600,
     ]);
 
@@ -53,7 +53,7 @@ test('job uses video midpoint for seek time', function () {
 test('job handles missing duration gracefully', function () {
     Process::fake(['*' => Process::result()]);
 
-    $video = SermonVideo::factory()->create([
+    $video = Video::factory()->create([
         'duration' => null,
     ]);
 
@@ -78,7 +78,7 @@ test('job handles ffmpeg failure gracefully', function () {
         errorOutput: 'ffmpeg crashed',
     )]);
 
-    $video = SermonVideo::factory()->create([
+    $video = Video::factory()->create([
         'duration' => 600,
     ]);
 
@@ -96,7 +96,7 @@ test('job does not overwrite existing frame path on failure', function () {
         errorOutput: 'ffmpeg crashed',
     )]);
 
-    $video = SermonVideo::factory()->create([
+    $video = Video::factory()->create([
         'duration' => 600,
         'preview_frame_path' => 'frames/existing.jpg',
     ]);
@@ -113,11 +113,11 @@ test('scan dispatches frame extraction for videos without frames', function () {
     Queue::fake();
     Http::fake();
 
-    $videoWithFrame = SermonVideo::factory()->create([
+    $videoWithFrame = Video::factory()->create([
         'preview_frame_path' => 'frames/existing.jpg',
     ]);
 
-    $videoWithoutFrame = SermonVideo::factory()->create([
+    $videoWithoutFrame = Video::factory()->create([
         'preview_frame_path' => null,
     ]);
 
@@ -131,10 +131,10 @@ test('scan dispatches frame extraction for videos without frames', function () {
     ))->handle(app(\App\Services\VideoProbe::class));
 
     Queue::assertPushed(ExtractPreviewFrame::class, function ($job) use ($videoWithoutFrame) {
-        return $job->sermonVideo->id === $videoWithoutFrame->id;
+        return $job->video->id === $videoWithoutFrame->id;
     });
 
     Queue::assertNotPushed(ExtractPreviewFrame::class, function ($job) use ($videoWithFrame) {
-        return $job->sermonVideo->id === $videoWithFrame->id;
+        return $job->video->id === $videoWithFrame->id;
     });
 });
