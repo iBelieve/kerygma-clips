@@ -1,4 +1,9 @@
-export default function viewTranscript({ segments, clips, diarize, speakerNames }) {
+export default function viewTranscript({
+    segments,
+    clips,
+    diarize,
+    speakerNames,
+}) {
     return {
         segments,
         clips,
