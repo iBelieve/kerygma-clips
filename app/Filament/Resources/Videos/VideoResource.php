@@ -32,8 +32,7 @@ class VideoResource extends Resource
                     TextInput::make('title')
                         ->required(),
                     Toggle::make('diarize')
-                        ->label('Enable speaker diarization')
-                        ->helperText('Identifies different speakers in the transcript.')
+                        ->label('Identify multiple speakers')
                         ->default(false),
                 ]),
                 FileUpload::make('raw_video_path')
@@ -44,7 +43,9 @@ class VideoResource extends Resource
                     ->maxSize(1024 * 1024)
                     ->preserveFilenames()
                     ->required(),
-            ])->visibleOn('create'),
+            ])
+                ->visibleOn('create')
+                ->columnSpanFull(),
             TextInput::make('title')
                 ->visibleOn('edit'),
             Grid::make(2)->columnStart(1)->schema([
