@@ -14,12 +14,12 @@ class ClipsPerWeekChart extends BaseWidget
     {
         $weeks = 12;
         $now = CarbonImmutable::now();
-        $startOfCurrentWeek = $now->startOfWeek();
+        $startOfCurrentWeek = $now->startOfWeek(CarbonImmutable::SUNDAY);
         $start = $startOfCurrentWeek->subWeeks($weeks - 1);
 
         $counts = VideoClip::query()
             ->where('created_at', '>=', $start)
-            ->select(DB::raw("date(created_at, 'weekday 0', '-6 days') as week_start"), DB::raw('count(*) as count'))
+            ->select(DB::raw("date(created_at, 'weekday 6', '-6 days') as week_start"), DB::raw('count(*) as count'))
             ->groupBy('week_start')
             ->orderBy('week_start')
             ->pluck('count', 'week_start');
@@ -56,7 +56,7 @@ class ClipsPerWeekChart extends BaseWidget
                 ->descriptionIcon($trendIcon)
                 ->color($trendColor)
                 ->chart($chartData),
-            Stat::make('Clips (last 12 weeks)', (string) $total),
+            Stat::make('Clips (last 3 months)', (string) $total),
             Stat::make('Total clips', (string) VideoClip::count()),
         ];
     }
