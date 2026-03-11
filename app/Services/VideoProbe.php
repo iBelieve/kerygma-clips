@@ -43,7 +43,7 @@ class VideoProbe
             'ffprobe',
             '-v', 'quiet',
             '-select_streams', 'v:0',
-            '-show_entries', 'stream=width,height',
+            '-show_entries', 'stream=width,height:stream_side_data=rotation:stream_tags=rotate',
             '-of', 'json',
             $absolutePath,
         ]);
@@ -63,9 +63,44 @@ class VideoProbe
             return null;
         }
 
+        $width = (int) $stream['width'];
+        $height = (int) $stream['height'];
+
+        // Detect rotation from side_data (displaymatrix) or stream tags.
+        // iPhone videos are often stored landscape with a rotation flag.
+        // ffmpeg auto-rotates during processing, so we return the effective
+        // (post-rotation) dimensions to match what filters will operate on.
+        $rotation = $this->detectRotation($stream);
+
+        if ($rotation === 90 || $rotation === 270) {
+            [$width, $height] = [$height, $width];
+        }
+
         return [
-            'width' => (int) $stream['width'],
-            'height' => (int) $stream['height'],
+            'width' => $width,
+            'height' => $height,
         ];
+    }
+
+    /**
+     * Detect video rotation from stream side data or tags.
+     *
+     * Returns the absolute rotation in degrees (0, 90, 180, 270) or 0 if none detected.
+     */
+    private function detectRotation(array $stream): int
+    {
+        // Check side_data (displaymatrix rotation, used by newer containers)
+        foreach ($stream['side_data_list'] ?? [] as $sideData) {
+            if (isset($sideData['rotation'])) {
+                return abs((int) $sideData['rotation']) % 360;
+            }
+        }
+
+        // Check stream tags (older metadata format, e.g. 'rotate' tag)
+        if (isset($stream['tags']['rotate'])) {
+            return abs((int) $stream['tags']['rotate']) % 360;
+        }
+
+        return 0;
     }
 }
