@@ -52,6 +52,11 @@ class VideosTable
                     })
                     ->sortable(),
 
+                TextColumn::make('video_clips_count')
+                    ->label('Clips')
+                    ->counts('videoClips')
+                    ->sortable(),
+
                 TextColumn::make('transcript_status')
                     ->label('Transcript')
                     ->badge()
