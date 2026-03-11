@@ -104,6 +104,93 @@ test('it uses only first stream when ffprobe returns multiple streams', function
     expect($dimensions)->toBe(['width' => 1080, 'height' => 1920]);
 });
 
+test('it swaps dimensions for video with -90 degree rotation in side_data', function () {
+    Process::fake([
+        '*' => Process::result(output: json_encode([
+            'streams' => [[
+                'width' => 1920,
+                'height' => 1080,
+                'side_data_list' => [
+                    ['side_data_type' => 'Display Matrix', 'rotation' => -90],
+                ],
+            ]],
+        ])),
+    ]);
+
+    $probe = new VideoProbe;
+    $dimensions = $probe->getVideoDimensions('/path/to/video.mov');
+
+    expect($dimensions)->toBe(['width' => 1080, 'height' => 1920]);
+});
+
+test('it swaps dimensions for video with 90 degree rotation in side_data', function () {
+    Process::fake([
+        '*' => Process::result(output: json_encode([
+            'streams' => [[
+                'width' => 1920,
+                'height' => 1080,
+                'side_data_list' => [
+                    ['side_data_type' => 'Display Matrix', 'rotation' => 90],
+                ],
+            ]],
+        ])),
+    ]);
+
+    $probe = new VideoProbe;
+    $dimensions = $probe->getVideoDimensions('/path/to/video.mov');
+
+    expect($dimensions)->toBe(['width' => 1080, 'height' => 1920]);
+});
+
+test('it swaps dimensions for video with rotate tag in stream tags', function () {
+    Process::fake([
+        '*' => Process::result(output: json_encode([
+            'streams' => [[
+                'width' => 1920,
+                'height' => 1080,
+                'tags' => ['rotate' => '90'],
+            ]],
+        ])),
+    ]);
+
+    $probe = new VideoProbe;
+    $dimensions = $probe->getVideoDimensions('/path/to/video.mp4');
+
+    expect($dimensions)->toBe(['width' => 1080, 'height' => 1920]);
+});
+
+test('it does not swap dimensions for 180 degree rotation', function () {
+    Process::fake([
+        '*' => Process::result(output: json_encode([
+            'streams' => [[
+                'width' => 1920,
+                'height' => 1080,
+                'side_data_list' => [
+                    ['side_data_type' => 'Display Matrix', 'rotation' => 180],
+                ],
+            ]],
+        ])),
+    ]);
+
+    $probe = new VideoProbe;
+    $dimensions = $probe->getVideoDimensions('/path/to/video.mov');
+
+    expect($dimensions)->toBe(['width' => 1920, 'height' => 1080]);
+});
+
+test('it does not swap dimensions when no rotation metadata present', function () {
+    Process::fake([
+        '*' => Process::result(output: json_encode([
+            'streams' => [['width' => 1920, 'height' => 1080]],
+        ])),
+    ]);
+
+    $probe = new VideoProbe;
+    $dimensions = $probe->getVideoDimensions('/path/to/video.mp4');
+
+    expect($dimensions)->toBe(['width' => 1920, 'height' => 1080]);
+});
+
 test('it rounds duration to nearest second', function () {
     Process::fake([
         '*' => Process::result(output: '45.7'),
