@@ -66,6 +66,8 @@ jobs:
             HF_HOME=/app/hf-cache
             TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=true
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          nginx-properties: |
+            client-max-body-size 1g
           process-scaling: |
             worker=1
             transcription=1
