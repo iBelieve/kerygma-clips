@@ -306,8 +306,10 @@ class EditVideo extends EditRecord
             ->schema([
                 TextInput::make('name')
                     ->label('Speaker Name')
-                    ->required()
-                    ->default(fn (array $arguments): string => $this->getRecord()->speaker_names[$arguments['speaker']] ?? ''),
+                    ->required(),
+            ])
+            ->fillForm(fn (array $arguments): array => [
+                'name' => $this->getRecord()->speaker_names[$arguments['speaker']] ?? '',
             ])
             ->action(function (array $data, array $arguments): void {
                 $video = $this->getRecord();
