@@ -33,7 +33,7 @@ class VideoResource extends Resource
                 ->disk('local')
                 ->directory('uploads')
                 ->acceptedFileTypes(['video/*'])
-                ->maxSize(1024 * 1024 * 10)
+                ->maxSize(1024 * 1024)
                 ->preserveFilenames()
                 ->required()
                 ->visibleOn('create'),
