@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Videos\Tables;
 
 use App\Enums\JobStatus;
+use App\Enums\VideoType;
 use App\Models\Video;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
@@ -112,7 +113,11 @@ class VideosTable
             ->recordActions([
                 ActionGroup::make([
                     DeleteAction::make()
-                        ->modalDescription('This will delete the video record and all associated clips. The original video file will not be deleted.'),
+                        ->modalDescription(
+                            fn (Video $record): string => $record->type === VideoType::Upload
+                                ? 'This will delete the video record, all associated clips, and the uploaded video file.'
+                                : 'This will delete the video record and all associated clips. The original video file will not be deleted.'
+                        ),
                 ])
                     ->color('gray'),
             ])

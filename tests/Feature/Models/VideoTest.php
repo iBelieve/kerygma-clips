@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\VideoType;
 use App\Models\Video;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Storage;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 
@@ -57,4 +59,49 @@ test('transcription_duration is null when both timestamps are missing', function
     $video->refresh();
 
     expect($video->transcription_duration)->toBeNull();
+});
+
+test('rawVideoDisk returns sermon_videos disk for sermon videos', function () {
+    Storage::fake('sermon_videos');
+
+    $video = Video::factory()->create(['type' => VideoType::Sermon]);
+
+    expect($video->rawVideoDisk())->toBe(Storage::disk('sermon_videos'));
+});
+
+test('rawVideoDisk returns local disk for uploaded videos', function () {
+    Storage::fake('local');
+
+    $video = Video::factory()->create(['type' => VideoType::Upload]);
+
+    expect($video->rawVideoDisk())->toBe(Storage::disk('local'));
+});
+
+test('deleting uploaded video removes raw file from local disk', function () {
+    Storage::fake('local');
+    Storage::fake('public');
+
+    $video = Video::factory()->create([
+        'type' => VideoType::Upload,
+        'raw_video_path' => 'uploads/test-video.mp4',
+    ]);
+
+    Storage::disk('local')->put('uploads/test-video.mp4', 'fake-content');
+
+    $video->delete();
+
+    Storage::disk('local')->assertMissing('uploads/test-video.mp4');
+});
+
+test('deleting sermon video does not remove raw file', function () {
+    Storage::fake('sermon_videos');
+    Storage::fake('public');
+
+    $video = Video::factory()->create(['type' => VideoType::Sermon]);
+
+    Storage::disk('sermon_videos')->put($video->raw_video_path, 'fake-content');
+
+    $video->delete();
+
+    Storage::disk('sermon_videos')->assertExists($video->raw_video_path);
 });

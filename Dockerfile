@@ -108,8 +108,8 @@ RUN install-php-extensions \
     pcntl
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" && \
-    sed -i -e "s/^ *upload_max_filesize.*/upload_max_filesize = 256M/g" "$PHP_INI_DIR/php.ini" && \
-    sed -i -e "s/^ *post_max_size.*/post_max_size = 256M/g" "$PHP_INI_DIR/php.ini"
+    sed -i -e "s/^ *upload_max_filesize.*/upload_max_filesize = 1G/g" "$PHP_INI_DIR/php.ini" && \
+    sed -i -e "s/^ *post_max_size.*/post_max_size = 1G/g" "$PHP_INI_DIR/php.ini"
 
 COPY --from=builder /usr/local/bin/frankenphp /usr/local/bin/frankenphp
 

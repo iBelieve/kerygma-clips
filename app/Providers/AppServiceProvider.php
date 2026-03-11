@@ -19,6 +19,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Allow large video uploads through Livewire's temporary upload endpoint.
+        // The default is 12 MB which is too small for video files.
+        config()->set('livewire.temporary_file_upload.rules', [
+            'required', 'file', 'max:'.((int) (1024 * 1024)), // 1 GB
+        ]);
     }
 }

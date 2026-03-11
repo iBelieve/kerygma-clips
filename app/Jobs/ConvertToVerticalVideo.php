@@ -51,7 +51,7 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
             'vertical_video_completed_at' => null,
         ]);
 
-        $inputDisk = Storage::disk('sermon_videos');
+        $inputDisk = $this->video->rawVideoDisk();
         $outputDisk = Storage::disk('public');
         $absolutePath = $inputDisk->path($this->video->raw_video_path);
 
@@ -67,12 +67,24 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
             $sourceWidth = $dimensions['width'];
             $sourceHeight = $dimensions['height'];
 
-            $cropHeight = $sourceHeight;
-            $cropWidth = min((int) round($sourceHeight * 9 / 16), $sourceWidth);
+            // Use integer cross-multiplication to avoid float inexactness
+            $isAlreadyVertical = $sourceWidth * 16 <= $sourceHeight * 9;
+            $isAlreadyTargetSize = $sourceWidth === 1080 && $sourceHeight === 1920;
 
-            $cropCenter = $this->video->vertical_video_crop_center ?? 50;
-            $centerX = (int) round($sourceWidth * $cropCenter / 100);
-            $cropX = max(0, min($centerX - intdiv($cropWidth, 2), $sourceWidth - $cropWidth));
+            if (! $isAlreadyVertical) {
+                $cropHeight = $sourceHeight;
+                $cropWidth = min((int) round($sourceHeight * 9 / 16), $sourceWidth);
+
+                $cropCenter = $this->video->vertical_video_crop_center ?? 50;
+                $centerX = (int) round($sourceWidth * $cropCenter / 100);
+                $cropX = max(0, min($centerX - intdiv($cropWidth, 2), $sourceWidth - $cropWidth));
+
+                $videoFilter = "crop={$cropWidth}:{$cropHeight}:{$cropX}:0,scale=1080:1920";
+            } elseif (! $isAlreadyTargetSize) {
+                $videoFilter = 'scale=1080:1920';
+            } else {
+                $videoFilter = null;
+            }
 
             $inputFilename = pathinfo($this->video->raw_video_path, PATHINFO_FILENAME);
             $outputRelativePath = "vertical/{$inputFilename}.mp4";
@@ -84,19 +96,25 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
                 mkdir($outputDir, 0755, true);
             }
 
-            $result = Process::timeout(7200)->run([
-                'ffmpeg',
-                '-i', $absolutePath,
-                '-vf', "crop={$cropWidth}:{$cropHeight}:{$cropX}:0,scale=1080:1920",
-                '-c:v', 'libx264',
-                '-preset', 'medium',
-                '-crf', '23',
-                '-c:a', 'aac',
-                '-b:a', '128k',
-                '-force_key_frames', 'expr:gte(t,n_forced*1)',
-                '-movflags', '+faststart',
-                '-y', $outputAbsolutePath,
-            ]);
+            $command = ['ffmpeg', '-i', $absolutePath];
+
+            if ($videoFilter !== null) {
+                array_push($command,
+                    '-vf', $videoFilter,
+                    '-c:v', 'libx264',
+                    '-preset', 'medium',
+                    '-crf', '23',
+                    '-c:a', 'aac',
+                    '-b:a', '128k',
+                    '-force_key_frames', 'expr:gte(t,n_forced*1)',
+                );
+            } else {
+                array_push($command, '-c', 'copy');
+            }
+
+            array_push($command, '-movflags', '+faststart', '-y', $outputAbsolutePath);
+
+            $result = Process::timeout(7200)->run($command);
 
             if ($result->failed()) {
                 throw new \RuntimeException($result->errorOutput() ?: $result->output());

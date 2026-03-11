@@ -40,6 +40,70 @@ test('it returns null when ffprobe returns non-numeric output', function () {
     expect($duration)->toBeNull();
 });
 
+test('it returns video dimensions from ffprobe json output', function () {
+    Process::fake([
+        '*' => Process::result(output: json_encode([
+            'streams' => [['width' => 1920, 'height' => 1080]],
+        ])),
+    ]);
+
+    $probe = new VideoProbe;
+    $dimensions = $probe->getVideoDimensions('/path/to/video.mp4');
+
+    expect($dimensions)->toBe(['width' => 1920, 'height' => 1080]);
+});
+
+test('it returns dimensions for vertical video', function () {
+    Process::fake([
+        '*' => Process::result(output: json_encode([
+            'streams' => [['width' => 1080, 'height' => 1920]],
+        ])),
+    ]);
+
+    $probe = new VideoProbe;
+    $dimensions = $probe->getVideoDimensions('/path/to/video.mov');
+
+    expect($dimensions)->toBe(['width' => 1080, 'height' => 1920]);
+});
+
+test('it returns null when ffprobe returns no dimensions', function () {
+    Process::fake([
+        '*' => Process::result(exitCode: 1, errorOutput: 'No such file'),
+    ]);
+
+    $probe = new VideoProbe;
+    $dimensions = $probe->getVideoDimensions('/path/to/video.mp4');
+
+    expect($dimensions)->toBeNull();
+});
+
+test('it returns null when ffprobe returns no streams', function () {
+    Process::fake([
+        '*' => Process::result(output: json_encode(['streams' => []])),
+    ]);
+
+    $probe = new VideoProbe;
+    $dimensions = $probe->getVideoDimensions('/path/to/video.mp4');
+
+    expect($dimensions)->toBeNull();
+});
+
+test('it uses only first stream when ffprobe returns multiple streams', function () {
+    Process::fake([
+        '*' => Process::result(output: json_encode([
+            'streams' => [
+                ['width' => 1080, 'height' => 1920],
+                ['width' => 320, 'height' => 240],
+            ],
+        ])),
+    ]);
+
+    $probe = new VideoProbe;
+    $dimensions = $probe->getVideoDimensions('/path/to/video.mov');
+
+    expect($dimensions)->toBe(['width' => 1080, 'height' => 1920]);
+});
+
 test('it rounds duration to nearest second', function () {
     Process::fake([
         '*' => Process::result(output: '45.7'),

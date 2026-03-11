@@ -44,7 +44,7 @@ class VideoProbe
             '-v', 'quiet',
             '-select_streams', 'v:0',
             '-show_entries', 'stream=width,height',
-            '-of', 'csv=s=x:p=0',
+            '-of', 'json',
             $absolutePath,
         ]);
 
@@ -54,17 +54,18 @@ class VideoProbe
             return null;
         }
 
-        $output = trim($result->output());
+        $data = json_decode(trim($result->output()), true);
+        $stream = $data['streams'][0] ?? null;
 
-        if (! preg_match('/^(\d+)x(\d+)$/', $output, $matches)) {
-            Log::warning("ffprobe returned unexpected dimensions for {$absolutePath}: {$output}");
+        if (! $stream || ! isset($stream['width'], $stream['height'])) {
+            Log::warning("ffprobe returned no video dimensions for {$absolutePath}: {$result->output()}");
 
             return null;
         }
 
         return [
-            'width' => (int) $matches[1],
-            'height' => (int) $matches[2],
+            'width' => (int) $stream['width'],
+            'height' => (int) $stream['height'],
         ];
     }
 }

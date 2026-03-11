@@ -14,7 +14,6 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\TimeoutExceededException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
-use Illuminate\Support\Facades\Storage;
 
 class TranscribeVideo implements ShouldBeUnique, ShouldQueue
 {
@@ -50,7 +49,7 @@ class TranscribeVideo implements ShouldBeUnique, ShouldQueue
             'transcription_completed_at' => null,
         ]);
 
-        $disk = Storage::disk('sermon_videos');
+        $disk = $this->video->rawVideoDisk();
         $absolutePath = $disk->path($this->video->raw_video_path);
 
         $outputDir = sys_get_temp_dir().'/whisperx_'.$this->video->id;
