@@ -8,21 +8,6 @@
             x-bind:class="{ 'select-none': dragging }"
             class="flex flex-col gap-4"
         >
-            <div class="flex items-center justify-end gap-3">
-                <label for="gapThreshold" class="whitespace-nowrap text-sm font-medium text-gray-950 dark:text-white">
-                    Gap threshold
-                </label>
-                <x-filament::input.wrapper class="max-w-48">
-                    <x-filament::input
-                        type="number"
-                        id="gapThreshold"
-                        x-model.debounce.500ms="gapThreshold"
-                        min="1"
-                    />
-                    <x-slot name="suffix">seconds</x-slot>
-                </x-filament::input.wrapper>
-            </div>
-
             <div
                 dusk="transcript-table"
                 x-on:mouseleave="!dragging && clearHighlight()"

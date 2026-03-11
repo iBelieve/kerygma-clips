@@ -22,6 +22,8 @@ use Livewire\Attributes\Computed;
  */
 class EditVideoClip extends EditRecord
 {
+    private const GAP_THRESHOLD_SECONDS = 2;
+
     protected static string $resource = VideoClipResource::class;
 
     protected string $view = 'filament.resources.video-clips.edit-video-clip';
@@ -104,7 +106,7 @@ class EditVideoClip extends EditRecord
         foreach ($clipSegments as $localIndex => $segment) {
             if ($previousEnd !== null) {
                 $gap = $segment['start'] - $previousEnd;
-                if ($gap > 2) {
+                if ($gap > self::GAP_THRESHOLD_SECONDS) {
                     $rows[] = [
                         'type' => 'gap',
                         'label' => $this->formatGap($gap),
