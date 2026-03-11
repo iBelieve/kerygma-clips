@@ -10,6 +10,7 @@ use App\Jobs\ExtractVideoClipVerticalVideo;
 use App\Jobs\GenerateVideoClipTitle;
 use App\Jobs\TranscribeVideo;
 use App\Models\Video;
+use App\Models\VideoClip;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
@@ -128,7 +129,7 @@ class EditVideo extends EditRecord
     }
 
     /**
-     * @return array{segments: list<array{start: float, end: float, text: string, speaker: string|null}>, clips: list<array{id: int, start: int, end: int}>, diarize: bool}
+     * @return array{segments: list<array{start: float, end: float, text: string, speaker: string|null}>, clips: list<array{id: int, start: int, end: int}>, diarize: bool, maxClipDuration: int}
      */
     #[Computed]
     public function transcriptData(): array
@@ -147,6 +148,7 @@ class EditVideo extends EditRecord
             'segments' => $segments,
             'clips' => $this->getClips(),
             'diarize' => $video->diarize,
+            'maxClipDuration' => VideoClip::MAX_CLIP_DURATION,
         ];
     }
 
@@ -196,8 +198,8 @@ class EditVideo extends EditRecord
         }
 
         $duration = $segments[$endSegmentIndex]['end'] - $segments[$startSegmentIndex]['start'];
-        if ($duration > 180) {
-            Log::warning('createClip rejected: duration exceeds 180s', [
+        if ($duration > VideoClip::MAX_CLIP_DURATION) {
+            Log::warning('createClip rejected: duration exceeds ' . VideoClip::MAX_CLIP_DURATION . 's', [
                 'video_id' => $this->getRecord()->id,
                 'start_segment_index' => $startSegmentIndex,
                 'end_segment_index' => $endSegmentIndex,
@@ -263,8 +265,8 @@ class EditVideo extends EditRecord
 
         // Reject if clip would exceed 3 minutes
         $duration = $segments[$endSegmentIndex]['end'] - $segments[$startSegmentIndex]['start'];
-        if ($duration > 180) {
-            Log::warning('updateClip rejected: duration exceeds 180s', [
+        if ($duration > VideoClip::MAX_CLIP_DURATION) {
+            Log::warning('updateClip rejected: duration exceeds ' . VideoClip::MAX_CLIP_DURATION . 's', [
                 'clip_id' => $clipId,
                 'duration' => $duration,
             ]);

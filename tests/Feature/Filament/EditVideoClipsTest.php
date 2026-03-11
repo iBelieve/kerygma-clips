@@ -124,14 +124,14 @@ test('createClip rejects when start is inside an existing clip', function () {
         ->end->toBe(10);
 });
 
-test('createClip rejects when duration exceeds 180 seconds', function () {
-    $video = makeVideo(50);
+test('createClip rejects when duration exceeds MAX_CLIP_DURATION', function () {
+    $segmentCount = (int) ceil(VideoClip::MAX_CLIP_DURATION / 5) + 10;
+    $video = makeVideo($segmentCount);
 
     $clips = Livewire::test(EditVideo::class, ['record' => $video->id])
-        ->call('createClip', 0, 49)
+        ->call('createClip', 0, $segmentCount - 1)
         ->get('transcriptData')['clips'];
 
-    // 50 segments x 5s = 250s > 180s - should be rejected
     expect($clips)->toHaveCount(0);
 });
 
@@ -213,17 +213,17 @@ test('updateClip rejects when it would overlap another clip', function () {
         ->end->toBe(15);
 });
 
-test('updateClip rejects when duration exceeds 180 seconds', function () {
-    $video = makeVideo(50);
+test('updateClip rejects when duration exceeds MAX_CLIP_DURATION', function () {
+    $segmentCount = (int) ceil(VideoClip::MAX_CLIP_DURATION / 5) + 10;
+    $video = makeVideo($segmentCount);
 
     $clip = $video->videoClips()->create([
         'start_segment_index' => 5,
         'end_segment_index' => 8,
     ]);
 
-    // Try to expand to 0-49 (250s)
     $clips = Livewire::test(EditVideo::class, ['record' => $video->id])
-        ->call('updateClip', $clip->id, 0, 49)
+        ->call('updateClip', $clip->id, 0, $segmentCount - 1)
         ->get('transcriptData')['clips'];
 
     // Clip should remain unchanged

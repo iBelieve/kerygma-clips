@@ -1,8 +1,14 @@
-export default function viewTranscript({ segments, clips, diarize }) {
+export default function viewTranscript({
+    segments,
+    clips,
+    diarize,
+    maxClipDuration,
+}) {
     return {
         segments,
         clips,
         diarize,
+        maxClipDuration,
         gapThreshold: 2,
         highlightStart: null,
         highlightEnd: null,
@@ -247,10 +253,10 @@ export default function viewTranscript({ segments, clips, diarize }) {
             // Can't drag start past end or vice versa
             if (newStart > newEnd) return;
 
-            // Check 3-minute limit
+            // Check max clip duration limit
             const duration =
                 this.segments[newEnd].end - this.segments[newStart].start;
-            if (duration > 180) return;
+            if (duration > this.maxClipDuration) return;
 
             // Check no overlap with other clips
             for (let i = 0; i < this.clips.length; i++) {

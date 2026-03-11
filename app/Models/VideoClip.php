@@ -13,6 +13,8 @@ class VideoClip extends Model
 {
     use HasFactory;
 
+    public const int MAX_CLIP_DURATION = 180;
+
     public const float MAX_PAUSE_BEFORE = 0.25;
 
     public const float MAX_PAUSE_AFTER = 0.5;
