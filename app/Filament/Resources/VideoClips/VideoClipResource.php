@@ -23,6 +23,12 @@ class VideoClipResource extends Resource
 {
     protected static ?string $model = VideoClip::class;
 
+    protected static ?string $modelLabel = 'Clip';
+
+    protected static ?string $pluralModelLabel = 'Clips';
+
+    protected static ?string $slug = 'clips';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedScissors;
 
     public static function form(Schema $schema): Schema
