@@ -51,8 +51,12 @@ export default function viewTranscript({
                 const showSpeaker =
                     this.diarize && speaker && speaker !== previousSpeaker;
 
-                if (showSpeaker && previousSpeaker !== null) {
-                    this.rows.push({ type: "speaker-change" });
+                if (showSpeaker && i > 0) {
+                    this.rows.push({
+                        type: "speaker-change",
+                        prevSegmentIndex: i - 1,
+                        nextSegmentIndex: i,
+                    });
                 }
 
                 this.rows.push({

@@ -35,10 +35,10 @@
                                 <tr
                                     x-bind:dusk="row.type === 'segment' ? `segment-row-${row.segmentIndex}` : `gap-row-${i}`"
                                     x-bind:class="{
-                                        'bg-emerald-100 dark:bg-emerald-500/10': row.type === 'gap'
+                                        'bg-emerald-100 dark:bg-emerald-500/10': row.type === 'gap' || row.type === 'speaker-change'
                                             ? gapInClip(row.prevSegmentIndex, row.nextSegmentIndex)
                                             : inClip(row.segmentIndex),
-                                        'bg-orange-100 dark:bg-orange-500/10': row.type === 'gap'
+                                        'bg-orange-100 dark:bg-orange-500/10': row.type === 'gap' || row.type === 'speaker-change'
                                             ? isGapHighlighted(row.prevSegmentIndex, row.nextSegmentIndex)
                                             : isHighlighted(row.segmentIndex),
                                         'cursor-pointer': row.type === 'segment' && !inClip(row.segmentIndex),
@@ -81,7 +81,7 @@
                                     <td
                                         x-show="row.type === 'speaker-change'"
                                         x-bind:colspan="diarize ? 3 : 2"
-                                        class="px-4 sm:px-6"
+                                        class="px-4 sm:px-6 py-2"
                                     >
                                         <div class="border-t border-gray-200 dark:border-gray-700"></div>
                                     </td>
