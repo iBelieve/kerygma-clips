@@ -4,18 +4,13 @@ namespace App\Filament\Widgets;
 
 use App\Models\VideoClip;
 use Carbon\CarbonImmutable;
-use Filament\Widgets\ChartWidget;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\DB;
 
-class ClipsPerWeekChart extends ChartWidget
+class ClipsPerWeekChart extends BaseWidget
 {
-    protected ?string $heading = 'Clips Created';
-
-    protected ?string $description = 'Weekly clip creation over the last 12 weeks';
-
-    protected ?string $maxHeight = '300px';
-
-    protected function getData(): array
+    protected function getStats(): array
     {
         $weeks = 12;
         $now = CarbonImmutable::now();
@@ -29,34 +24,40 @@ class ClipsPerWeekChart extends ChartWidget
             ->orderBy('week')
             ->pluck('count', 'week');
 
-        $labels = [];
-        $data = [];
+        $chartData = [];
 
         for ($i = 0; $i < $weeks; $i++) {
             $weekStart = $start->addWeeks($i);
             $key = $weekStart->format('Y-W');
-            $labels[] = $weekStart->format('M j');
-            $data[] = $counts->get($key, 0);
+            $chartData[] = $counts->get($key, 0);
         }
 
-        return [
-            'datasets' => [
-                [
-                    'label' => 'Clips created',
-                    'data' => $data,
-                    'fill' => true,
-                    'borderColor' => '#f59e0b',
-                    'backgroundColor' => 'rgba(245, 158, 11, 0.1)',
-                    'tension' => 0.3,
-                    'pointBackgroundColor' => '#f59e0b',
-                ],
-            ],
-            'labels' => $labels,
-        ];
-    }
+        $thisWeek = $chartData[$weeks - 1];
+        $lastWeek = $chartData[$weeks - 2];
+        $total = array_sum($chartData);
 
-    protected function getType(): string
-    {
-        return 'line';
+        $trend = $lastWeek > 0
+            ? (int) round(($thisWeek - $lastWeek) / $lastWeek * 100)
+            : ($thisWeek > 0 ? 100 : 0);
+
+        $trendDescription = $trend >= 0
+            ? ($trend.'% increase')
+            : (abs($trend).'% decrease');
+
+        $trendIcon = $trend >= 0
+            ? 'heroicon-m-arrow-trending-up'
+            : 'heroicon-m-arrow-trending-down';
+
+        $trendColor = $trend >= 0 ? 'success' : 'danger';
+
+        return [
+            Stat::make('Clips this week', (string) $thisWeek)
+                ->description($trendDescription.' from last week')
+                ->descriptionIcon($trendIcon)
+                ->color($trendColor)
+                ->chart($chartData),
+            Stat::make('Clips (last 12 weeks)', (string) $total),
+            Stat::make('Total clips', (string) VideoClip::count()),
+        ];
     }
 }
