@@ -29,6 +29,7 @@ class AppPanelProvider extends PanelProvider
             ->path('')
             ->viteTheme(['resources/css/filament/app/theme.css', 'resources/js/app.js'])
             ->login()
+            ->topNavigation()
             ->colors([
                 'primary' => Color::Amber,
             ])
