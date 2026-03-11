@@ -16,6 +16,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Enums\Width;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Computed;
@@ -303,6 +304,7 @@ class EditVideo extends EditRecord
     {
         return Action::make('renameSpeaker')
             ->modalHeading('Rename speaker')
+            ->modalWidth(Width::Small)
             ->schema([
                 TextInput::make('name')
                     ->label('Speaker Name')

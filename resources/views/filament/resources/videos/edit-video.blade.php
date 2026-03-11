@@ -104,7 +104,7 @@
                                             type="button"
                                             x-on:click.stop="$wire.mountAction('renameSpeaker', { speaker: row.speaker })"
                                             class="rounded px-1.5 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-500/10"
-                                            x-text="speakerNames[row.speaker] || row.speaker"
+                                            x-text="$wire.transcriptData.speakerNames[row.speaker] || row.speaker"
                                         ></button>
                                     </td>
 

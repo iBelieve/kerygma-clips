@@ -2,13 +2,11 @@ export default function viewTranscript({
     segments,
     clips,
     diarize,
-    speakerNames,
 }) {
     return {
         segments,
         clips,
         diarize,
-        speakerNames,
         gapThreshold: 2,
         highlightStart: null,
         highlightEnd: null,
