@@ -60,10 +60,11 @@ jobs:
             {STORAGE_DIR}:/app/storage
             /var/lib/dokku/data/storage/kerygma/app/:/app/prod-storage:ro
             /data/syncthing/mluther-videos/Sermons:/app/sermon-videos:ro
-            /var/lib/dokku/data/storage/hf-cache:/app/hf-cache
+            /var/lib/dokku/data/storage/hf-cache:/app/model-cache
           env-vars: |
             SERMON_VIDEOS_DIR=/app/sermon-videos
-            HF_HOME=/app/hf-cache
+            HF_HOME=/app/model-cache/huggingface
+            TORCH_HOME=/app/model-cache/torch
             TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=true
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
             HUGGINGFACE_TOKEN=${{ secrets.HUGGINGFACE_TOKEN }}

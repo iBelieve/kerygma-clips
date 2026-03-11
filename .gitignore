@@ -26,4 +26,4 @@ Homestead.yaml
 Thumbs.db
 .claude/settings.local.json
 .env.dusk.local
-.hf-cache
+.model-cache
