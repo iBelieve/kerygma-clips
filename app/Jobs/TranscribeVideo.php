@@ -61,14 +61,19 @@ class TranscribeVideo implements ShouldBeUnique, ShouldQueue
             $command = [
                 'whisperx',
                 $absolutePath,
-                '--model', 'large-v3',
-                '--output_format', 'json',
-                '--output_dir', $outputDir,
-                '--language', 'en',
+                '--model',
+                'large-v3',
+                '--output_format',
+                'json',
+                '--output_dir',
+                $outputDir,
+                '--language',
+                'en',
                 // Use int8 quantization for CPU-only inference. This significantly
                 // reduces memory usage and speeds up transcription compared to
                 // float32/float16, which require a GPU to run efficiently.
-                '--compute_type', 'int8',
+                '--compute_type',
+                'int8',
             ];
 
             if ($this->video->diarize) {
@@ -78,6 +83,11 @@ class TranscribeVideo implements ShouldBeUnique, ShouldQueue
                 }
                 array_push($command, '--diarize', '--hf_token', $token);
             }
+
+            Log::info('Starting transcription', [
+                'video_id' => $this->video->id,
+                'command' => implode(' ', $command),
+            ]);
 
             $result = Process::path(base_path())
                 ->timeout(3600)
