@@ -136,42 +136,16 @@ class VideoClip extends Model
     public function getTranscriptText(): string
     {
         $segments = $this->video->transcript['segments'] ?? [];
-        $speakerNames = $this->video->speaker_names ?? [];
 
-        $clipSegments = collect($segments)
+        return collect($segments)
             ->slice(
                 $this->start_segment_index,
                 $this->end_segment_index - $this->start_segment_index + 1
             )
-            ->values();
-
-        if (empty($speakerNames)) {
-            return $clipSegments->pluck('text')
-                ->map(fn (string $text): string => trim($text))
-                ->filter()
-                ->join(' ');
-        }
-
-        $lastSpeaker = null;
-        $parts = [];
-
-        foreach ($clipSegments as $segment) {
-            $text = trim($segment['text'] ?? '');
-            if ($text === '') {
-                continue;
-            }
-
-            $speaker = $segment['speaker'] ?? null;
-            if ($speaker !== null && $speaker !== $lastSpeaker) {
-                $name = $speakerNames[$speaker] ?? $speaker;
-                $parts[] = "\n{$name}: {$text}";
-                $lastSpeaker = $speaker;
-            } else {
-                $parts[] = $text;
-            }
-        }
-
-        return trim(implode(' ', $parts));
+            ->pluck('text')
+            ->map(fn (string $text): string => trim($text))
+            ->filter()
+            ->join(' ');
     }
 
     protected static function booted(): void

@@ -302,7 +302,7 @@ class EditVideo extends EditRecord
     public function renameSpeakerAction(): Action
     {
         return Action::make('renameSpeaker')
-            ->modalHeading(fn (array $arguments): string => 'Rename '.($this->getRecord()->speaker_names[$arguments['speaker']] ?? $arguments['speaker']))
+            ->modalHeading('Rename speaker')
             ->schema([
                 TextInput::make('name')
                     ->label('Speaker Name')
