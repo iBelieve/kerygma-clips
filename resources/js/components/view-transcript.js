@@ -1,9 +1,10 @@
+const GAP_THRESHOLD_SECONDS = 2;
+
 export default function viewTranscript({ segments, clips, diarize }) {
     return {
         segments,
         clips,
         diarize,
-        gapThreshold: 2,
         highlightStart: null,
         highlightEnd: null,
         rows: [],
@@ -16,7 +17,6 @@ export default function viewTranscript({ segments, clips, diarize }) {
 
         init() {
             this.recompute();
-            this.$watch("gapThreshold", () => this.recompute());
         },
 
         recompute() {
@@ -31,7 +31,7 @@ export default function viewTranscript({ segments, clips, diarize }) {
 
                 if (previousEnd !== null) {
                     const gap = segment.start - previousEnd;
-                    if (gap > this.gapThreshold) {
+                    if (gap > GAP_THRESHOLD_SECONDS) {
                         this.rows.push({
                             type: "gap",
                             label: this.formatGap(gap),
