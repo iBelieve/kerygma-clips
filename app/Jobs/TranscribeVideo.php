@@ -58,20 +58,30 @@ class TranscribeVideo implements ShouldBeUnique, ShouldQueue
         }
 
         try {
+            $command = [
+                'whisperx',
+                $absolutePath,
+                '--model', 'large-v3',
+                '--output_format', 'json',
+                '--output_dir', $outputDir,
+                '--language', 'en',
+                // Use int8 quantization for CPU-only inference. This significantly
+                // reduces memory usage and speeds up transcription compared to
+                // float32/float16, which require a GPU to run efficiently.
+                '--compute_type', 'int8',
+            ];
+
+            if ($this->video->diarize) {
+                $token = config('services.huggingface.token');
+                if (empty($token)) {
+                    throw new \RuntimeException('HUGGINGFACE_TOKEN is required for speaker diarization but is not set.');
+                }
+                array_push($command, '--diarize', '--hf_token', $token);
+            }
+
             $result = Process::path(base_path())
                 ->timeout(3600)
-                ->run([
-                    'whisperx',
-                    $absolutePath,
-                    '--model', 'large-v3',
-                    '--output_format', 'json',
-                    '--output_dir', $outputDir,
-                    '--language', 'en',
-                    // Use int8 quantization for CPU-only inference. This significantly
-                    // reduces memory usage and speeds up transcription compared to
-                    // float32/float16, which require a GPU to run efficiently.
-                    '--compute_type', 'int8',
-                ]);
+                ->run($command);
 
             if ($result->failed()) {
                 throw new \RuntimeException($result->errorOutput() ?: $result->output());
@@ -95,11 +105,29 @@ class TranscribeVideo implements ShouldBeUnique, ShouldQueue
                 );
             }
 
-            $this->video->update([
+            $updateData = [
                 'transcript_status' => JobStatus::Completed,
                 'transcript' => $transcript,
                 'transcription_completed_at' => now(),
-            ]);
+            ];
+
+            if ($this->video->diarize) {
+                $speakers = collect($transcript['segments'] ?? [])
+                    ->pluck('speaker')
+                    ->filter()
+                    ->unique()
+                    ->sort()
+                    ->values();
+
+                $speakerNames = [];
+                foreach ($speakers as $index => $speakerId) {
+                    $speakerNames[$speakerId] = 'Speaker '.($index + 1);
+                }
+
+                $updateData['speaker_names'] = $speakerNames;
+            }
+
+            $this->video->update($updateData);
         } catch (\Throwable $e) {
             $isTimeout = $e instanceof ProcessTimedOutException;
 

@@ -1,7 +1,9 @@
-export default function viewTranscript({ segments, clips }) {
+export default function viewTranscript({ segments, clips, diarize, speakerNames }) {
     return {
         segments,
         clips,
+        diarize,
+        speakerNames,
         gapThreshold: 2,
         highlightStart: null,
         highlightEnd: null,
@@ -45,6 +47,7 @@ export default function viewTranscript({ segments, clips }) {
                     end: segment.end,
                     segmentIndex: i,
                     text: segment.text,
+                    speaker: segment.speaker || null,
                 });
 
                 previousEnd = segment.end;

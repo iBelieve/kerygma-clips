@@ -64,7 +64,7 @@
                                     {{-- Gap row content --}}
                                     <td
                                         x-show="row.type === 'gap'"
-                                        colspan="2"
+                                        x-bind:colspan="diarize ? 3 : 2"
                                         class="px-4 sm:px-6"
                                     >
                                         <div class="flex items-center gap-3 py-2">
@@ -84,6 +84,21 @@
                                     >
                                         <span x-text="row.type === 'segment' ? formatTimestamp(row.start) : ''"></span>
                                     </td>
+
+                                    {{-- Speaker column (only for diarized videos) --}}
+                                    <td
+                                        x-show="row.type === 'segment' && diarize"
+                                        class="whitespace-nowrap py-1 pe-3 align-baseline"
+                                    >
+                                        <button
+                                            x-show="row.speaker"
+                                            type="button"
+                                            x-on:click.stop="$wire.mountAction('renameSpeaker', { speaker: row.speaker })"
+                                            class="rounded px-1.5 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-500/10"
+                                            x-text="speakerNames[row.speaker] || row.speaker"
+                                        ></button>
+                                    </td>
+
                                     <td
                                         x-show="row.type === 'segment'"
                                         class="w-full py-1 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white"

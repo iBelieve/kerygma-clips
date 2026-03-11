@@ -13,6 +13,7 @@ use App\Models\Video;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\Support\Htmlable;
@@ -117,21 +118,26 @@ class EditVideo extends EditRecord
     }
 
     /**
-     * @return array{segments: list<array{start: float, end: float, text: string}>, clips: list<array{id: int, start: int, end: int}>}
+     * @return array{segments: list<array{start: float, end: float, text: string, speaker: string|null}>, clips: list<array{id: int, start: int, end: int}>, diarize: bool, speakerNames: array<string, string>}
      */
     #[Computed]
     public function transcriptData(): array
     {
-        $segments = collect($this->getRecord()->transcript['segments'] ?? [])
+        $video = $this->getRecord();
+
+        $segments = collect($video->transcript['segments'] ?? [])
             ->map(fn (array $s): array => [
                 'start' => $s['start'],
                 'end' => $s['end'],
                 'text' => trim($s['text']),
+                'speaker' => $s['speaker'] ?? null,
             ])->values()->all();
 
         return [
             'segments' => $segments,
             'clips' => $this->getClips(),
+            'diarize' => $video->diarize,
+            'speakerNames' => $video->speaker_names ?? [],
         ];
     }
 
@@ -291,6 +297,26 @@ class EditVideo extends EditRecord
         unset($this->transcriptData);
 
         return $this->getClips();
+    }
+
+    public function renameSpeakerAction(): Action
+    {
+        return Action::make('renameSpeaker')
+            ->modalHeading(fn (array $arguments): string => 'Rename '.($this->getRecord()->speaker_names[$arguments['speaker']] ?? $arguments['speaker']))
+            ->schema([
+                TextInput::make('name')
+                    ->label('Speaker Name')
+                    ->required()
+                    ->default(fn (array $arguments): string => $this->getRecord()->speaker_names[$arguments['speaker']] ?? ''),
+            ])
+            ->action(function (array $data, array $arguments): void {
+                $video = $this->getRecord();
+                $names = $video->speaker_names ?? [];
+                $names[$arguments['speaker']] = $data['name'];
+                $video->update(['speaker_names' => $names]);
+
+                unset($this->transcriptData);
+            });
     }
 
     /**

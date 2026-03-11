@@ -11,6 +11,7 @@ use App\Models\Video;
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
@@ -36,6 +37,11 @@ class VideoResource extends Resource
                 ->maxSize(1024 * 1024)
                 ->preserveFilenames()
                 ->required()
+                ->visibleOn('create'),
+            Toggle::make('diarize')
+                ->label('Enable speaker diarization')
+                ->helperText('Identifies different speakers in the transcript.')
+                ->default(false)
                 ->visibleOn('create'),
             Grid::make(2)->columnStart(1)->schema([
                 TextInput::make('subtitle'),

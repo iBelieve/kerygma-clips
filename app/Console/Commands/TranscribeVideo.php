@@ -10,7 +10,8 @@ use Illuminate\Console\Command;
 class TranscribeVideo extends Command
 {
     protected $signature = 'app:transcribe-video
-                            {id : The ID of the video to transcribe}';
+                            {id : The ID of the video to transcribe}
+                            {--diarize : Enable speaker diarization}';
 
     protected $description = 'Run transcription for a video';
 
@@ -28,6 +29,10 @@ class TranscribeVideo extends Command
             $this->error("Video #{$video->id} is already being processed.");
 
             return self::FAILURE;
+        }
+
+        if ($this->option('diarize')) {
+            $video->update(['diarize' => true]);
         }
 
         $this->info("Running transcription for video #{$video->id}...");
