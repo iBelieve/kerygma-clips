@@ -32,6 +32,15 @@ class EditVideo extends EditRecord
 
     protected string $view = 'filament.resources.videos.edit-video';
 
+    /** @var array<string, string> */
+    public array $speakerNames = [];
+
+    public function mount(int|string $record): void
+    {
+        parent::mount($record);
+        $this->speakerNames = $this->getRecord()->speaker_names ?? [];
+    }
+
     public function getTitle(): string|Htmlable
     {
         return $this->getRecord()->title
@@ -119,7 +128,7 @@ class EditVideo extends EditRecord
     }
 
     /**
-     * @return array{segments: list<array{start: float, end: float, text: string, speaker: string|null}>, clips: list<array{id: int, start: int, end: int}>, diarize: bool, speakerNames: array<string, string>}
+     * @return array{segments: list<array{start: float, end: float, text: string, speaker: string|null}>, clips: list<array{id: int, start: int, end: int}>, diarize: bool}
      */
     #[Computed]
     public function transcriptData(): array
@@ -138,7 +147,6 @@ class EditVideo extends EditRecord
             'segments' => $segments,
             'clips' => $this->getClips(),
             'diarize' => $video->diarize,
-            'speakerNames' => $video->speaker_names ?? [],
         ];
     }
 
@@ -318,6 +326,7 @@ class EditVideo extends EditRecord
                 $names = $video->speaker_names ?? [];
                 $names[$arguments['speaker']] = $data['name'];
                 $video->update(['speaker_names' => $names]);
+                $this->speakerNames = $names;
 
                 unset($this->transcriptData);
             });
