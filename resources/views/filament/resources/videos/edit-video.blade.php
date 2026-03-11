@@ -77,6 +77,15 @@
                                         </div>
                                     </td>
 
+                                    {{-- Speaker change divider --}}
+                                    <td
+                                        x-show="row.type === 'speaker-change'"
+                                        x-bind:colspan="diarize ? 3 : 2"
+                                        class="px-4 sm:px-6"
+                                    >
+                                        <div class="border-t border-gray-200 dark:border-gray-700"></div>
+                                    </td>
+
                                     {{-- Segment row content --}}
                                     <td
                                         x-show="row.type === 'segment'"
@@ -91,7 +100,7 @@
                                         class="whitespace-nowrap py-1 pe-3 align-baseline"
                                     >
                                         <button
-                                            x-show="row.speaker"
+                                            x-show="row.showSpeaker"
                                             type="button"
                                             x-on:click.stop="$wire.mountAction('renameSpeaker', { speaker: row.speaker })"
                                             class="rounded px-1.5 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-500/10"
