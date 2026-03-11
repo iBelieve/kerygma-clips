@@ -19,16 +19,16 @@ class ClipsPerWeekChart extends BaseWidget
 
         $counts = VideoClip::query()
             ->where('created_at', '>=', $start)
-            ->select(DB::raw("strftime('%Y-%W', created_at) as week"), DB::raw('count(*) as count'))
-            ->groupBy('week')
-            ->orderBy('week')
-            ->pluck('count', 'week');
+            ->select(DB::raw("date(created_at, 'weekday 0', '-6 days') as week_start"), DB::raw('count(*) as count'))
+            ->groupBy('week_start')
+            ->orderBy('week_start')
+            ->pluck('count', 'week_start');
 
         $chartData = [];
 
         for ($i = 0; $i < $weeks; $i++) {
             $weekStart = $start->addWeeks($i);
-            $key = $weekStart->format('Y-W');
+            $key = $weekStart->format('Y-m-d');
             $chartData[] = $counts->get($key, 0);
         }
 
