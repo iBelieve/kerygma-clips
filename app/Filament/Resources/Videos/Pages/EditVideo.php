@@ -13,8 +13,10 @@ use App\Models\Video;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Enums\Width;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Computed;
@@ -29,6 +31,15 @@ class EditVideo extends EditRecord
     protected static string $resource = VideoResource::class;
 
     protected string $view = 'filament.resources.videos.edit-video';
+
+    /** @var array<string, string> */
+    public array $speakerNames = [];
+
+    public function mount(int|string $record): void
+    {
+        parent::mount($record);
+        $this->speakerNames = $this->getRecord()->speaker_names ?? [];
+    }
 
     public function getTitle(): string|Htmlable
     {
@@ -117,21 +128,25 @@ class EditVideo extends EditRecord
     }
 
     /**
-     * @return array{segments: list<array{start: float, end: float, text: string}>, clips: list<array{id: int, start: int, end: int}>}
+     * @return array{segments: list<array{start: float, end: float, text: string, speaker: string|null}>, clips: list<array{id: int, start: int, end: int}>, diarize: bool}
      */
     #[Computed]
     public function transcriptData(): array
     {
-        $segments = collect($this->getRecord()->transcript['segments'] ?? [])
+        $video = $this->getRecord();
+
+        $segments = collect($video->transcript['segments'] ?? [])
             ->map(fn (array $s): array => [
                 'start' => $s['start'],
                 'end' => $s['end'],
                 'text' => trim($s['text']),
+                'speaker' => $s['speaker'] ?? null,
             ])->values()->all();
 
         return [
             'segments' => $segments,
             'clips' => $this->getClips(),
+            'diarize' => $video->diarize,
         ];
     }
 
@@ -291,6 +306,30 @@ class EditVideo extends EditRecord
         unset($this->transcriptData);
 
         return $this->getClips();
+    }
+
+    public function renameSpeakerAction(): Action
+    {
+        return Action::make('renameSpeaker')
+            ->modalHeading('Rename speaker')
+            ->modalWidth(Width::Small)
+            ->schema([
+                TextInput::make('name')
+                    ->label('Speaker Name')
+                    ->required(),
+            ])
+            ->fillForm(fn (array $arguments): array => [
+                'name' => $this->getRecord()->speaker_names[$arguments['speaker']] ?? '',
+            ])
+            ->action(function (array $data, array $arguments): void {
+                $video = $this->getRecord();
+                $names = $video->speaker_names ?? [];
+                $names[$arguments['speaker']] = $data['name'];
+                $video->update(['speaker_names' => $names]);
+                $this->speakerNames = $names;
+
+                unset($this->transcriptData);
+            });
     }
 
     /**

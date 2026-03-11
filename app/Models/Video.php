@@ -38,6 +38,8 @@ class Video extends Model
         'vertical_video_completed_at',
         'vertical_video_crop_center',
         'preview_frame_path',
+        'diarize',
+        'speaker_names',
     ];
 
     protected static function booted(): void
@@ -107,6 +109,8 @@ class Video extends Model
         'transcription_started_at' => 'immutable_datetime',
         'transcription_completed_at' => 'immutable_datetime',
         'transcription_duration' => 'integer',
+        'diarize' => 'boolean',
+        'speaker_names' => 'array',
         'vertical_video_status' => JobStatus::class,
         'vertical_video_crop_center' => 'integer',
         'vertical_video_started_at' => 'immutable_datetime',

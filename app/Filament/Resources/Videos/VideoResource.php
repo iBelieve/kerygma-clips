@@ -11,6 +11,7 @@ use App\Models\Video;
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
@@ -26,17 +27,27 @@ class VideoResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
+            Grid::make(2)->schema([
+                Grid::make(1)->schema([
+                    TextInput::make('title')
+                        ->required(),
+                    Toggle::make('diarize')
+                        ->label('Identify multiple speakers')
+                        ->default(false),
+                ]),
+                FileUpload::make('raw_video_path')
+                    ->label('Video File')
+                    ->disk('local')
+                    ->directory('uploads')
+                    ->acceptedFileTypes(['video/*'])
+                    ->maxSize(1024 * 1024)
+                    ->preserveFilenames()
+                    ->required(),
+            ])
+                ->visibleOn('create')
+                ->columnSpanFull(),
             TextInput::make('title')
-                ->required(fn (string $operation): bool => $operation === 'create'),
-            FileUpload::make('raw_video_path')
-                ->label('Video File')
-                ->disk('local')
-                ->directory('uploads')
-                ->acceptedFileTypes(['video/*'])
-                ->maxSize(1024 * 1024)
-                ->preserveFilenames()
-                ->required()
-                ->visibleOn('create'),
+                ->visibleOn('edit'),
             Grid::make(2)->columnStart(1)->schema([
                 TextInput::make('subtitle'),
                 TextInput::make('scripture'),

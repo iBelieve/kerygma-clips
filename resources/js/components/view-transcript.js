@@ -1,7 +1,8 @@
-export default function viewTranscript({ segments, clips }) {
+export default function viewTranscript({ segments, clips, diarize }) {
     return {
         segments,
         clips,
+        diarize,
         gapThreshold: 2,
         highlightStart: null,
         highlightEnd: null,
@@ -23,6 +24,7 @@ export default function viewTranscript({ segments, clips }) {
             this.highlightEnds = new Array(this.segments.length).fill(0);
 
             let previousEnd = null;
+            let previousSpeaker = null;
 
             for (let i = 0; i < this.segments.length; i++) {
                 const segment = this.segments[i];
@@ -39,13 +41,31 @@ export default function viewTranscript({ segments, clips }) {
                     }
                 }
 
+                const speaker = segment.speaker || null;
+                const showSpeaker =
+                    this.diarize && speaker && speaker !== previousSpeaker;
+
+                if (showSpeaker && i > 0) {
+                    this.rows.push({
+                        type: "speaker-change",
+                        prevSegmentIndex: i - 1,
+                        nextSegmentIndex: i,
+                    });
+                }
+
                 this.rows.push({
                     type: "segment",
                     start: segment.start,
                     end: segment.end,
                     segmentIndex: i,
                     text: segment.text,
+                    speaker,
+                    showSpeaker,
                 });
+
+                if (speaker) {
+                    previousSpeaker = speaker;
+                }
 
                 previousEnd = segment.end;
             }
