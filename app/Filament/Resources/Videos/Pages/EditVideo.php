@@ -181,7 +181,7 @@ class EditVideo extends EditRecord
             return $this->getClips();
         }
 
-        // Reject if clip would exceed 90s
+        // Reject if clip would exceed 3 minutes
         $segments = $this->getRecord()->transcript['segments'] ?? [];
 
         if (! isset($segments[$startSegmentIndex], $segments[$endSegmentIndex])) {
@@ -196,8 +196,8 @@ class EditVideo extends EditRecord
         }
 
         $duration = $segments[$endSegmentIndex]['end'] - $segments[$startSegmentIndex]['start'];
-        if ($duration > 90) {
-            Log::warning('createClip rejected: duration exceeds 90s', [
+        if ($duration > 180) {
+            Log::warning('createClip rejected: duration exceeds 180s', [
                 'video_id' => $this->getRecord()->id,
                 'start_segment_index' => $startSegmentIndex,
                 'end_segment_index' => $endSegmentIndex,
@@ -261,10 +261,10 @@ class EditVideo extends EditRecord
             return $this->getClips();
         }
 
-        // Reject if clip would exceed 90s
+        // Reject if clip would exceed 3 minutes
         $duration = $segments[$endSegmentIndex]['end'] - $segments[$startSegmentIndex]['start'];
-        if ($duration > 90) {
-            Log::warning('updateClip rejected: duration exceeds 90s', [
+        if ($duration > 180) {
+            Log::warning('updateClip rejected: duration exceeds 180s', [
                 'clip_id' => $clipId,
                 'duration' => $duration,
             ]);
