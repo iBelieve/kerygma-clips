@@ -27,22 +27,26 @@ class VideoResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
+            Grid::make(2)->schema([
+                Grid::make(1)->schema([
+                    TextInput::make('title')
+                        ->required(),
+                    Toggle::make('diarize')
+                        ->label('Enable speaker diarization')
+                        ->helperText('Identifies different speakers in the transcript.')
+                        ->default(false),
+                ]),
+                FileUpload::make('raw_video_path')
+                    ->label('Video File')
+                    ->disk('local')
+                    ->directory('uploads')
+                    ->acceptedFileTypes(['video/*'])
+                    ->maxSize(1024 * 1024)
+                    ->preserveFilenames()
+                    ->required(),
+            ])->visibleOn('create'),
             TextInput::make('title')
-                ->required(fn (string $operation): bool => $operation === 'create'),
-            FileUpload::make('raw_video_path')
-                ->label('Video File')
-                ->disk('local')
-                ->directory('uploads')
-                ->acceptedFileTypes(['video/*'])
-                ->maxSize(1024 * 1024)
-                ->preserveFilenames()
-                ->required()
-                ->visibleOn('create'),
-            Toggle::make('diarize')
-                ->label('Enable speaker diarization')
-                ->helperText('Identifies different speakers in the transcript.')
-                ->default(false)
-                ->visibleOn('create'),
+                ->visibleOn('edit'),
             Grid::make(2)->columnStart(1)->schema([
                 TextInput::make('subtitle'),
                 TextInput::make('scripture'),
