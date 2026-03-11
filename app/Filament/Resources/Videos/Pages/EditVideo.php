@@ -129,7 +129,7 @@ class EditVideo extends EditRecord
     }
 
     /**
-     * @return array{segments: list<array{start: float, end: float, text: string, speaker: string|null}>, clips: list<array{id: int, start: int, end: int}>, diarize: bool, maxClipDuration: int}
+     * @return array{segments: list<array{start: float, end: float, text: string, speaker: string|null}>, clips: list<array{id: int, start: int, end: int}>, diarize: bool}
      */
     #[Computed]
     public function transcriptData(): array
@@ -148,7 +148,6 @@ class EditVideo extends EditRecord
             'segments' => $segments,
             'clips' => $this->getClips(),
             'diarize' => $video->diarize,
-            'maxClipDuration' => VideoClip::MAX_CLIP_DURATION,
         ];
     }
 

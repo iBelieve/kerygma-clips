@@ -1,16 +1,11 @@
 const GAP_THRESHOLD_SECONDS = 2;
+const MAX_CLIP_DURATION_SECONDS = 180;
 
-export default function viewTranscript({
-    segments,
-    clips,
-    diarize,
-    maxClipDuration,
-}) {
+export default function viewTranscript({ segments, clips, diarize }) {
     return {
         segments,
         clips,
         diarize,
-        maxClipDuration,
         highlightStart: null,
         highlightEnd: null,
         rows: [],
@@ -256,7 +251,7 @@ export default function viewTranscript({
             // Check max clip duration limit
             const duration =
                 this.segments[newEnd].end - this.segments[newStart].start;
-            if (duration > this.maxClipDuration) return;
+            if (duration > MAX_CLIP_DURATION_SECONDS) return;
 
             // Check no overlap with other clips
             for (let i = 0; i < this.clips.length; i++) {
