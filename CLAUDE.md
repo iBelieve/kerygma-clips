@@ -211,6 +211,13 @@ php artisan config:clear      # Clear config cache
 php artisan view:clear        # Clear compiled views
 ```
 
+## Docker / Deployment
+
+The application is deployed via Docker using a multi-stage build (`Dockerfile`). Key things to remember:
+
+- **Adding new top-level directories**: The Dockerfile explicitly copies directories into the image — it does NOT copy the entire repo. If you add a new directory that needs to be available at runtime (e.g. `scripts/`), you must add a corresponding `COPY --link <dir> <dir>` line in the runner stage of the Dockerfile.
+- **Python dependency changes**: When adding or changing Python dependencies in `pyproject.toml`, always run `uv lock` afterward to update `uv.lock`. The Docker build uses `--locked` and will fail if the lockfile is stale.
+
 ## Conventions
 
 - **Immutable timestamps**: Always use `immutable_datetime` (or `immutable_date`) casts for datetime model attributes. This ensures all date properties return `CarbonImmutable` instances, preventing accidental mutation of date values.
