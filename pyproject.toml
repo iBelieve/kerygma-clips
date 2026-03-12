@@ -6,4 +6,6 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "whisperx>=3.7.4",
+    "mediapipe>=0.10.14",
+    "opencv-python-headless>=4.9.0",
 ]
