@@ -127,6 +127,7 @@ COPY --link pyproject.toml uv.lock .python-version ./
 COPY --link Procfile release.sh entrypoint.sh /app/
 COPY --link resources/fonts resources/fonts
 COPY --link scripts scripts
+COPY --link models models
 
 RUN php artisan storage:link
 

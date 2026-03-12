@@ -4,15 +4,25 @@ Usage:
     python scripts/segment_person.py --input frame.jpg --output mask.png
 
 Produces a grayscale PNG where white (255) = person, black (0) = background.
-Uses MediaPipe Selfie Segmentation (general model, 256x256, ~454KB).
+Uses the MediaPipe Image Segmenter Tasks API with the selfie_segmenter model.
 """
 
 import argparse
 import sys
+from pathlib import Path
 
 import cv2
 import mediapipe as mp
 import numpy as np
+
+# Resolve the model path relative to this script's location
+_SCRIPT_DIR = Path(__file__).resolve().parent
+_MODEL_PATH = _SCRIPT_DIR.parent / "models" / "selfie_segmenter.tflite"
+
+BaseOptions = mp.tasks.BaseOptions
+ImageSegmenter = mp.tasks.vision.ImageSegmenter
+ImageSegmenterOptions = mp.tasks.vision.ImageSegmenterOptions
+VisionRunningMode = mp.tasks.vision.RunningMode
 
 
 def segment_person(input_path: str, output_path: str, threshold: float = 0.5) -> None:
@@ -21,13 +31,27 @@ def segment_person(input_path: str, output_path: str, threshold: float = 0.5) ->
         print(f"Error: could not read image at {input_path}", file=sys.stderr)
         sys.exit(1)
 
+    if not _MODEL_PATH.exists():
+        print(f"Error: model not found at {_MODEL_PATH}", file=sys.stderr)
+        sys.exit(1)
+
     rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
 
-    with mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=1) as seg:
-        result = seg.process(rgb)
+    options = ImageSegmenterOptions(
+        base_options=BaseOptions(model_asset_path=str(_MODEL_PATH)),
+        running_mode=VisionRunningMode.IMAGE,
+        output_confidence_masks=True,
+    )
 
-    # result.segmentation_mask is a float32 array in [0, 1]
-    mask = (result.segmentation_mask > threshold).astype(np.uint8) * 255
+    with ImageSegmenter.create_from_options(options) as segmenter:
+        result = segmenter.segment(mp_image)
+
+    # confidence_masks[0] is the person confidence mask (float32, 0-1)
+    confidence_mask = result.confidence_masks[0].numpy_view()
+
+    # Threshold to binary and scale to 0-255
+    mask = (confidence_mask > threshold).astype(np.uint8) * 255
 
     # Apply a slight Gaussian blur to soften the mask edges
     mask = cv2.GaussianBlur(mask, (15, 15), sigmaX=5)

@@ -61,9 +61,13 @@ test('example', function () {
 ### Static Analysis
 ```bash
 composer analyze           # Run Larastan (PHPStan) static analysis
+uv run --dev mypy scripts/ # Run mypy type checking on Python scripts
+uv run --dev ruff check scripts/ # Run ruff linting on Python scripts
 ```
 
 The project uses **Larastan** (level 5) with the Livewire plugin for static analysis. Configuration is in `phpstan.neon`.
+
+Python scripts use **mypy** (strict mode) for type checking and **ruff** for linting/formatting. Configuration is in `pyproject.toml`. Both are run in CI via the "Analyze Python" workflow job.
 
 ### Code Formatting
 
