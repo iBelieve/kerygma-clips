@@ -5,6 +5,7 @@ namespace App\Filament\Resources\VideoClips\Pages;
 use App\Enums\JobStatus;
 use App\Filament\Resources\VideoClips\VideoClipResource;
 use App\Jobs\ExtractVideoClipVerticalVideo;
+use App\Jobs\GenerateClipThumbnail;
 use App\Models\VideoClip;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -51,6 +52,46 @@ class ListVideoClips extends ListRecords
                         Notification::make()
                             ->title('Clip extraction queued')
                             ->body("Dispatched video extraction for {$clips->count()} clip(s).")
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('generate_all_thumbnails')
+                    ->label('Regenerate All Thumbnails')
+                    ->icon('heroicon-o-photo')
+                    ->action(function () {
+                        $clips = VideoClip::where('clip_video_status', JobStatus::Completed)->get();
+
+                        foreach ($clips as $clip) {
+                            GenerateClipThumbnail::dispatch($clip);
+                        }
+
+                        Notification::make()
+                            ->title('Thumbnail generation queued')
+                            ->body("Dispatched thumbnail generation for {$clips->count()} clip(s).")
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('generate_missing_thumbnails')
+                    ->label('Generate Missing Thumbnails')
+                    ->icon('heroicon-o-photo')
+                    ->color('primary')
+                    ->visible(fn () => VideoClip::where('clip_video_status', JobStatus::Completed)
+                        ->where('thumbnail_status', '!=', JobStatus::Completed)
+                        ->exists())
+                    ->action(function () {
+                        $clips = VideoClip::where('clip_video_status', JobStatus::Completed)
+                            ->where('thumbnail_status', '!=', JobStatus::Completed)
+                            ->get();
+
+                        foreach ($clips as $clip) {
+                            GenerateClipThumbnail::dispatch($clip);
+                        }
+
+                        Notification::make()
+                            ->title('Thumbnail generation queued')
+                            ->body("Dispatched thumbnail generation for {$clips->count()} clip(s).")
                             ->success()
                             ->send();
                     }),

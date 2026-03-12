@@ -139,6 +139,8 @@ class ExtractVideoClipVerticalVideo implements ShouldBeUniqueUntilProcessing, Sh
                 'clip_video_path' => $outputRelativePath,
                 'clip_video_completed_at' => now(),
             ]);
+
+            GenerateClipThumbnail::dispatch($videoClip);
         } catch (\Throwable $e) {
             Log::error('Video clip vertical video extraction failed', [
                 'video_clip_id' => $videoClip->id,

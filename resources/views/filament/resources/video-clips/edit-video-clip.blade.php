@@ -7,14 +7,28 @@
 
     <div x-data="segmentWordEditor()">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
-            {{-- Video player --}}
-            @if ($clip->clip_video_path)
-                <div class="shrink-0 rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10 overflow-hidden">
-                    <video
-                        controls
-                        class="w-full max-w-xs"
-                        src="{{ Storage::disk('public')->url($clip->clip_video_path) }}"
-                    ></video>
+            {{-- Video player & thumbnail --}}
+            @if ($clip->clip_video_path || $clip->thumbnail_path)
+                <div class="shrink-0 flex flex-col gap-4">
+                    @if ($clip->clip_video_path)
+                        <div class="rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10 overflow-hidden">
+                            <video
+                                controls
+                                class="w-full max-w-xs"
+                                src="{{ Storage::disk('public')->url($clip->clip_video_path) }}"
+                            ></video>
+                        </div>
+                    @endif
+
+                    @if ($clip->thumbnail_path)
+                        <div class="rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10 overflow-hidden">
+                            <img
+                                src="{{ Storage::disk('public')->url($clip->thumbnail_path) }}"
+                                alt="Clip thumbnail"
+                                class="w-full max-w-xs"
+                            >
+                        </div>
+                    @endif
                 </div>
             @endif
 

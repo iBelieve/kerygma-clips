@@ -5,6 +5,7 @@ namespace App\Filament\Resources\VideoClips\Pages;
 use App\Enums\JobStatus;
 use App\Filament\Resources\VideoClips\VideoClipResource;
 use App\Jobs\ExtractVideoClipVerticalVideo;
+use App\Jobs\GenerateClipThumbnail;
 use App\Jobs\GenerateVideoClipTitle;
 use App\Models\VideoClip;
 use Filament\Actions\Action;
@@ -57,6 +58,19 @@ class EditVideoClip extends EditRecord
                         Notification::make()
                             ->title('Clip extraction queued')
                             ->body('Clip video extraction has been dispatched.')
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('generate_thumbnail')
+                    ->label(fn () => $this->getRecord()->thumbnail_status === JobStatus::Completed ? 'Regenerate Thumbnail' : 'Generate Thumbnail')
+                    ->icon('heroicon-o-photo')
+                    ->action(function () {
+                        GenerateClipThumbnail::dispatch($this->getRecord());
+
+                        Notification::make()
+                            ->title('Thumbnail generation queued')
+                            ->body('Clip thumbnail generation has been dispatched.')
                             ->success()
                             ->send();
                     }),

@@ -95,6 +95,16 @@ class VideoClipsTable
                         return sprintf('Extraction completed in %dm %02ds', $minutes, $seconds);
                     }),
 
+                TextColumn::make('thumbnail_status')
+                    ->label('Thumbnail')
+                    ->badge()
+                    ->color(fn (JobStatus $state): string => match ($state) {
+                        JobStatus::Pending => 'warning',
+                        JobStatus::Processing => 'info',
+                        JobStatus::Completed => 'success',
+                        JobStatus::Failed, JobStatus::TimedOut => 'danger',
+                    }),
+
                 TextColumn::make('created_at')
                     ->label('Created')
                     ->since()

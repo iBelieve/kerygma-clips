@@ -34,6 +34,9 @@ class VideoClip extends Model
         'clip_video_error',
         'clip_video_started_at',
         'clip_video_completed_at',
+        'thumbnail_status',
+        'thumbnail_path',
+        'thumbnail_error',
     ];
 
     protected $casts = [
@@ -48,6 +51,7 @@ class VideoClip extends Model
         'clip_video_started_at' => 'immutable_datetime',
         'clip_video_completed_at' => 'immutable_datetime',
         'clip_video_duration' => 'integer',
+        'thumbnail_status' => JobStatus::class,
     ];
 
     /**
@@ -178,6 +182,10 @@ class VideoClip extends Model
         static::deleting(function (VideoClip $clip): void {
             if ($clip->clip_video_path) {
                 Storage::disk('public')->delete($clip->clip_video_path);
+            }
+
+            if ($clip->thumbnail_path) {
+                Storage::disk('public')->delete($clip->thumbnail_path);
             }
         });
     }
