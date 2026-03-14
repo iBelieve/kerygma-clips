@@ -91,7 +91,7 @@
                         <div class="space-y-0.5">
                             @foreach ($day['clips'] as $clip)
                                 <div draggable="true"
-                                     x-on:dragstart="onDragStart($event, {{ $clip->id }}, {{ Js::from($clip->title ?: 'Untitled') }})"
+                                     x-on:dragstart="onDragStart($event, {{ $clip->id }}, {{ Js::from($clip->title ?: 'Untitled') }}, '{{ $day['date'] }}')"
                                      x-on:dragend="onDragEnd($event)"
                                      class="group cursor-grab rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-900 ring-1 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700 relative">
                                     <span class="line-clamp-2">{{ $clip->title ?: 'Untitled' }}</span>
@@ -104,7 +104,7 @@
                             @endforeach
 
                             {{-- Drop preview: ghost of the clip being dragged --}}
-                            <div x-show="hoveredDate === '{{ $day['date'] }}' && draggedClipName" x-cloak
+                            <div x-show="hoveredDate === '{{ $day['date'] }}' && draggedClipName && draggedFromDate !== '{{ $day['date'] }}'" x-cloak
                                  class="rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-900 ring-1 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700 opacity-50">
                                 <span class="line-clamp-2" x-text="draggedClipName"></span>
                             </div>

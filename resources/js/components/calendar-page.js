@@ -1,10 +1,12 @@
 export default function calendarPage() {
   return {
     draggedClipName: null,
+    draggedFromDate: null,
     hoveredDate: null,
 
-    onDragStart(event, clipId, clipName) {
+    onDragStart(event, clipId, clipName, fromDate) {
       this.draggedClipName = clipName;
+      this.draggedFromDate = fromDate || null;
       event.dataTransfer.effectAllowed = "move";
       event.dataTransfer.setData("text/plain", String(clipId));
       event.target.classList.add("opacity-50");
@@ -13,6 +15,7 @@ export default function calendarPage() {
     onDragEnd(event) {
       event.target.classList.remove("opacity-50");
       this.draggedClipName = null;
+      this.draggedFromDate = null;
       this.hoveredDate = null;
     },
 
