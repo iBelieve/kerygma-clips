@@ -179,7 +179,7 @@ The application uses dedicated queue workers for long-running jobs. Each queue m
 | Queue | Worker | Timeout | Purpose |
 |---|---|---|---|
 | `default` | `worker` | 60s | General background jobs |
-| `transcription` | `transcription` | 3600s | WhisperX video transcription |
+| `transcription` | `transcription` | 7200s | WhisperX video transcription |
 | `video-processing` | `video-processing` | 7200s | Vertical video conversion (ffmpeg) |
 
 When adding a new queue, update all three places:

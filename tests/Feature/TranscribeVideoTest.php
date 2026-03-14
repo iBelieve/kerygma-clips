@@ -107,7 +107,7 @@ test('job sets status to failed when process fails', function () {
 
 test('job sets status to timed_out when process times out', function () {
     $process = new \Symfony\Component\Process\Process(['whisperx']);
-    $process->setTimeout(3600);
+    $process->setTimeout(7200);
 
     Process::fake(fn () => throw new \Symfony\Component\Process\Exception\ProcessTimedOutException(
         $process,
