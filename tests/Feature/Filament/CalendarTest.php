@@ -3,6 +3,7 @@
 use App\Filament\Pages\Calendar;
 use App\Models\User;
 use App\Models\Video;
+use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -77,6 +78,47 @@ test('it can navigate months', function () {
         ->assertSet('month', $now->copy()->addMonth()->month)
         ->call('previousMonth')
         ->assertSet('month', $now->month);
+});
+
+test('it includes lectionary day names from the API', function () {
+    Http::fake([
+        'mluther.org/api/lectionary/2026/3' => Http::response([
+            'data' => [
+                [
+                    'date' => '2026-03-01',
+                    'short_name' => 'Lent 2',
+                    'color_key' => 'purple',
+                ],
+                [
+                    'date' => '2026-03-08',
+                    'short_name' => 'Lent 3',
+                    'color_key' => 'purple',
+                ],
+            ],
+        ]),
+        'mluther.org/api/lectionary/*' => Http::response(['data' => []]),
+    ]);
+
+    $component = Livewire::test(Calendar::class)
+        ->set('year', 2026)
+        ->set('month', 3);
+
+    $days = $component->instance()->calendarDays;
+    $march1 = collect($days)->firstWhere('date', '2026-03-01');
+    $march2 = collect($days)->firstWhere('date', '2026-03-02');
+
+    expect($march1['lectionaryName'])->toBe('Lent 2')
+        ->and($march1['lectionaryColor'])->toBe('#66479c')
+        ->and($march2['lectionaryName'])->toBeNull();
+});
+
+test('it handles lectionary API failure gracefully', function () {
+    Http::fake([
+        'mluther.org/api/lectionary/*' => Http::response(null, 500),
+    ]);
+
+    Livewire::test(Calendar::class)
+        ->assertSuccessful();
 });
 
 test('it can navigate to today', function () {

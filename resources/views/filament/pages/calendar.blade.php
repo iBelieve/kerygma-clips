@@ -88,6 +88,15 @@
                         ])>
                             {{ $day['dayNumber'] }}
                         </div>
+                        @if ($day['lectionaryName'])
+                            <div class="text-[10px] leading-tight font-medium truncate mb-0.5"
+                                 @if ($day['lectionaryColor'])
+                                     style="color: {{ $day['lectionaryColor'] }}"
+                                 @endif
+                            >
+                                {{ $day['lectionaryName'] }}
+                            </div>
+                        @endif
                         <div class="space-y-0.5">
                             @foreach ($day['clips'] as $clip)
                                 <div draggable="true"

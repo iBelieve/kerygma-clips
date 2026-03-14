@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\VideoClip;
+use App\Services\LectionaryService;
 use BackedEnum;
 use Carbon\CarbonImmutable;
 use Filament\Pages\Page;
@@ -92,7 +93,40 @@ class Calendar extends Page
     }
 
     /**
-     * @return list<array{date: string, dayNumber: int, isCurrentMonth: bool, isToday: bool, clips: Collection<int, VideoClip>}>
+     * @return array<string, array{name: string, color: string|null}>
+     */
+    public function getLectionaryDaysProperty(): array
+    {
+        $lectionary = app(LectionaryService::class);
+
+        $start = CarbonImmutable::create($this->year, $this->month, 1);
+        $gridStart = $start->startOfWeek(Carbon::SUNDAY);
+        $gridEnd = $start->endOfMonth()->endOfWeek(Carbon::SATURDAY);
+
+        // Collect unique year/month pairs visible in the grid
+        $months = collect();
+        $current = $gridStart;
+        while ($current <= $gridEnd) {
+            $months->push($current->year . '-' . $current->month);
+            $current = $current->addMonth()->startOfMonth();
+            if ($current > $gridEnd) {
+                break;
+            }
+        }
+        // Ensure last month is included
+        $months->push($gridEnd->year . '-' . $gridEnd->month);
+
+        $days = [];
+        foreach ($months->unique() as $key) {
+            [$y, $m] = explode('-', $key);
+            $days = array_merge($days, $lectionary->getDays((int) $y, (int) $m));
+        }
+
+        return $days;
+    }
+
+    /**
+     * @return list<array{date: string, dayNumber: int, isCurrentMonth: bool, isToday: bool, clips: Collection<int, VideoClip>, lectionaryName: string|null, lectionaryColor: string|null}>
      */
     public function getCalendarDaysProperty(): array
     {
@@ -106,17 +140,22 @@ class Calendar extends Page
             fn (VideoClip $clip): string => $clip->scheduled_date->toDateString()
         );
 
+        $lectionaryDays = $this->lectionaryDays;
+
         $days = [];
         $current = $gridStart;
 
         while ($current <= $gridEnd) {
             $dateString = $current->toDateString();
+            $lectionary = $lectionaryDays[$dateString] ?? null;
             $days[] = [
                 'date' => $dateString,
                 'dayNumber' => $current->day,
                 'isCurrentMonth' => $current->month === $this->month,
                 'isToday' => $current->isToday(),
                 'clips' => $scheduledClips->get($dateString, collect()),
+                'lectionaryName' => $lectionary['name'] ?? null,
+                'lectionaryColor' => $lectionary['color'] ?? null,
             ];
             $current = $current->addDay();
         }
