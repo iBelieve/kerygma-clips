@@ -195,8 +195,8 @@ class VideoClip extends Model
             $clip->starts_at = $timing['starts_at'];
             $clip->ends_at = $timing['ends_at'];
 
-            // Rename the clip video file when the title changes
-            if ($clip->isDirty('title') && $clip->clip_video_path) {
+            // Rename the clip video file to match the current filename format
+            if ($clip->clip_video_path) {
                 $newPath = $clip->buildClipVideoPath();
 
                 if ($newPath !== $clip->clip_video_path) {
