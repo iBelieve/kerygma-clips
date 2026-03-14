@@ -69,6 +69,36 @@ test('it cannot create sermon clips', function () {
     expect(VideoClipResource::canCreate())->toBeFalse();
 });
 
+test('it formats the start time and duration columns as h:mm:ss or m:ss', function () {
+    $video = createVideoWithTranscript(segmentCount: 750);
+    $video->update(['duration' => 3750]);
+
+    // Segments have no gaps (each 5s long, back-to-back), so pause_before and pause_after are 0
+    // between adjacent segments. starts_at = segment start, ends_at = segment end.
+
+    // Clip spanning segments 720–749: starts_at=3600.0 (1:00:00), ends_at=3750.0, duration=150.0 (2:30)
+    $clip1 = $video->videoClips()->create([
+        'start_segment_index' => 720,
+        'end_segment_index' => 749,
+    ]);
+
+    // Clip spanning segments 1–3: starts_at=5.0 (0:05), ends_at=20.0, duration=15.0 (0:15)
+    $clip2 = $video->videoClips()->create([
+        'start_segment_index' => 1,
+        'end_segment_index' => 3,
+    ]);
+
+    // Refresh to load virtual column values computed by SQLite
+    $clip1->refresh();
+    $clip2->refresh();
+
+    Livewire::test(ListVideoClips::class)
+        ->assertTableColumnFormattedStateSet('starts_at', '1:00:00', $clip1)
+        ->assertTableColumnFormattedStateSet('starts_at', '0:05', $clip2)
+        ->assertTableColumnFormattedStateSet('duration', '2:30', $clip1)
+        ->assertTableColumnFormattedStateSet('duration', '0:15', $clip2);
+});
+
 test('it can render the edit page', function () {
     $video = createVideoWithTranscript();
     $clip = $video->videoClips()->create([

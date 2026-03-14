@@ -51,6 +51,8 @@ class VideoClipsTable
 
                         return sprintf('%d:%02d', $minutes, $seconds);
                     })
+                    ->extraAttributes(['class' => 'tabular-nums'])
+                    ->alignEnd()
                     ->sortable(),
 
                 TextColumn::make('duration')
@@ -67,6 +69,8 @@ class VideoClipsTable
 
                         return sprintf('%d:%02d', $minutes, $seconds);
                     })
+                    ->extraAttributes(['class' => 'tabular-nums'])
+                    ->alignEnd()
                     ->sortable(),
 
                 TextColumn::make('clip_video_status')

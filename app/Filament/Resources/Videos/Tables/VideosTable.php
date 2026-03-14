@@ -50,11 +50,15 @@ class VideosTable
 
                         return sprintf('%d:%02d', $minutes, $seconds);
                     })
+                    ->extraAttributes(['class' => 'tabular-nums'])
+                    ->alignEnd()
                     ->sortable(),
 
                 TextColumn::make('video_clips_count')
                     ->label('Clips')
                     ->counts('videoClips')
+                    ->extraAttributes(['class' => 'tabular-nums'])
+                    ->alignEnd()
                     ->sortable(),
 
                 TextColumn::make('transcript_status')
