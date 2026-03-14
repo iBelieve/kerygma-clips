@@ -45,6 +45,13 @@ return [
             'report' => false,
         ],
 
+        'import_videos' => [
+            'driver' => 'local',
+            'root' => env('IMPORT_VIDEOS_DIR', storage_path('import_videos')),
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

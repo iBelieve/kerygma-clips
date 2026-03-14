@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 Schedule::job(new App\Jobs\ScanSermonVideos)
     ->hourly();
+
+Schedule::job(new App\Jobs\ScanImportVideos)
+    ->hourly();
