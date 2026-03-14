@@ -57,6 +57,8 @@ class VideosTable
                 TextColumn::make('video_clips_count')
                     ->label('Clips')
                     ->counts('videoClips')
+                    ->extraAttributes(['class' => 'tabular-nums'])
+                    ->alignEnd()
                     ->sortable(),
 
                 TextColumn::make('transcript_status')
