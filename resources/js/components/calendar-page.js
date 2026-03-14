@@ -1,6 +1,10 @@
 export default function calendarPage() {
   return {
-    onDragStart(event, clipId) {
+    draggedClipName: null,
+    hoveredDate: null,
+
+    onDragStart(event, clipId, clipName) {
+      this.draggedClipName = clipName;
       event.dataTransfer.effectAllowed = "move";
       event.dataTransfer.setData("text/plain", String(clipId));
       event.target.classList.add("opacity-50");
@@ -8,29 +12,28 @@ export default function calendarPage() {
 
     onDragEnd(event) {
       event.target.classList.remove("opacity-50");
+      this.draggedClipName = null;
+      this.hoveredDate = null;
     },
 
-    onDragOver(event) {
+    onDragOver(event, date) {
       event.preventDefault();
-      event.currentTarget.classList.add(
-        "!bg-amber-50",
-        "dark:!bg-amber-900/20",
-      );
+      if (date !== undefined) {
+        this.hoveredDate = date;
+      }
     },
 
     onDragLeave(event) {
-      event.currentTarget.classList.remove(
-        "!bg-amber-50",
-        "dark:!bg-amber-900/20",
-      );
+      // Only clear if leaving the cell entirely (not entering a child element)
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        this.hoveredDate = null;
+      }
     },
 
     async onDrop(event, date) {
       event.preventDefault();
-      event.currentTarget.classList.remove(
-        "!bg-amber-50",
-        "dark:!bg-amber-900/20",
-      );
+      this.hoveredDate = null;
+      this.draggedClipName = null;
       const clipId = parseInt(event.dataTransfer.getData("text/plain"));
       if (clipId) {
         await this.$wire.scheduleClip(clipId, date);
@@ -39,10 +42,8 @@ export default function calendarPage() {
 
     async onDropToUnschedule(event) {
       event.preventDefault();
-      event.currentTarget.classList.remove(
-        "!bg-amber-50",
-        "dark:!bg-amber-900/20",
-      );
+      this.hoveredDate = null;
+      this.draggedClipName = null;
       const clipId = parseInt(event.dataTransfer.getData("text/plain"));
       if (clipId) {
         await this.$wire.unscheduleClip(clipId);

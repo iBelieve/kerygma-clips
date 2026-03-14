@@ -11,7 +11,7 @@
                  x-on:drop="onDropToUnschedule($event)">
                 @forelse ($this->unscheduledClips as $clip)
                     <div draggable="true"
-                         x-on:dragstart="onDragStart($event, {{ $clip->id }})"
+                         x-on:dragstart="onDragStart($event, {{ $clip->id }}, {{ Js::from($clip->title ?: 'Untitled') }})"
                          x-on:dragend="onDragEnd($event)"
                          class="cursor-grab rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition hover:shadow dark:border-gray-700 dark:bg-gray-800">
                         <div class="font-medium text-gray-900 dark:text-white truncate">
@@ -71,9 +71,10 @@
             {{-- Calendar grid --}}
             <div class="grid grid-cols-7 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                 @foreach ($this->calendarDays as $day)
-                    <div x-on:dragover.prevent="onDragOver($event)"
+                    <div x-on:dragover.prevent="onDragOver($event, '{{ $day['date'] }}')"
                          x-on:drop="onDrop($event, '{{ $day['date'] }}')"
                          x-on:dragleave="onDragLeave($event)"
+                         x-bind:class="hoveredDate === '{{ $day['date'] }}' && '!bg-amber-50 dark:!bg-amber-900/20'"
                          @class([
                              'min-h-24 border-b border-r border-gray-200 dark:border-gray-700 p-1.5 transition-colors',
                              'bg-white dark:bg-gray-900' => $day['isCurrentMonth'],
@@ -90,17 +91,23 @@
                         <div class="space-y-0.5">
                             @foreach ($day['clips'] as $clip)
                                 <div draggable="true"
-                                     x-on:dragstart="onDragStart($event, {{ $clip->id }})"
+                                     x-on:dragstart="onDragStart($event, {{ $clip->id }}, {{ Js::from($clip->title ?: 'Untitled') }})"
                                      x-on:dragend="onDragEnd($event)"
-                                     class="group cursor-grab rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-900 ring-1 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700 flex items-center gap-1">
-                                    <span class="truncate flex-1">{{ $clip->title ?: 'Untitled' }}</span>
+                                     class="group cursor-grab rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-900 ring-1 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700 relative">
+                                    <span class="line-clamp-2">{{ $clip->title ?: 'Untitled' }}</span>
                                     <button x-on:click="unschedule({{ $clip->id }})"
-                                            class="opacity-0 group-hover:opacity-100 shrink-0 text-amber-400 hover:text-red-500 dark:text-amber-600 dark:hover:text-red-400 transition-opacity"
+                                            class="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 shrink-0 text-amber-400 hover:text-red-500 dark:text-amber-600 dark:hover:text-red-400 transition-opacity"
                                             title="Unschedule">
                                         <x-heroicon-m-x-mark class="w-3 h-3" />
                                     </button>
                                 </div>
                             @endforeach
+
+                            {{-- Drop preview: ghost of the clip being dragged --}}
+                            <div x-show="hoveredDate === '{{ $day['date'] }}' && draggedClipName" x-cloak
+                                 class="rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-900 ring-1 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700 opacity-50">
+                                <span class="line-clamp-2" x-text="draggedClipName"></span>
+                            </div>
                         </div>
                     </div>
                 @endforeach
