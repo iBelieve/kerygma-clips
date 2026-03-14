@@ -98,6 +98,7 @@ class ScanImportVideos implements ShouldBeUnique, ShouldQueue
                 'title' => $title,
                 'date' => $date->utc(),
                 'duration' => $duration,
+                'diarize' => true,
                 'vertical_video_crop_center' => 50,
             ]);
 
