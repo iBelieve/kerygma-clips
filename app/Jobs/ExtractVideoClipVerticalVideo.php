@@ -73,15 +73,7 @@ class ExtractVideoClipVerticalVideo implements ShouldBeUniqueUntilProcessing, Sh
             $endTime = $videoClip->ends_at;
             $duration = $videoClip->duration;
 
-            // Build the output path: clips/YYYY-MM-DD_HHMM_MMSS.mp4
-            $videoDate = $video->date->timezone('America/Chicago');
-            $clipStartSeconds = (int) floor($startTime);
-            $outputRelativePath = sprintf(
-                'clips/%s_%02d%02d.mp4',
-                $videoDate->format('Y-m-d_Hi'),
-                intdiv($clipStartSeconds, 60),
-                $clipStartSeconds % 60,
-            );
+            $outputRelativePath = $videoClip->buildClipVideoPath();
 
             // Delete the previous clip file if the path changed (e.g., timing was adjusted)
             $oldPath = $videoClip->clip_video_path;

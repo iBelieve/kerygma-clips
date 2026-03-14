@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class VideoClip extends Model
 {
@@ -150,6 +151,26 @@ class VideoClip extends Model
             ->join(' ');
     }
 
+    public function buildClipVideoPath(): string
+    {
+        $videoDate = $this->video->date->timezone('America/Chicago');
+        $clipStartSeconds = (int) floor($this->starts_at);
+        $slugifiedTitle = Str::slug($this->title);
+
+        $baseName = sprintf(
+            '%s_%02d%02d',
+            $videoDate->format('Y-m-d_Hi'),
+            intdiv($clipStartSeconds, 60),
+            $clipStartSeconds % 60,
+        );
+
+        if ($slugifiedTitle !== '') {
+            $baseName .= '_'.$slugifiedTitle;
+        }
+
+        return "clips/{$baseName}.mp4";
+    }
+
     protected static function booted(): void
     {
         static::creating(function (VideoClip $clip): void {
@@ -173,6 +194,19 @@ class VideoClip extends Model
             $clip->pause_after = $timing['pause_after'];
             $clip->starts_at = $timing['starts_at'];
             $clip->ends_at = $timing['ends_at'];
+
+            // Rename the clip video file to match the current filename format
+            if ($clip->clip_video_path) {
+                $newPath = $clip->buildClipVideoPath();
+
+                if ($newPath !== $clip->clip_video_path) {
+                    $disk = Storage::disk('public');
+                    if ($disk->exists($clip->clip_video_path)) {
+                        $disk->move($clip->clip_video_path, $newPath);
+                    }
+                    $clip->clip_video_path = $newPath;
+                }
+            }
         });
 
         static::deleting(function (VideoClip $clip): void {
