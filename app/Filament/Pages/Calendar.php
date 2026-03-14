@@ -126,7 +126,7 @@ class Calendar extends Page
     }
 
     /**
-     * @return list<array{date: string, dayNumber: int, isCurrentMonth: bool, isToday: bool, clips: Collection<int, VideoClip>, lectionaryName: string|null, lectionaryColor: string|null}>
+     * @return list<array{date: string, dayNumber: int, isCurrentMonth: bool, isToday: bool, isPast: bool, clips: Collection<int, VideoClip>, lectionaryName: string|null, lectionaryColor: string|null}>
      */
     public function getCalendarDaysProperty(): array
     {
@@ -141,6 +141,7 @@ class Calendar extends Page
         );
 
         $lectionaryDays = $this->lectionaryDays;
+        $today = CarbonImmutable::today();
 
         $days = [];
         $current = $gridStart;
@@ -153,6 +154,7 @@ class Calendar extends Page
                 'dayNumber' => $current->day,
                 'isCurrentMonth' => $current->month === $this->month,
                 'isToday' => $current->isToday(),
+                'isPast' => $current->isBefore($today),
                 'clips' => $scheduledClips->get($dateString, collect()),
                 'lectionaryName' => $lectionary['name'] ?? null,
                 'lectionaryColor' => $lectionary['color'] ?? null,

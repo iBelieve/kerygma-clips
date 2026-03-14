@@ -80,7 +80,10 @@
                              'bg-white dark:bg-gray-900' => $day['isCurrentMonth'],
                              'bg-gray-50 dark:bg-gray-900/50' => ! $day['isCurrentMonth'],
                          ])>
-                        <div class="flex items-baseline gap-1 mb-1">
+                        <div @class([
+                            'flex items-baseline gap-1 mb-2',
+                            'opacity-50' => $day['isPast'],
+                        ])>
                             <span @class([
                                 'text-xs',
                                 'font-bold text-amber-600 dark:text-amber-400' => $day['isToday'],
@@ -104,10 +107,18 @@
                                 <div draggable="true"
                                      x-on:dragstart="onDragStart($event, {{ $clip->id }})"
                                      x-on:dragend="onDragEnd($event)"
-                                     class="group cursor-grab rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-900 ring-1 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700 relative">
-                                    <span class="line-clamp-2">{{ $clip->title ?: 'Untitled' }}</span>
+                                     @class([
+                                         'group cursor-grab rounded px-1.5 py-0.5 text-xs ring-1 relative',
+                                         'bg-blue-50 text-blue-900 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:ring-blue-700' => $day['isPast'],
+                                         'bg-amber-50 text-amber-900 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700' => ! $day['isPast'],
+                                     ])>
+                                    <span class="line-clamp-3">{{ $clip->title ?: 'Untitled' }}</span>
                                     <button x-on:click="unschedule({{ $clip->id }})"
-                                            class="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 shrink-0 text-amber-400 hover:text-red-500 dark:text-amber-600 dark:hover:text-red-400 transition-opacity"
+                                            @class([
+                                                'absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 shrink-0 hover:text-red-500 dark:hover:text-red-400 transition-opacity',
+                                                'text-blue-400 dark:text-blue-600' => $day['isPast'],
+                                                'text-amber-400 dark:text-amber-600' => ! $day['isPast'],
+                                            ])
                                             title="Unschedule">
                                         <x-heroicon-m-x-mark class="w-3 h-3" />
                                     </button>
