@@ -46,11 +46,6 @@ class ScanImportVideos implements ShouldBeUnique, ShouldQueue
         $disk = Storage::disk('import_videos');
         $files = $disk->files();
 
-        $latestCropCenter = Video::query()
-            ->whereNotNull('vertical_video_crop_center')
-            ->latest('date')
-            ->value('vertical_video_crop_center');
-
         $videoFiles = array_filter($files, function (string $file): bool {
             $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
@@ -103,7 +98,7 @@ class ScanImportVideos implements ShouldBeUnique, ShouldQueue
                 'title' => $title,
                 'date' => $date->utc(),
                 'duration' => $duration,
-                'vertical_video_crop_center' => $latestCropCenter ?? 50,
+                'vertical_video_crop_center' => 50,
             ]);
 
             Log::info("Created import video for {$file}", [
