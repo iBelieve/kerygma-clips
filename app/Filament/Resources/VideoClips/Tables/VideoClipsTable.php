@@ -4,6 +4,7 @@ namespace App\Filament\Resources\VideoClips\Tables;
 
 use App\Enums\JobStatus;
 use App\Models\VideoClip;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -98,6 +99,22 @@ class VideoClipsTable
 
                         return sprintf('Extraction completed in %dm %02ds', $minutes, $seconds);
                     }),
+
+                TextColumn::make('thumbnail_status')
+                    ->label('Thumbnail')
+                    ->badge()
+                    ->color(fn (JobStatus $state): string => match ($state) {
+                        JobStatus::Pending => 'warning',
+                        JobStatus::Processing => 'info',
+                        JobStatus::Completed => 'success',
+                        JobStatus::Failed, JobStatus::TimedOut => 'danger',
+                    }),
+
+                ImageColumn::make('thumbnail_path')
+                    ->label('Preview')
+                    ->disk('public')
+                    ->imageHeight(60)
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('created_at')
                     ->label('Created')

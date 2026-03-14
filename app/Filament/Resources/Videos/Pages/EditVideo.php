@@ -7,6 +7,7 @@ use App\Enums\VideoType;
 use App\Filament\Resources\Videos\VideoResource;
 use App\Jobs\ConvertToVerticalVideo;
 use App\Jobs\ExtractVideoClipVerticalVideo;
+use App\Jobs\GenerateClipThumbnail;
 use App\Jobs\GenerateVideoClipTitle;
 use App\Jobs\TranscribeVideo;
 use App\Models\Video;
@@ -231,6 +232,7 @@ class EditVideo extends EditRecord
 
         GenerateVideoClipTitle::dispatch($clip);
         ExtractVideoClipVerticalVideo::dispatch($clip);
+        GenerateClipThumbnail::dispatch($clip);
 
         unset($this->transcriptData);
 
@@ -303,6 +305,7 @@ class EditVideo extends EditRecord
         }
 
         ExtractVideoClipVerticalVideo::dispatch($clip);
+        GenerateClipThumbnail::dispatch($clip);
 
         unset($this->transcriptData);
 

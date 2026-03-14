@@ -61,9 +61,13 @@ test('example', function () {
 ### Static Analysis
 ```bash
 composer analyze           # Run Larastan (PHPStan) static analysis
+uv run --dev mypy scripts/ # Run mypy type checking on Python scripts
+uv run --dev ruff check scripts/ # Run ruff linting on Python scripts
 ```
 
 The project uses **Larastan** (level 5) with the Livewire plugin for static analysis. Configuration is in `phpstan.neon`.
+
+Python scripts use **mypy** (strict mode) for type checking and **ruff** for linting/formatting. Configuration is in `pyproject.toml`. Both are run in CI via the "Analyze Python" workflow job.
 
 ### Code Formatting
 
@@ -210,6 +214,13 @@ php artisan cache:clear       # Clear application cache
 php artisan config:clear      # Clear config cache
 php artisan view:clear        # Clear compiled views
 ```
+
+## Docker / Deployment
+
+The application is deployed via Docker using a multi-stage build (`Dockerfile`). Key things to remember:
+
+- **Adding new top-level directories**: The Dockerfile explicitly copies directories into the image — it does NOT copy the entire repo. If you add a new directory that needs to be available at runtime (e.g. `scripts/`), you must add a corresponding `COPY --link <dir> <dir>` line in the runner stage of the Dockerfile.
+- **Python dependency changes**: When adding or changing Python dependencies in `pyproject.toml`, always run `uv lock` afterward to update `uv.lock`. The Docker build uses `--locked` and will fail if the lockfile is stale.
 
 ## Conventions
 

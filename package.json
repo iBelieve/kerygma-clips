@@ -11,7 +11,11 @@
     },
     "lint-staged": {
         "*.php": "vendor/bin/pint",
-        "*.{js,css,json,md,yaml,yml}": "prettier --write"
+        "*.{js,css,json,md,yaml,yml}": "prettier --write",
+        "*.py": [
+            "uv run ruff check --fix",
+            "uv run ruff format"
+        ]
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.2.0",
