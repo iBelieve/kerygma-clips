@@ -6,6 +6,7 @@ use App\Enums\JobStatus;
 use App\Filament\Resources\Videos\VideoResource;
 use App\Jobs\ConvertToVerticalVideo;
 use App\Jobs\ExtractPreviewFrame;
+use App\Jobs\ScanImportVideos;
 use App\Jobs\ScanSermonVideos;
 use App\Jobs\TranscribeVideo;
 use App\Models\Video;
@@ -32,10 +33,11 @@ class ListVideos extends ListRecords
                 ->icon('heroicon-o-arrow-path')
                 ->action(function () {
                     ScanSermonVideos::dispatch(verbose: true, includeRecent: true);
+                    ScanImportVideos::dispatch(verbose: true, includeRecent: true);
 
                     Notification::make()
                         ->title('Scan started')
-                        ->body('A background scan for new sermon videos has been dispatched.')
+                        ->body('A background scan for new videos has been dispatched.')
                         ->success()
                         ->send();
                 }),

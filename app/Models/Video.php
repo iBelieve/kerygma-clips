@@ -70,7 +70,8 @@ class Video extends Model
     {
         return Storage::disk(match ($this->type) {
             VideoType::Upload => 'local',
-            default => 'sermon_videos',
+            VideoType::Import => 'import_videos',
+            VideoType::Sermon => 'sermon_videos',
         });
     }
 

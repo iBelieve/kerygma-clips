@@ -22,7 +22,7 @@ class TranscribeVideo implements ShouldBeUnique, ShouldQueue
     /**
      * The number of seconds the job can run before timing out.
      */
-    public int $timeout = 3600;
+    public int $timeout = 7200;
 
     /**
      * The number of times the job may be attempted.
@@ -90,7 +90,7 @@ class TranscribeVideo implements ShouldBeUnique, ShouldQueue
             ]);
 
             $result = Process::path(base_path())
-                ->timeout(3600)
+                ->timeout(7200)
                 ->run($command);
 
             if ($result->failed()) {

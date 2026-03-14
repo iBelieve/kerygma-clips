@@ -70,6 +70,24 @@ class EditVideo extends EditRecord
                             ->send();
                     }),
 
+                Action::make('toggle_diarize')
+                    ->label(fn () => $this->getRecord()->diarize ? 'Remove speakers' : 'Detect speakers')
+                    ->icon('heroicon-o-user-group')
+                    ->color('primary')
+                    ->requiresConfirmation()
+                    ->action(function () {
+                        $video = $this->getRecord();
+                        $video->update(['diarize' => ! $video->diarize]);
+
+                        TranscribeVideo::dispatch($video);
+
+                        Notification::make()
+                            ->title($video->diarize ? 'Speaker detection enabled' : 'Speaker detection disabled')
+                            ->body('Transcription has been queued.')
+                            ->success()
+                            ->send();
+                    }),
+
                 Action::make('convert_to_vertical')
                     ->label(fn () => $this->getRecord()->vertical_video_status === JobStatus::Completed ? 'Re-convert to Vertical' : 'Convert to Vertical')
                     ->icon('heroicon-o-device-phone-mobile')
