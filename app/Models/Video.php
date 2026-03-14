@@ -40,6 +40,10 @@ class Video extends Model
         'preview_frame_path',
         'diarize',
         'speaker_names',
+        'source_width',
+        'source_height',
+        'source_aspect_ratio',
+        'is_source_vertical',
     ];
 
     protected static function booted(): void
@@ -117,5 +121,8 @@ class Video extends Model
         'vertical_video_started_at' => 'immutable_datetime',
         'vertical_video_completed_at' => 'immutable_datetime',
         'vertical_video_duration' => 'integer',
+        'source_width' => 'integer',
+        'source_height' => 'integer',
+        'is_source_vertical' => 'boolean',
     ];
 }
