@@ -1,0 +1,91 @@
+<?php
+
+use App\Filament\Pages\Calendar;
+use App\Models\User;
+use App\Models\Video;
+use Livewire\Livewire;
+
+uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->actingAs(User::factory()->create());
+});
+
+function createVideoWithClips(int $clipCount = 3): array
+{
+    $segments = [];
+    for ($i = 0; $i < 20; $i++) {
+        $segments[] = [
+            'start' => $i * 5.0,
+            'end' => $i * 5.0 + 5.0,
+            'text' => "Segment {$i}",
+        ];
+    }
+
+    $video = Video::factory()->create([
+        'transcript' => ['segments' => $segments],
+    ]);
+
+    $clips = [];
+    for ($i = 0; $i < $clipCount; $i++) {
+        $clips[] = $video->videoClips()->create([
+            'start_segment_index' => $i * 2,
+            'end_segment_index' => $i * 2 + 1,
+            'title' => "Clip {$i}",
+        ]);
+    }
+
+    return [$video, $clips];
+}
+
+test('it can render the calendar page', function () {
+    Livewire::test(Calendar::class)
+        ->assertSuccessful();
+});
+
+test('it can schedule a clip', function () {
+    [$video, $clips] = createVideoWithClips(1);
+    $clip = $clips[0];
+
+    Livewire::test(Calendar::class)
+        ->call('scheduleClip', $clip->id, '2026-03-15');
+
+    expect($clip->fresh()->scheduled_date->toDateString())
+        ->toBe('2026-03-15');
+});
+
+test('it can unschedule a clip', function () {
+    [$video, $clips] = createVideoWithClips(1);
+    $clip = $clips[0];
+
+    // Schedule first via query builder (same as page does)
+    \App\Models\VideoClip::where('id', $clip->id)->update(['scheduled_date' => '2026-03-15']);
+
+    Livewire::test(Calendar::class)
+        ->call('unscheduleClip', $clip->id);
+
+    expect($clip->fresh()->scheduled_date)->toBeNull();
+});
+
+test('it can navigate months', function () {
+    $now = now();
+
+    Livewire::test(Calendar::class)
+        ->assertSet('month', $now->month)
+        ->assertSet('year', $now->year)
+        ->call('nextMonth')
+        ->assertSet('month', $now->copy()->addMonth()->month)
+        ->call('previousMonth')
+        ->assertSet('month', $now->month);
+});
+
+test('it can navigate to today', function () {
+    $now = now();
+
+    Livewire::test(Calendar::class)
+        ->call('nextMonth')
+        ->call('nextMonth')
+        ->call('goToToday')
+        ->assertSet('month', $now->month)
+        ->assertSet('year', $now->year);
+});
