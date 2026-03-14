@@ -56,19 +56,20 @@ class ConvertToVerticalVideo implements ShouldBeUnique, ShouldQueue
         $absolutePath = $inputDisk->path($this->video->raw_video_path);
 
         try {
-            $dimensions = $videoProbe->getVideoDimensions($absolutePath);
+            $metadata = $videoProbe->getVideoMetadata($absolutePath);
 
-            if ($dimensions === null) {
+            if ($metadata === null) {
                 throw new \RuntimeException(
                     'Failed to detect video dimensions via ffprobe'
                 );
             }
 
-            $sourceWidth = $dimensions['width'];
-            $sourceHeight = $dimensions['height'];
+            $this->video->update($metadata);
 
-            // Use integer cross-multiplication to avoid float inexactness
-            $isAlreadyVertical = $sourceWidth * 16 <= $sourceHeight * 9;
+            $sourceWidth = $metadata['source_width'];
+            $sourceHeight = $metadata['source_height'];
+
+            $isAlreadyVertical = $metadata['is_source_vertical'];
             $isAlreadyTargetSize = $sourceWidth === 1080 && $sourceHeight === 1920;
 
             if (! $isAlreadyVertical) {

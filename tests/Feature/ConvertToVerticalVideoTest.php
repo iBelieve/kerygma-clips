@@ -23,8 +23,8 @@ test('job completes vertical conversion successfully', function () {
     Process::fake(['*' => Process::result()]);
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 1920, 'height' => 1080]);
+        $mock->shouldReceive('getVideoMetadata')
+            ->andReturn(['source_width' => 1920, 'source_height' => 1080, 'source_aspect_ratio' => '16:9', 'is_source_vertical' => false]);
     });
 
     $video = Video::factory()->create([
@@ -48,8 +48,8 @@ test('job sets status to failed when ffmpeg fails', function () {
     )]);
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 1920, 'height' => 1080]);
+        $mock->shouldReceive('getVideoMetadata')
+            ->andReturn(['source_width' => 1920, 'source_height' => 1080, 'source_aspect_ratio' => '16:9', 'is_source_vertical' => false]);
     });
 
     $video = Video::factory()->create([
@@ -67,7 +67,7 @@ test('job sets status to failed when ffmpeg fails', function () {
 
 test('job sets status to failed when video dimensions cannot be detected', function () {
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
+        $mock->shouldReceive('getVideoMetadata')
             ->andReturn(null);
     });
 
@@ -94,8 +94,8 @@ test('job sets status to timed_out when process times out', function () {
     ));
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 1920, 'height' => 1080]);
+        $mock->shouldReceive('getVideoMetadata')
+            ->andReturn(['source_width' => 1920, 'source_height' => 1080, 'source_aspect_ratio' => '16:9', 'is_source_vertical' => false]);
     });
 
     $video = Video::factory()->create([
@@ -115,8 +115,8 @@ test('job clears previous error on new run', function () {
     Process::fake(['*' => Process::result()]);
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 1920, 'height' => 1080]);
+        $mock->shouldReceive('getVideoMetadata')
+            ->andReturn(['source_width' => 1920, 'source_height' => 1080, 'source_aspect_ratio' => '16:9', 'is_source_vertical' => false]);
     });
 
     $video = Video::factory()->create([
@@ -137,8 +137,8 @@ test('job passes correct crop parameters to ffmpeg for centered video', function
     Process::fake(['*' => Process::result()]);
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 1920, 'height' => 1080]);
+        $mock->shouldReceive('getVideoMetadata')
+            ->andReturn(['source_width' => 1920, 'source_height' => 1080, 'source_aspect_ratio' => '16:9', 'is_source_vertical' => false]);
     });
 
     $video = Video::factory()->create([
@@ -165,8 +165,8 @@ test('job clamps crop position to stay within frame bounds', function () {
     Process::fake(['*' => Process::result()]);
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 1920, 'height' => 1080]);
+        $mock->shouldReceive('getVideoMetadata')
+            ->andReturn(['source_width' => 1920, 'source_height' => 1080, 'source_aspect_ratio' => '16:9', 'is_source_vertical' => false]);
     });
 
     // Set crop center to far right (100%)
@@ -196,7 +196,7 @@ test('job sets vertical_video_started_at when processing begins', function () {
     Carbon::setTestNow('2026-02-24 12:00:00');
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
+        $mock->shouldReceive('getVideoMetadata')
             ->andReturn(null);
     });
 
@@ -219,8 +219,8 @@ test('job sets vertical_video_completed_at on successful completion', function (
     Process::fake(['*' => Process::result()]);
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 1920, 'height' => 1080]);
+        $mock->shouldReceive('getVideoMetadata')
+            ->andReturn(['source_width' => 1920, 'source_height' => 1080, 'source_aspect_ratio' => '16:9', 'is_source_vertical' => false]);
     });
 
     $video = Video::factory()->create([
@@ -239,7 +239,7 @@ test('job sets vertical_video_completed_at on successful completion', function (
 
 test('job does not set vertical_video_completed_at on failure', function () {
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
+        $mock->shouldReceive('getVideoMetadata')
             ->andReturn(null);
     });
 
@@ -258,7 +258,7 @@ test('job does not set vertical_video_completed_at on failure', function () {
 
 test('job resets vertical_video_completed_at on re-run', function () {
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
+        $mock->shouldReceive('getVideoMetadata')
             ->andReturn(null);
     });
 
@@ -303,8 +303,8 @@ test('job dispatches clip extraction for all sermon clips on success', function 
     Process::fake(['*' => Process::result()]);
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 1920, 'height' => 1080]);
+        $mock->shouldReceive('getVideoMetadata')
+            ->andReturn(['source_width' => 1920, 'source_height' => 1080, 'source_aspect_ratio' => '16:9', 'is_source_vertical' => false]);
     });
 
     $segments = collect(range(0, 9))->map(fn ($i) => [
@@ -334,7 +334,7 @@ test('job does not dispatch clip extraction on failure', function () {
     Queue::fake([ExtractVideoClipVerticalVideo::class]);
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
+        $mock->shouldReceive('getVideoMetadata')
             ->andReturn(null);
     });
 
@@ -363,8 +363,8 @@ test('job does not dispatch clip extraction when video has no clips', function (
     Process::fake(['*' => Process::result()]);
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 1920, 'height' => 1080]);
+        $mock->shouldReceive('getVideoMetadata')
+            ->andReturn(['source_width' => 1920, 'source_height' => 1080, 'source_aspect_ratio' => '16:9', 'is_source_vertical' => false]);
     });
 
     $video = Video::factory()->create([
@@ -384,8 +384,8 @@ test('job copies streams without re-encoding for 1080x1920 video', function () {
     Process::fake(['*' => Process::result()]);
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 1080, 'height' => 1920]);
+        $mock->shouldReceive('getVideoMetadata')
+            ->andReturn(['source_width' => 1080, 'source_height' => 1920, 'source_aspect_ratio' => '9:16', 'is_source_vertical' => true]);
     });
 
     $video = Video::factory()->create([
@@ -412,8 +412,8 @@ test('job scales without cropping for vertical video not at target size', functi
     Process::fake(['*' => Process::result()]);
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 720, 'height' => 1280]);
+        $mock->shouldReceive('getVideoMetadata')
+            ->andReturn(['source_width' => 720, 'source_height' => 1280, 'source_aspect_ratio' => '9:16', 'is_source_vertical' => true]);
     });
 
     $video = Video::factory()->create([
@@ -438,8 +438,8 @@ test('job crops square video', function () {
     Process::fake(['*' => Process::result()]);
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 1080, 'height' => 1080]);
+        $mock->shouldReceive('getVideoMetadata')
+            ->andReturn(['source_width' => 1080, 'source_height' => 1080, 'source_aspect_ratio' => '1:1', 'is_source_vertical' => false]);
     });
 
     $video = Video::factory()->create([
@@ -463,8 +463,8 @@ test('job reads from local disk for uploaded videos', function () {
     Storage::fake('local');
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 1080, 'height' => 1920]);
+        $mock->shouldReceive('getVideoMetadata')
+            ->andReturn(['source_width' => 1080, 'source_height' => 1920, 'source_aspect_ratio' => '9:16', 'is_source_vertical' => true]);
     });
 
     $video = Video::factory()->create([
@@ -487,8 +487,8 @@ test('command runs conversion synchronously', function () {
     Process::fake(['*' => Process::result()]);
 
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
-            ->andReturn(['width' => 1920, 'height' => 1080]);
+        $mock->shouldReceive('getVideoMetadata')
+            ->andReturn(['source_width' => 1920, 'source_height' => 1080, 'source_aspect_ratio' => '16:9', 'is_source_vertical' => false]);
     });
 
     $video = Video::factory()->create([
@@ -520,7 +520,7 @@ test('command fails for sermon video already being converted', function () {
 
 test('command reports failure when conversion fails', function () {
     $this->mock(VideoProbe::class, function ($mock) {
-        $mock->shouldReceive('getVideoDimensions')
+        $mock->shouldReceive('getVideoMetadata')
             ->andReturn(null);
     });
 

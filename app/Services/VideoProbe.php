@@ -83,6 +83,42 @@ class VideoProbe
     }
 
     /**
+     * Get video metadata including dimensions, aspect ratio, and orientation.
+     *
+     * @return array{source_width: int, source_height: int, source_aspect_ratio: string, is_source_vertical: bool}|null
+     */
+    public function getVideoMetadata(string $absolutePath): ?array
+    {
+        $dimensions = $this->getVideoDimensions($absolutePath);
+
+        if ($dimensions === null) {
+            return null;
+        }
+
+        $width = $dimensions['width'];
+        $height = $dimensions['height'];
+
+        $gcd = $this->gcd($width, $height);
+        $aspectRatio = ($width / $gcd).':'.($height / $gcd);
+
+        return [
+            'source_width' => $width,
+            'source_height' => $height,
+            'source_aspect_ratio' => $aspectRatio,
+            'is_source_vertical' => $width * 16 <= $height * 9,
+        ];
+    }
+
+    private function gcd(int $a, int $b): int
+    {
+        while ($b !== 0) {
+            [$a, $b] = [$b, $a % $b];
+        }
+
+        return $a;
+    }
+
+    /**
      * Detect video rotation from stream side data or tags.
      *
      * Returns the absolute rotation in degrees (0, 90, 180, 270) or 0 if none detected.
