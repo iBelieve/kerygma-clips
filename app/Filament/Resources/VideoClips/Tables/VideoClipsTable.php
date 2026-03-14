@@ -51,7 +51,7 @@ class VideoClipsTable
 
                         return sprintf('%d:%02d', $minutes, $seconds);
                     })
-                    ->extraAttributes(['style' => 'font-variant-numeric: tabular-nums'])
+                    ->extraAttributes(['class' => 'tabular-nums'])
                     ->alignEnd()
                     ->sortable(),
 
@@ -69,7 +69,7 @@ class VideoClipsTable
 
                         return sprintf('%d:%02d', $minutes, $seconds);
                     })
-                    ->extraAttributes(['style' => 'font-variant-numeric: tabular-nums'])
+                    ->extraAttributes(['class' => 'tabular-nums'])
                     ->alignEnd()
                     ->sortable(),
 
