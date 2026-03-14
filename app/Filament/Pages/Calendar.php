@@ -107,14 +107,14 @@ class Calendar extends Page
         $months = collect();
         $current = $gridStart;
         while ($current <= $gridEnd) {
-            $months->push($current->year . '-' . $current->month);
+            $months->push($current->year.'-'.$current->month);
             $current = $current->addMonth()->startOfMonth();
             if ($current > $gridEnd) {
                 break;
             }
         }
         // Ensure last month is included
-        $months->push($gridEnd->year . '-' . $gridEnd->month);
+        $months->push($gridEnd->year.'-'.$gridEnd->month);
 
         $days = [];
         foreach ($months->unique() as $key) {
