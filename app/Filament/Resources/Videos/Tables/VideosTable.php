@@ -50,6 +50,8 @@ class VideosTable
 
                         return sprintf('%d:%02d', $minutes, $seconds);
                     })
+                    ->numeric()
+                    ->alignEnd()
                     ->sortable(),
 
                 TextColumn::make('video_clips_count')
