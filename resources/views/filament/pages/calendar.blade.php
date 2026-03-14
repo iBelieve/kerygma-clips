@@ -11,7 +11,7 @@
                  x-on:drop="onDropToUnschedule($event)">
                 @forelse ($this->unscheduledClips as $clip)
                     <div draggable="true"
-                         x-on:dragstart="onDragStart($event, {{ $clip->id }}, {{ Js::from($clip->title ?: 'Untitled') }})"
+                         x-on:dragstart="onDragStart($event, {{ $clip->id }})"
                          x-on:dragend="onDragEnd($event)"
                          class="cursor-grab rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition hover:shadow dark:border-gray-700 dark:bg-gray-800">
                         <div class="font-medium text-gray-900 dark:text-white truncate">
@@ -80,27 +80,29 @@
                              'bg-white dark:bg-gray-900' => $day['isCurrentMonth'],
                              'bg-gray-50 dark:bg-gray-900/50' => ! $day['isCurrentMonth'],
                          ])>
-                        <div @class([
-                            'text-xs mb-1',
-                            'font-bold text-amber-600 dark:text-amber-400' => $day['isToday'],
-                            'text-gray-900 dark:text-gray-100' => $day['isCurrentMonth'] && ! $day['isToday'],
-                            'text-gray-400 dark:text-gray-600' => ! $day['isCurrentMonth'],
-                        ])>
-                            {{ $day['dayNumber'] }}
+                        <div class="flex items-baseline gap-1 mb-1">
+                            <span @class([
+                                'text-xs',
+                                'font-bold text-amber-600 dark:text-amber-400' => $day['isToday'],
+                                'text-gray-900 dark:text-gray-100' => $day['isCurrentMonth'] && ! $day['isToday'],
+                                'text-gray-400 dark:text-gray-600' => ! $day['isCurrentMonth'],
+                            ])>
+                                {{ $day['dayNumber'] }}
+                            </span>
+                            @if ($day['lectionaryName'])
+                                <span class="text-[10px] leading-tight font-medium truncate"
+                                      @if ($day['lectionaryColor'])
+                                          style="color: {{ $day['lectionaryColor'] }}"
+                                      @endif
+                                >
+                                    {{ $day['lectionaryName'] }}
+                                </span>
+                            @endif
                         </div>
-                        @if ($day['lectionaryName'])
-                            <div class="text-[10px] leading-tight font-medium truncate mb-0.5"
-                                 @if ($day['lectionaryColor'])
-                                     style="color: {{ $day['lectionaryColor'] }}"
-                                 @endif
-                            >
-                                {{ $day['lectionaryName'] }}
-                            </div>
-                        @endif
                         <div class="space-y-0.5">
                             @foreach ($day['clips'] as $clip)
                                 <div draggable="true"
-                                     x-on:dragstart="onDragStart($event, {{ $clip->id }}, {{ Js::from($clip->title ?: 'Untitled') }}, '{{ $day['date'] }}')"
+                                     x-on:dragstart="onDragStart($event, {{ $clip->id }})"
                                      x-on:dragend="onDragEnd($event)"
                                      class="group cursor-grab rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-900 ring-1 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700 relative">
                                     <span class="line-clamp-2">{{ $clip->title ?: 'Untitled' }}</span>
@@ -111,12 +113,6 @@
                                     </button>
                                 </div>
                             @endforeach
-
-                            {{-- Drop preview: ghost of the clip being dragged --}}
-                            <div x-show="hoveredDate === '{{ $day['date'] }}' && draggedClipName && draggedFromDate !== '{{ $day['date'] }}'" x-cloak
-                                 class="rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-900 ring-1 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700 opacity-50">
-                                <span class="line-clamp-2" x-text="draggedClipName"></span>
-                            </div>
                         </div>
                     </div>
                 @endforeach
