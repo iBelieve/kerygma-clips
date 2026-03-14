@@ -50,7 +50,7 @@ class VideosTable
 
                         return sprintf('%d:%02d', $minutes, $seconds);
                     })
-                    ->numeric()
+                    ->extraAttributes(['style' => 'font-variant-numeric: tabular-nums'])
                     ->alignEnd()
                     ->sortable(),
 

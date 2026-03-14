@@ -52,3 +52,21 @@ test('it dispatches scan job from header action', function () {
 test('it can create videos via upload', function () {
     expect(VideoResource::canCreate())->toBeTrue();
 });
+
+test('it formats the duration column as h:mm:ss or m:ss', function () {
+    $longVideo = Video::create([
+        'raw_video_path' => '2025-12-10 18-53-50.mp4',
+        'date' => '2025-12-10 18:53:50',
+        'duration' => 3661, // 1:01:01
+    ]);
+
+    $shortVideo = Video::create([
+        'raw_video_path' => '2025-12-11 09-30-00.mp4',
+        'date' => '2025-12-11 09:30:00',
+        'duration' => 125, // 2:05
+    ]);
+
+    Livewire::test(ListVideos::class)
+        ->assertTableColumnFormattedStateSet('duration', '1:01:01', $longVideo)
+        ->assertTableColumnFormattedStateSet('duration', '2:05', $shortVideo);
+});
