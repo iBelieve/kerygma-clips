@@ -13,6 +13,8 @@ use Illuminate\Support\Carbon;
 
 class Calendar extends Page
 {
+    private const DISPLAY_TIMEZONE = 'America/Chicago';
+
     protected static ?string $navigationLabel = 'Calendar';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
@@ -29,8 +31,9 @@ class Calendar extends Page
 
     public function mount(): void
     {
-        $this->year = now()->year;
-        $this->month = now()->month;
+        $now = CarbonImmutable::now(self::DISPLAY_TIMEZONE);
+        $this->year = $now->year;
+        $this->month = $now->month;
     }
 
     public function previousMonth(): void
@@ -49,8 +52,9 @@ class Calendar extends Page
 
     public function goToToday(): void
     {
-        $this->year = now()->year;
-        $this->month = now()->month;
+        $now = CarbonImmutable::now(self::DISPLAY_TIMEZONE);
+        $this->year = $now->year;
+        $this->month = $now->month;
     }
 
     public function scheduleClip(int $clipId, string $date): void
@@ -141,7 +145,7 @@ class Calendar extends Page
         );
 
         $lectionaryDays = $this->lectionaryDays;
-        $today = CarbonImmutable::today();
+        $todayString = CarbonImmutable::today(self::DISPLAY_TIMEZONE)->toDateString();
 
         $days = [];
         $current = $gridStart;
@@ -153,8 +157,8 @@ class Calendar extends Page
                 'date' => $dateString,
                 'dayNumber' => $current->day,
                 'isCurrentMonth' => $current->month === $this->month,
-                'isToday' => $current->isToday(),
-                'isPast' => $current->isBefore($today),
+                'isToday' => $dateString === $todayString,
+                'isPast' => $dateString < $todayString,
                 'clips' => $scheduledClips->get($dateString, collect()),
                 'lectionaryName' => $lectionary['name'] ?? null,
                 'lectionaryColor' => $lectionary['color'] ?? null,
