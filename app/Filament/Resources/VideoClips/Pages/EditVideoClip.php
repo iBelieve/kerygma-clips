@@ -184,6 +184,10 @@ class EditVideoClip extends EditRecord
 
         $video->update(['transcript' => $transcript]);
 
+        if (! $clip->excerpt_manually_edited) {
+            $clip->update(['excerpt' => $clip->getTranscriptText()]);
+        }
+
         unset($this->transcriptRows);
 
         $shouldReExport = in_array($clip->clip_video_status, [
