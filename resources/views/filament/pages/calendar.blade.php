@@ -1,31 +1,33 @@
 <x-filament-panels::page>
-    <div x-data="calendarPage()" class="flex gap-6 items-start">
+    <div x-data="calendarPage()" class="flex gap-6 items-stretch">
         {{-- Left Sidebar: Unscheduled Clips --}}
-        <div class="w-72 shrink-0">
+        <div class="w-72 shrink-0 flex flex-col">
             <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                 Unscheduled Clips ({{ $this->unscheduledClips->count() }})
             </h3>
-            <div class="space-y-1 max-h-[calc(100vh-12rem)] overflow-y-auto pr-1"
-                 x-on:dragover.prevent="onDragOver($event)"
-                 x-on:dragleave="onDragLeave($event)"
-                 x-on:drop="onDropToUnschedule($event)">
-                @forelse ($this->unscheduledClips as $clip)
-                    <div draggable="true"
-                         x-on:dragstart="onDragStart($event, {{ $clip->id }})"
-                         x-on:dragend="onDragEnd($event)"
-                         class="cursor-grab rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm transition hover:shadow dark:border-gray-700 dark:bg-gray-800">
-                        <div class="font-medium text-gray-900 dark:text-white truncate">
-                            {{ $clip->title ?: 'Untitled' }}
+            <div class="relative flex-1">
+                <div class="absolute inset-0 space-y-1 overflow-y-auto pr-1"
+                     x-on:dragover.prevent="onDragOver($event)"
+                     x-on:dragleave="onDragLeave($event)"
+                     x-on:drop="onDropToUnschedule($event)">
+                    @forelse ($this->unscheduledClips as $clip)
+                        <div draggable="true"
+                             x-on:dragstart="onDragStart($event, {{ $clip->id }})"
+                             x-on:dragend="onDragEnd($event)"
+                             class="cursor-grab rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white hover:dark:bg-amber-900/30 hover:dark:text-amber-200 hover:dark:border-amber-700">
+                            <div class="font-medium truncate">
+                                {{ $clip->title ?: 'Untitled' }}
+                            </div>
+                            <div class="text-xs opacity-60 truncate">
+                                {{ $clip->video->title }}
+                            </div>
                         </div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {{ $clip->video->title }}
+                    @empty
+                        <div class="text-sm text-gray-400 dark:text-gray-500 italic py-4 text-center">
+                            No unscheduled clips
                         </div>
-                    </div>
-                @empty
-                    <div class="text-sm text-gray-400 dark:text-gray-500 italic py-4 text-center">
-                        No unscheduled clips
-                    </div>
-                @endforelse
+                    @endforelse
+                </div>
             </div>
         </div>
 
@@ -74,7 +76,7 @@
                     <div x-on:dragover.prevent="onDragOver($event, '{{ $day['date'] }}')"
                          x-on:drop="onDrop($event, '{{ $day['date'] }}')"
                          x-on:dragleave="onDragLeave($event)"
-                         x-bind:class="hoveredDate === '{{ $day['date'] }}' && '{{ $day['isPast'] ? '!bg-blue-50 dark:!bg-blue-900/20' : '!bg-amber-50 dark:!bg-amber-900/20' }}'"
+                         x-bind:class="hoveredDate === '{{ $day['date'] }}' && '{{ $day['isPast'] ? 'bg-blue-50! dark:bg-blue-900/20!' : 'bg-amber-50! dark:bg-amber-900/20!' }}'"
                          @class([
                              'min-h-24 border-gray-200 dark:border-gray-700 p-1.5 transition-colors',
                              'border-b' => $loop->iteration <= $loop->count - 7,
