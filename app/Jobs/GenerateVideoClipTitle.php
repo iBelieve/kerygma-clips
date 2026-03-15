@@ -26,6 +26,10 @@ class GenerateVideoClipTitle implements ShouldQueue
 
     public function handle(): void
     {
+        if ($this->videoClip->title_manually_edited) {
+            return;
+        }
+
         $clipText = $this->videoClip->getTranscriptText();
 
         if ($clipText === '') {

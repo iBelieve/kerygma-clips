@@ -311,10 +311,12 @@ class EditVideo extends EditRecord
         $boundariesChanged = $clip->start_segment_index !== $startSegmentIndex
             || $clip->end_segment_index !== $endSegmentIndex;
 
-        $clip->update([
+        $updateData = [
             'start_segment_index' => $startSegmentIndex,
             'end_segment_index' => $endSegmentIndex,
-        ]);
+        ];
+
+        $clip->update($updateData);
 
         if ($boundariesChanged) {
             GenerateVideoClipTitle::dispatch($clip);

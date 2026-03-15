@@ -39,6 +39,7 @@ class EditVideoClip extends EditRecord
                     ->label('Generate Title')
                     ->icon('heroicon-o-sparkles')
                     ->action(function () {
+                        $this->getRecord()->update(['title_manually_edited' => false]);
                         GenerateVideoClipTitle::dispatch($this->getRecord());
 
                         Notification::make()

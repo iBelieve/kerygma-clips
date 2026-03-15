@@ -41,13 +41,16 @@ class VideoClipResource extends Resource
                 Grid::make(2)->schema([
                     Group::make([
                         TextInput::make('title')
-                            ->label('Title'),
+                            ->label('Title')
+                            ->live(debounce: 500)
+                            ->afterStateUpdated(fn (Set $set) => $set('title_manually_edited', true)),
 
                         Textarea::make('excerpt')
                             ->label('Excerpt')
                             ->autosize()
                             ->live(debounce: 500)
                             ->afterStateUpdated(function (Get $get, Set $set, VideoClip $record) {
+                                $set('excerpt_manually_edited', true);
                                 $set('generated_description', $record->buildDescription(
                                     $get('excerpt') ?? '',
                                 ));
@@ -58,6 +61,7 @@ class VideoClipResource extends Resource
                                     ->icon(Heroicon::OutlinedArrowPath)
                                     ->action(function (Get $get, Set $set, VideoClip $record) {
                                         $set('excerpt', $record->getTranscriptText());
+                                        $set('excerpt_manually_edited', false);
                                         $set('generated_description', $record->buildDescription(
                                             $record->getTranscriptText(),
                                         ));
