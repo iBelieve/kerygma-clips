@@ -134,7 +134,7 @@ class Calendar extends Page
      */
     public function getCalendarDaysProperty(): array
     {
-        $start = CarbonImmutable::create($this->year, $this->month, 1);
+        $start = CarbonImmutable::create($this->year, $this->month, 1, timezone: self::DISPLAY_TIMEZONE);
         $end = $start->endOfMonth();
 
         $gridStart = $start->startOfWeek(Carbon::SUNDAY);
@@ -145,7 +145,7 @@ class Calendar extends Page
         );
 
         $lectionaryDays = $this->lectionaryDays;
-        $todayString = CarbonImmutable::today(self::DISPLAY_TIMEZONE)->toDateString();
+        $today = CarbonImmutable::today(self::DISPLAY_TIMEZONE);
 
         $days = [];
         $current = $gridStart;
@@ -157,8 +157,8 @@ class Calendar extends Page
                 'date' => $dateString,
                 'dayNumber' => $current->day,
                 'isCurrentMonth' => $current->month === $this->month,
-                'isToday' => $dateString === $todayString,
-                'isPast' => $dateString < $todayString,
+                'isToday' => $current->isToday(),
+                'isPast' => $current->isBefore($today),
                 'clips' => $scheduledClips->get($dateString, collect()),
                 'lectionaryName' => $lectionary['name'] ?? null,
                 'lectionaryColor' => $lectionary['color'] ?? null,
