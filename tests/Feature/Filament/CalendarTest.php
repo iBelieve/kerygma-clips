@@ -121,6 +121,52 @@ test('it handles lectionary API failure gracefully', function () {
         ->assertSuccessful();
 });
 
+test('unscheduled clips are sorted by video date then clip start time', function () {
+    $segments = [];
+    for ($i = 0; $i < 20; $i++) {
+        $segments[] = [
+            'start' => $i * 5.0,
+            'end' => $i * 5.0 + 5.0,
+            'text' => "Segment {$i}",
+        ];
+    }
+
+    // Create an older video with two clips (later clip created first)
+    $olderVideo = Video::factory()->create([
+        'date' => '2026-01-01',
+        'transcript' => ['segments' => $segments],
+    ]);
+    $olderClipB = $olderVideo->videoClips()->create([
+        'start_segment_index' => 4,
+        'end_segment_index' => 5,
+        'title' => 'Older Video - Later Clip',
+    ]);
+    $olderClipA = $olderVideo->videoClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 1,
+        'title' => 'Older Video - Earlier Clip',
+    ]);
+
+    // Create a newer video with one clip
+    $newerVideo = Video::factory()->create([
+        'date' => '2026-02-15',
+        'transcript' => ['segments' => $segments],
+    ]);
+    $newerClip = $newerVideo->videoClips()->create([
+        'start_segment_index' => 2,
+        'end_segment_index' => 3,
+        'title' => 'Newer Video Clip',
+    ]);
+
+    $component = Livewire::test(Calendar::class);
+    $unscheduled = $component->instance()->unscheduledClips;
+
+    expect($unscheduled)->toHaveCount(3)
+        ->and($unscheduled[0]->title)->toBe('Older Video - Earlier Clip')
+        ->and($unscheduled[1]->title)->toBe('Older Video - Later Clip')
+        ->and($unscheduled[2]->title)->toBe('Newer Video Clip');
+});
+
 test('it can navigate to today', function () {
     $now = now();
 
