@@ -74,9 +74,11 @@
                     <div x-on:dragover.prevent="onDragOver($event, '{{ $day['date'] }}')"
                          x-on:drop="onDrop($event, '{{ $day['date'] }}')"
                          x-on:dragleave="onDragLeave($event)"
-                         x-bind:class="hoveredDate === '{{ $day['date'] }}' && '!bg-amber-50 dark:!bg-amber-900/20'"
+                         x-bind:class="hoveredDate === '{{ $day['date'] }}' && '{{ $day['isPast'] ? '!bg-blue-50 dark:!bg-blue-900/20' : '!bg-amber-50 dark:!bg-amber-900/20' }}'"
                          @class([
-                             'min-h-24 border-b border-r border-gray-200 dark:border-gray-700 p-1.5 transition-colors',
+                             'min-h-24 border-gray-200 dark:border-gray-700 p-1.5 transition-colors',
+                             'border-b' => $loop->iteration <= $loop->count - 7,
+                             'border-r' => $loop->iteration % 7 !== 0,
                              'bg-white dark:bg-gray-900' => $day['isCurrentMonth'],
                              'bg-gray-50 dark:bg-gray-900/50' => ! $day['isCurrentMonth'],
                          ])>
