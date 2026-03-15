@@ -26,20 +26,29 @@ class TranscriptionScatterChart extends ChartWidget
             ->whereNotNull('transcription_duration')
             ->whereNotNull('duration')
             ->where('duration', '>', 0)
-            ->select(['duration', 'transcription_duration'])
+            ->select(['duration', 'transcription_duration', 'diarize'])
             ->get();
 
-        $data = $videos->map(fn (Video $v) => [
+        $mapFn = fn (Video $v): array => [
             'x' => round($v->duration / 60, 1),
             'y' => round($v->transcription_duration / 60, 1),
-        ])->values()->all();
+        ];
+
+        $withoutDiarization = $videos->filter(fn (Video $v): bool => ! $v->diarize)->map($mapFn)->values()->all();
+        $withDiarization = $videos->filter(fn (Video $v): bool => (bool) $v->diarize)->map($mapFn)->values()->all();
 
         return [
             'datasets' => [
                 [
-                    'label' => 'Videos',
-                    'data' => $data,
+                    'label' => 'Without diarization',
+                    'data' => $withoutDiarization,
                     'backgroundColor' => 'rgba(245, 158, 11, 0.6)',
+                    'pointRadius' => 4,
+                ],
+                [
+                    'label' => 'With diarization',
+                    'data' => $withDiarization,
+                    'backgroundColor' => 'rgba(59, 130, 246, 0.6)',
                     'pointRadius' => 4,
                 ],
             ],
