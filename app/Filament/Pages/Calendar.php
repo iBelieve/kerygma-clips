@@ -75,7 +75,10 @@ class Calendar extends Page
         return VideoClip::query()
             ->whereNull('scheduled_date')
             ->with('video')
-            ->latest()
+            ->join('videos', 'video_clips.video_id', '=', 'videos.id')
+            ->orderBy('videos.date')
+            ->orderBy('video_clips.starts_at')
+            ->select('video_clips.*')
             ->get();
     }
 
