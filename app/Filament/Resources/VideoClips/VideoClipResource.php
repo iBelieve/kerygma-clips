@@ -46,7 +46,7 @@ class VideoClipResource extends Resource
                         Textarea::make('excerpt')
                             ->label('Excerpt')
                             ->autosize()
-                            ->live(debounce: 500)
+                            ->live(onBlur: true)
                             ->afterStateUpdated(function (Get $get, Set $set, VideoClip $record) {
                                 $set('generated_description', $record->buildDescription(
                                     $get('excerpt') ?? '',

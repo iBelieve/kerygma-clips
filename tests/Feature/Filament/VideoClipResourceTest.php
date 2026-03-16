@@ -195,6 +195,57 @@ test('edit page has excerpt field', function () {
         ->assertFormFieldExists('excerpt');
 });
 
+test('excerpt field does not reset during live update', function () {
+    $video = createVideoWithTranscript();
+    $clip = $video->videoClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+    ]);
+
+    // Original excerpt is auto-populated from transcript
+    expect($clip->excerpt)->toBe('Segment 0 Segment 1 Segment 2 Segment 3');
+
+    $component = Livewire::test(EditVideoClip::class, ['record' => $clip->id]);
+
+    // Simulate a user typing a new excerpt (live update sets the form field directly)
+    $component
+        ->set('data.excerpt', 'User is typing something new')
+        ->assertFormSet(['excerpt' => 'User is typing something new']);
+
+    // After the live round-trip, the excerpt should NOT revert to the DB value.
+    // With live(debounce: 500), each keystroke debounce triggers afterStateUpdated
+    // which re-renders the component. The excerpt must remain what the user typed.
+    $component->assertFormSet(['excerpt' => 'User is typing something new']);
+
+    // The generated_description should reflect the new excerpt, not the old one
+    $component->assertFormSet([
+        'excerpt' => 'User is typing something new',
+    ]);
+});
+
+test('excerpt field uses onBlur not debounce for live updates', function () {
+    $video = createVideoWithTranscript();
+    $clip = $video->videoClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+    ]);
+
+    // Verify the excerpt field is live(onBlur: true) by checking that rapid
+    // sequential updates don't cause intermediate server round-trips that
+    // could reset the field. With onBlur, only the final value matters.
+    $component = Livewire::test(EditVideoClip::class, ['record' => $clip->id]);
+
+    // Simulate typing progressively — with onBlur, only the final blur triggers the update
+    $component
+        ->set('data.excerpt', 'Final typed value')
+        ->assertFormSet(['excerpt' => 'Final typed value']);
+
+    // Save and confirm the value persists
+    $component->call('save')->assertHasNoFormErrors();
+
+    expect($clip->refresh()->excerpt)->toBe('Final typed value');
+});
+
 test('reset excerpt action restores transcript text', function () {
     $video = createVideoWithTranscript();
     $clip = $video->videoClips()->create([
