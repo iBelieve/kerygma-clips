@@ -247,6 +247,37 @@ test('updateSegmentWords does not dispatch re-export when validation fails', fun
     Queue::assertNotPushed(ExtractVideoClipVerticalVideo::class);
 });
 
+test('updateSegmentWords regenerates excerpt when not manually edited', function () {
+    $video = makeVideoWithWords();
+    $clip = $video->videoClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 2,
+        'excerpt_manually_edited' => false,
+    ]);
+
+    Livewire::test(EditVideoClip::class, ['record' => $clip->id])
+        ->call('updateSegmentWords', 1, ['Changed', 'the', 'words']);
+
+    $clip->refresh();
+    expect($clip->excerpt)->toContain('Changed the words');
+});
+
+test('updateSegmentWords does not regenerate excerpt when manually edited', function () {
+    $video = makeVideoWithWords();
+    $clip = $video->videoClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 2,
+        'excerpt' => 'My custom excerpt',
+        'excerpt_manually_edited' => true,
+    ]);
+
+    Livewire::test(EditVideoClip::class, ['record' => $clip->id])
+        ->call('updateSegmentWords', 1, ['Changed', 'the', 'words']);
+
+    $clip->refresh();
+    expect($clip->excerpt)->toBe('My custom excerpt');
+});
+
 test('updateSegmentWords preserves word timestamps', function () {
     $video = makeVideoWithWords();
     $clip = $video->videoClips()->create([
