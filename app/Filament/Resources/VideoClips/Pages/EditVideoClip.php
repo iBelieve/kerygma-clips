@@ -39,6 +39,7 @@ class EditVideoClip extends EditRecord
                     ->label('Generate Title')
                     ->icon('heroicon-o-sparkles')
                     ->action(function () {
+                        $this->getRecord()->update(['title_manually_edited' => false]);
                         GenerateVideoClipTitle::dispatch($this->getRecord());
 
                         Notification::make()
@@ -182,6 +183,10 @@ class EditVideoClip extends EditRecord
         $transcript['segments'][$segmentIndex]['text'] = implode(' ', $words);
 
         $video->update(['transcript' => $transcript]);
+
+        if (! $clip->excerpt_manually_edited) {
+            $clip->update(['excerpt' => $clip->getTranscriptText()]);
+        }
 
         unset($this->transcriptRows);
 

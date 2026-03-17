@@ -316,7 +316,7 @@ class EditVideo extends EditRecord
             'end_segment_index' => $endSegmentIndex,
         ]);
 
-        if ($boundariesChanged) {
+        if ($boundariesChanged && ! $clip->title_manually_edited) {
             GenerateVideoClipTitle::dispatch($clip);
         }
 
