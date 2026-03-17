@@ -34,13 +34,11 @@ class EditVideoClip extends EditRecord
      */
     protected function getHeaderActions(): array
     {
-        $isDraft = $this->getRecord()->status === ClipStatus::Draft;
-
         return [
             Action::make('toggle_status')
-                ->label($isDraft ? 'Approve' : 'Revert to Draft')
-                ->icon($isDraft ? 'heroicon-o-check-circle' : 'heroicon-o-arrow-uturn-left')
-                ->color($isDraft ? 'success' : 'warning')
+                ->label(fn () => $this->getRecord()->status === ClipStatus::Draft ? 'Approve' : 'Revert to Draft')
+                ->icon(fn () => $this->getRecord()->status === ClipStatus::Draft ? 'heroicon-o-check-circle' : 'heroicon-o-arrow-uturn-left')
+                ->color(fn () => $this->getRecord()->status === ClipStatus::Draft ? 'success' : 'warning')
                 ->action(function () {
                     $record = $this->getRecord();
                     $record->update([
