@@ -14,11 +14,7 @@
                         <div draggable="true"
                              x-on:dragstart="onDragStart($event, {{ $clip->id }})"
                              x-on:dragend="onDragEnd($event)"
-                             @class([
-                                 'cursor-grab rounded-lg bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-900 dark:bg-gray-800 dark:text-white hover:dark:bg-amber-900/30 hover:dark:text-amber-200 hover:dark:border-amber-700',
-                                 'border-2 border-dashed border-gray-300 dark:border-gray-600' => $clip->status === \App\Enums\ClipStatus::Draft,
-                                 'border border-gray-200 dark:border-gray-700' => $clip->status !== \App\Enums\ClipStatus::Draft,
-                             ])>
+                             class="cursor-grab rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white hover:dark:bg-amber-900/30 hover:dark:text-amber-200 hover:dark:border-amber-700">
                             <div class="font-medium truncate">
                                 {{ $clip->title ?: 'Untitled' }}
                             </div>
