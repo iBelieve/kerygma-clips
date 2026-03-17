@@ -140,7 +140,7 @@ test('scheduled clips on calendar include both draft and approved clips', functi
     [$video, $clips] = createVideoWithClips(2);
     $now = now();
 
-    $date = $now->format('Y-m') . '-15';
+    $date = $now->format('Y-m').'-15';
     VideoClip::where('id', $clips[0]->id)->update([
         'scheduled_date' => $date,
         'status' => ClipStatus::Approved,
