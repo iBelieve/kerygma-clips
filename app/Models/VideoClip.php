@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ClipStatus;
 use App\Enums\JobStatus;
 use App\Enums\VideoType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,6 +31,7 @@ class VideoClip extends Model
         'pause_after',
         'title',
         'excerpt',
+        'status',
         'clip_video_status',
         'clip_video_path',
         'clip_video_error',
@@ -46,6 +48,7 @@ class VideoClip extends Model
         'pause_before' => 'float',
         'pause_after' => 'float',
         'duration' => 'float',
+        'status' => ClipStatus::class,
         'clip_video_status' => JobStatus::class,
         'clip_video_started_at' => 'immutable_datetime',
         'clip_video_completed_at' => 'immutable_datetime',

@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources\VideoClips\Tables;
 
+use App\Enums\ClipStatus;
 use App\Enums\JobStatus;
 use App\Models\VideoClip;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -99,11 +101,27 @@ class VideoClipsTable
                         return sprintf('Extraction completed in %dm %02ds', $minutes, $seconds);
                     }),
 
+                TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (ClipStatus $state): string => match ($state) {
+                        ClipStatus::Draft => 'warning',
+                        ClipStatus::Approved => 'success',
+                    }),
+
                 TextColumn::make('created_at')
                     ->label('Created')
                     ->since()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->recordActions([
+                Action::make('toggleStatus')
+                    ->label(fn (VideoClip $record): string => $record->status === ClipStatus::Draft ? 'Approve' : 'Revert to Draft')
+                    ->icon(fn (VideoClip $record): string => $record->status === ClipStatus::Draft ? 'heroicon-o-check-circle' : 'heroicon-o-arrow-uturn-left')
+                    ->color(fn (VideoClip $record): string => $record->status === ClipStatus::Draft ? 'success' : 'warning')
+                    ->action(fn (VideoClip $record) => $record->update([
+                        'status' => $record->status === ClipStatus::Draft ? ClipStatus::Approved : ClipStatus::Draft,
+                    ])),
             ])
             ->defaultSort('created_at', 'desc')
             ->paginated([10]);

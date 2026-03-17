@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\ClipStatus;
 use App\Filament\Pages\Calendar;
 use App\Models\User;
 use App\Models\Video;
+use App\Models\VideoClip;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 
@@ -119,6 +121,44 @@ test('it handles lectionary API failure gracefully', function () {
 
     Livewire::test(Calendar::class)
         ->assertSuccessful();
+});
+
+test('unscheduled clips sidebar excludes draft clips', function () {
+    [$video, $clips] = createVideoWithClips(2);
+
+    // One approved, one draft (default)
+    VideoClip::where('id', $clips[0]->id)->update(['status' => ClipStatus::Approved]);
+
+    $component = Livewire::test(Calendar::class);
+    $unscheduled = $component->instance()->unscheduledClips;
+
+    expect($unscheduled)->toHaveCount(1)
+        ->and($unscheduled->first()->id)->toBe($clips[0]->id);
+});
+
+test('scheduled clips on calendar exclude draft clips', function () {
+    [$video, $clips] = createVideoWithClips(2);
+    $now = now();
+
+    // Schedule both clips for this month
+    $date = $now->format('Y-m') . '-15';
+    VideoClip::where('id', $clips[0]->id)->update([
+        'scheduled_date' => $date,
+        'status' => ClipStatus::Approved,
+    ]);
+    VideoClip::where('id', $clips[1]->id)->update([
+        'scheduled_date' => $date,
+        'status' => ClipStatus::Draft,
+    ]);
+
+    $component = Livewire::test(Calendar::class)
+        ->set('year', $now->year)
+        ->set('month', $now->month);
+
+    $scheduled = $component->instance()->scheduledClips;
+
+    expect($scheduled)->toHaveCount(1)
+        ->and($scheduled->first()->id)->toBe($clips[0]->id);
 });
 
 test('it can navigate to today', function () {
