@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Videos\Pages;
 
+use App\Enums\ClipStatus;
 use App\Enums\JobStatus;
 use App\Enums\VideoType;
 use App\Filament\Resources\Videos\VideoResource;
@@ -311,10 +312,11 @@ class EditVideo extends EditRecord
         $boundariesChanged = $clip->start_segment_index !== $startSegmentIndex
             || $clip->end_segment_index !== $endSegmentIndex;
 
-        $clip->update([
+        $clip->update(array_filter([
             'start_segment_index' => $startSegmentIndex,
             'end_segment_index' => $endSegmentIndex,
-        ]);
+            'status' => $boundariesChanged ? ClipStatus::Draft : null,
+        ]));
 
         if ($boundariesChanged && ! $clip->title_manually_edited) {
             GenerateVideoClipTitle::dispatch($clip);
