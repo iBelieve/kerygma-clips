@@ -77,7 +77,10 @@ class Calendar extends Page
             ->whereNull('scheduled_date')
             ->where('status', ClipStatus::Approved)
             ->with('video')
-            ->latest()
+            ->join('videos', 'video_clips.video_id', '=', 'videos.id')
+            ->orderBy('videos.date')
+            ->orderBy('video_clips.starts_at')
+            ->select('video_clips.*')
             ->get();
     }
 

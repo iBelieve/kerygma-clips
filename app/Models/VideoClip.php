@@ -30,7 +30,9 @@ class VideoClip extends Model
         'pause_before',
         'pause_after',
         'title',
+        'title_manually_edited',
         'excerpt',
+        'excerpt_manually_edited',
         'status',
         'clip_video_status',
         'clip_video_path',
@@ -48,6 +50,8 @@ class VideoClip extends Model
         'pause_before' => 'float',
         'pause_after' => 'float',
         'duration' => 'float',
+        'title_manually_edited' => 'boolean',
+        'excerpt_manually_edited' => 'boolean',
         'status' => ClipStatus::class,
         'clip_video_status' => JobStatus::class,
         'clip_video_started_at' => 'immutable_datetime',
@@ -185,6 +189,13 @@ class VideoClip extends Model
         });
 
         static::saving(function (VideoClip $clip): void {
+            // Regenerate excerpt from transcript when boundaries change, unless manually edited
+            if (! $clip->excerpt_manually_edited
+                && ($clip->isDirty('start_segment_index') || $clip->isDirty('end_segment_index'))
+            ) {
+                $clip->excerpt = $clip->getTranscriptText();
+            }
+
             $video = $clip->video;
             $segments = $video->transcript['segments'] ?? [];
 
