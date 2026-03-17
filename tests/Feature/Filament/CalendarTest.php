@@ -123,7 +123,7 @@ test('it handles lectionary API failure gracefully', function () {
         ->assertSuccessful();
 });
 
-test('unscheduled clips sidebar includes both draft and approved clips', function () {
+test('unscheduled clips sidebar only shows approved clips', function () {
     [$video, $clips] = createVideoWithClips(2);
 
     // One approved, one draft (default)
@@ -132,7 +132,8 @@ test('unscheduled clips sidebar includes both draft and approved clips', functio
     $component = Livewire::test(Calendar::class);
     $unscheduled = $component->instance()->unscheduledClips;
 
-    expect($unscheduled)->toHaveCount(2);
+    expect($unscheduled)->toHaveCount(1)
+        ->and($unscheduled->first()->id)->toBe($clips[0]->id);
 });
 
 test('scheduled clips on calendar include both draft and approved clips', function () {
