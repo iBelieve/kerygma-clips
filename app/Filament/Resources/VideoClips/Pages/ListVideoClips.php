@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\VideoClips\Pages;
 
+use App\Enums\ClipStatus;
 use App\Enums\JobStatus;
 use App\Filament\Resources\VideoClips\VideoClipResource;
 use App\Jobs\ExtractVideoClipVerticalVideo;
@@ -10,10 +11,29 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Tabs\Tab;
+use Illuminate\Database\Eloquent\Builder;
 
 class ListVideoClips extends ListRecords
 {
     protected static string $resource = VideoClipResource::class;
+
+    /**
+     * @return array<string, Tab>
+     */
+    public function getTabs(): array
+    {
+        return [
+            'all' => Tab::make()->label('All'),
+            'draft' => Tab::make()
+                ->label('Draft')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', ClipStatus::Draft))
+                ->badge(fn () => VideoClip::where('status', ClipStatus::Draft)->count()),
+            'approved' => Tab::make()
+                ->label('Approved')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', ClipStatus::Approved)),
+        ];
+    }
 
     protected function getHeaderActions(): array
     {

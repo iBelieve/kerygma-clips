@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ClipStatus;
 use App\Filament\Resources\Videos\Pages\EditVideo;
 use App\Jobs\GenerateVideoClipTitle;
 use App\Models\User;
@@ -437,4 +438,34 @@ test('updateClip recalculates pause values', function () {
         ->pause_after->toBe(0.5)
         ->starts_at->toBe(11.75)
         ->ends_at->toBe(28.5);
+});
+
+test('updateClip resets approved clip back to draft when boundaries change', function () {
+    $video = makeVideo(30);
+
+    $clip = $video->videoClips()->create([
+        'start_segment_index' => 2,
+        'end_segment_index' => 5,
+        'status' => ClipStatus::Approved,
+    ]);
+
+    Livewire::test(EditVideo::class, ['record' => $video->id])
+        ->call('updateClip', $clip->id, 3, 6);
+
+    expect($clip->fresh()->status)->toBe(ClipStatus::Draft);
+});
+
+test('updateClip does not reset status when boundaries are unchanged', function () {
+    $video = makeVideo(30);
+
+    $clip = $video->videoClips()->create([
+        'start_segment_index' => 2,
+        'end_segment_index' => 5,
+        'status' => ClipStatus::Approved,
+    ]);
+
+    Livewire::test(EditVideo::class, ['record' => $video->id])
+        ->call('updateClip', $clip->id, 2, 5);
+
+    expect($clip->fresh()->status)->toBe(ClipStatus::Approved);
 });

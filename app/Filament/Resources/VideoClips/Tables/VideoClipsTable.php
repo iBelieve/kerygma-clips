@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\VideoClips\Tables;
 
+use App\Enums\ClipStatus;
 use App\Enums\JobStatus;
 use App\Models\VideoClip;
 use Filament\Tables\Columns\TextColumn;
@@ -31,6 +32,14 @@ class VideoClipsTable
                     ->label('Title')
                     ->placeholder("\u{2014}")
                     ->searchable(),
+
+                TextColumn::make('status')
+                    ->badge()
+                    ->formatStateUsing(fn (ClipStatus $state): string => ucfirst($state->value))
+                    ->color(fn (ClipStatus $state): string => match ($state) {
+                        ClipStatus::Draft => 'warning',
+                        ClipStatus::Approved => 'success',
+                    }),
 
                 TextColumn::make('starts_at')
                     ->label('Start Time')

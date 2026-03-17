@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ClipStatus;
 use App\Enums\JobStatus;
 use App\Filament\Resources\VideoClips\Pages\EditVideoClip;
 use App\Filament\Resources\VideoClips\Pages\ListVideoClips;
@@ -193,6 +194,87 @@ test('edit page has excerpt field', function () {
 
     Livewire::test(EditVideoClip::class, ['record' => $clip->id])
         ->assertFormFieldExists('excerpt');
+});
+
+test('new clips default to draft status', function () {
+    $video = createVideoWithTranscript();
+    $clip = $video->videoClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+    ]);
+
+    expect($clip->fresh()->status)->toBe(ClipStatus::Draft);
+});
+
+test('draft tab only shows draft clips', function () {
+    $video = createVideoWithTranscript();
+    $draftClip = $video->videoClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+        'status' => ClipStatus::Draft,
+    ]);
+    $approvedClip = $video->videoClips()->create([
+        'start_segment_index' => 4,
+        'end_segment_index' => 7,
+        'status' => ClipStatus::Approved,
+    ]);
+
+    Livewire::test(ListVideoClips::class)
+        ->set('activeTab', 'draft')
+        ->assertCanSeeTableRecords([$draftClip])
+        ->assertCanNotSeeTableRecords([$approvedClip]);
+});
+
+test('approved tab only shows approved clips', function () {
+    $video = createVideoWithTranscript();
+    $draftClip = $video->videoClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+        'status' => ClipStatus::Draft,
+    ]);
+    $approvedClip = $video->videoClips()->create([
+        'start_segment_index' => 4,
+        'end_segment_index' => 7,
+        'status' => ClipStatus::Approved,
+    ]);
+
+    Livewire::test(ListVideoClips::class)
+        ->set('activeTab', 'approved')
+        ->assertCanSeeTableRecords([$approvedClip])
+        ->assertCanNotSeeTableRecords([$draftClip]);
+});
+
+test('all tab shows both draft and approved clips', function () {
+    $video = createVideoWithTranscript();
+    $draftClip = $video->videoClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+        'status' => ClipStatus::Draft,
+    ]);
+    $approvedClip = $video->videoClips()->create([
+        'start_segment_index' => 4,
+        'end_segment_index' => 7,
+        'status' => ClipStatus::Approved,
+    ]);
+
+    Livewire::test(ListVideoClips::class)
+        ->set('activeTab', 'all')
+        ->assertCanSeeTableRecords([$draftClip, $approvedClip]);
+});
+
+test('toggle status action updates label after approving', function () {
+    $video = createVideoWithTranscript();
+    $clip = $video->videoClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+        'status' => ClipStatus::Draft,
+    ]);
+
+    Livewire::test(EditVideoClip::class, ['record' => $clip->id])
+        ->assertActionVisible('toggle_status')
+        ->assertActionHasLabel('toggle_status', 'Approve')
+        ->callAction('toggle_status')
+        ->assertActionHasLabel('toggle_status', 'Revert to Draft');
 });
 
 test('reset excerpt action restores transcript text', function () {

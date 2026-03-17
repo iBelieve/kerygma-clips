@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ClipStatus;
 use App\Models\Video;
 use App\Models\VideoClip;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -19,6 +20,12 @@ class VideoClipFactory extends Factory
             'video_id' => Video::factory(),
             'start_segment_index' => 0,
             'end_segment_index' => 5,
+            'status' => ClipStatus::Draft,
         ];
+    }
+
+    public function approved(): static
+    {
+        return $this->state(['status' => ClipStatus::Approved]);
     }
 }

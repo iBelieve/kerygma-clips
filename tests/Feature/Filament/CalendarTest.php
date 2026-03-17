@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\ClipStatus;
 use App\Filament\Pages\Calendar;
 use App\Models\User;
 use App\Models\Video;
+use App\Models\VideoClip;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 
@@ -121,6 +123,42 @@ test('it handles lectionary API failure gracefully', function () {
         ->assertSuccessful();
 });
 
+test('unscheduled clips sidebar only shows approved clips', function () {
+    [$video, $clips] = createVideoWithClips(2);
+
+    // One approved, one draft (default)
+    VideoClip::where('id', $clips[0]->id)->update(['status' => ClipStatus::Approved]);
+
+    $component = Livewire::test(Calendar::class);
+    $unscheduled = $component->instance()->unscheduledClips;
+
+    expect($unscheduled)->toHaveCount(1)
+        ->and($unscheduled->first()->id)->toBe($clips[0]->id);
+});
+
+test('scheduled clips on calendar include both draft and approved clips', function () {
+    [$video, $clips] = createVideoWithClips(2);
+    $now = now();
+
+    $date = $now->format('Y-m').'-15';
+    VideoClip::where('id', $clips[0]->id)->update([
+        'scheduled_date' => $date,
+        'status' => ClipStatus::Approved,
+    ]);
+    VideoClip::where('id', $clips[1]->id)->update([
+        'scheduled_date' => $date,
+        'status' => ClipStatus::Draft,
+    ]);
+
+    $component = Livewire::test(Calendar::class)
+        ->set('year', $now->year)
+        ->set('month', $now->month);
+
+    $scheduled = $component->instance()->scheduledClips;
+
+    expect($scheduled)->toHaveCount(2);
+});
+
 test('unscheduled clips are sorted by video date then clip start time', function () {
     $segments = [];
     for ($i = 0; $i < 20; $i++) {
@@ -140,11 +178,13 @@ test('unscheduled clips are sorted by video date then clip start time', function
         'start_segment_index' => 4,
         'end_segment_index' => 5,
         'title' => 'Older Video - Later Clip',
+        'status' => ClipStatus::Approved,
     ]);
     $olderClipA = $olderVideo->videoClips()->create([
         'start_segment_index' => 0,
         'end_segment_index' => 1,
         'title' => 'Older Video - Earlier Clip',
+        'status' => ClipStatus::Approved,
     ]);
 
     // Create a newer video with one clip
@@ -156,6 +196,7 @@ test('unscheduled clips are sorted by video date then clip start time', function
         'start_segment_index' => 2,
         'end_segment_index' => 3,
         'title' => 'Newer Video Clip',
+        'status' => ClipStatus::Approved,
     ]);
 
     $component = Livewire::test(Calendar::class);

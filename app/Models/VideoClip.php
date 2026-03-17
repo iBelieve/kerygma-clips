@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ClipStatus;
 use App\Enums\JobStatus;
 use App\Enums\VideoType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,6 +33,7 @@ class VideoClip extends Model
         'title_manually_edited',
         'excerpt',
         'excerpt_manually_edited',
+        'status',
         'clip_video_status',
         'clip_video_path',
         'clip_video_error',
@@ -50,6 +52,7 @@ class VideoClip extends Model
         'duration' => 'float',
         'title_manually_edited' => 'boolean',
         'excerpt_manually_edited' => 'boolean',
+        'status' => ClipStatus::class,
         'clip_video_status' => JobStatus::class,
         'clip_video_started_at' => 'immutable_datetime',
         'clip_video_completed_at' => 'immutable_datetime',

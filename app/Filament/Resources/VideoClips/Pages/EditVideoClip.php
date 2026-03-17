@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\VideoClips\Pages;
 
+use App\Enums\ClipStatus;
 use App\Enums\JobStatus;
 use App\Filament\Resources\VideoClips\VideoClipResource;
 use App\Jobs\ExtractVideoClipVerticalVideo;
@@ -29,11 +30,25 @@ class EditVideoClip extends EditRecord
     protected string $view = 'filament.resources.video-clips.edit-video-clip';
 
     /**
-     * @return array<ActionGroup>
+     * @return array<Action|ActionGroup>
      */
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('toggle_status')
+                ->label(fn () => $this->getRecord()->status === ClipStatus::Draft ? 'Approve' : 'Revert to Draft')
+                ->icon(fn () => $this->getRecord()->status === ClipStatus::Draft ? 'heroicon-o-check-circle' : 'heroicon-o-arrow-uturn-left')
+                ->color(fn () => $this->getRecord()->status === ClipStatus::Draft ? 'success' : 'warning')
+                ->action(function () {
+                    $record = $this->getRecord();
+                    $record->update([
+                        'status' => $record->status === ClipStatus::Draft ? ClipStatus::Approved : ClipStatus::Draft,
+                    ]);
+                }),
+
+            DeleteAction::make()
+                ->visible(fn () => $this->getRecord()->status === ClipStatus::Draft),
+
             ActionGroup::make([
                 Action::make('generate_title')
                     ->label('Generate Title')
@@ -62,7 +77,8 @@ class EditVideoClip extends EditRecord
                             ->send();
                     }),
 
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->visible(fn () => $this->getRecord()->status === ClipStatus::Approved),
             ])
                 ->icon('heroicon-o-cog-6-tooth')
                 ->label('')

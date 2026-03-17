@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\ClipStatus;
 use App\Models\VideoClip;
 use App\Services\LectionaryService;
 use BackedEnum;
@@ -74,6 +75,7 @@ class Calendar extends Page
     {
         return VideoClip::query()
             ->whereNull('scheduled_date')
+            ->where('status', ClipStatus::Approved)
             ->with('video')
             ->join('videos', 'video_clips.video_id', '=', 'videos.id')
             ->orderBy('videos.date')
