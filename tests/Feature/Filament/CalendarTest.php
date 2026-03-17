@@ -123,7 +123,7 @@ test('it handles lectionary API failure gracefully', function () {
         ->assertSuccessful();
 });
 
-test('unscheduled clips sidebar excludes draft clips', function () {
+test('unscheduled clips sidebar includes both draft and approved clips', function () {
     [$video, $clips] = createVideoWithClips(2);
 
     // One approved, one draft (default)
@@ -132,15 +132,13 @@ test('unscheduled clips sidebar excludes draft clips', function () {
     $component = Livewire::test(Calendar::class);
     $unscheduled = $component->instance()->unscheduledClips;
 
-    expect($unscheduled)->toHaveCount(1)
-        ->and($unscheduled->first()->id)->toBe($clips[0]->id);
+    expect($unscheduled)->toHaveCount(2);
 });
 
-test('scheduled clips on calendar exclude draft clips', function () {
+test('scheduled clips on calendar include both draft and approved clips', function () {
     [$video, $clips] = createVideoWithClips(2);
     $now = now();
 
-    // Schedule both clips for this month
     $date = $now->format('Y-m') . '-15';
     VideoClip::where('id', $clips[0]->id)->update([
         'scheduled_date' => $date,
@@ -157,8 +155,7 @@ test('scheduled clips on calendar exclude draft clips', function () {
 
     $scheduled = $component->instance()->scheduledClips;
 
-    expect($scheduled)->toHaveCount(1)
-        ->and($scheduled->first()->id)->toBe($clips[0]->id);
+    expect($scheduled)->toHaveCount(2);
 });
 
 test('it can navigate to today', function () {

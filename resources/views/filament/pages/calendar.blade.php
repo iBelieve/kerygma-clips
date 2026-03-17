@@ -14,7 +14,11 @@
                         <div draggable="true"
                              x-on:dragstart="onDragStart($event, {{ $clip->id }})"
                              x-on:dragend="onDragEnd($event)"
-                             class="cursor-grab rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white hover:dark:bg-amber-900/30 hover:dark:text-amber-200 hover:dark:border-amber-700">
+                             @class([
+                                 'cursor-grab rounded-lg bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-900 dark:bg-gray-800 dark:text-white hover:dark:bg-amber-900/30 hover:dark:text-amber-200 hover:dark:border-amber-700',
+                                 'border-2 border-dashed border-gray-300 dark:border-gray-600' => $clip->status === \App\Enums\ClipStatus::Draft,
+                                 'border border-gray-200 dark:border-gray-700' => $clip->status !== \App\Enums\ClipStatus::Draft,
+                             ])>
                             <div class="font-medium truncate">
                                 {{ $clip->title ?: 'Untitled' }}
                             </div>
@@ -112,9 +116,10 @@
                                      x-on:dragstart="onDragStart($event, {{ $clip->id }})"
                                      x-on:dragend="onDragEnd($event)"
                                      @class([
-                                         'group cursor-grab rounded px-1.5 py-0.5 text-xs ring-1 relative',
-                                         'bg-blue-50 text-blue-900 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:ring-blue-700' => $day['isPast'],
-                                         'bg-amber-50 text-amber-900 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700' => ! $day['isPast'],
+                                         'group cursor-grab rounded px-1.5 py-0.5 text-xs border relative',
+                                         'border-dashed border-2' => $clip->status === \App\Enums\ClipStatus::Draft,
+                                         'bg-blue-50 text-blue-900 border-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-700' => $day['isPast'],
+                                         'bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700' => ! $day['isPast'],
                                      ])>
                                     <span class="line-clamp-3">{{ $clip->title ?: 'Untitled' }}</span>
                                     <button x-on:click="unschedule({{ $clip->id }})"

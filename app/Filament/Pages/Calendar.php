@@ -2,7 +2,6 @@
 
 namespace App\Filament\Pages;
 
-use App\Enums\ClipStatus;
 use App\Models\VideoClip;
 use App\Services\LectionaryService;
 use BackedEnum;
@@ -75,7 +74,6 @@ class Calendar extends Page
     {
         return VideoClip::query()
             ->whereNull('scheduled_date')
-            ->where('status', ClipStatus::Approved)
             ->with('video')
             ->latest()
             ->get();
@@ -93,7 +91,6 @@ class Calendar extends Page
 
         return VideoClip::query()
             ->whereNotNull('scheduled_date')
-            ->where('status', ClipStatus::Approved)
             ->whereBetween('scheduled_date', [$gridStart->toDateString(), $gridEnd->toDateString()])
             ->with('video')
             ->get();
