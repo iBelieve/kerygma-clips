@@ -42,13 +42,13 @@ class VideoClipResource extends Resource
                     Group::make([
                         TextInput::make('title')
                             ->label('Title')
-                            ->live(debounce: 500)
+                            ->live(onBlur: true)
                             ->afterStateUpdated(fn (Set $set) => $set('title_manually_edited', true)),
 
                         Textarea::make('excerpt')
                             ->label('Excerpt')
                             ->autosize()
-                            ->live(debounce: 500)
+                            ->live(onBlur: true)
                             ->afterStateUpdated(function (Get $get, Set $set, VideoClip $record) {
                                 $set('excerpt_manually_edited', true);
                                 $set('generated_description', $record->buildDescription(
