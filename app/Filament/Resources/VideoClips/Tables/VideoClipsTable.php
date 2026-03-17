@@ -35,6 +35,7 @@ class VideoClipsTable
 
                 TextColumn::make('status')
                     ->badge()
+                    ->formatStateUsing(fn (ClipStatus $state): string => ucfirst($state->value))
                     ->color(fn (ClipStatus $state): string => match ($state) {
                         ClipStatus::Draft => 'warning',
                         ClipStatus::Approved => 'success',
