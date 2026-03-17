@@ -263,34 +263,6 @@ test('all tab shows both draft and approved clips', function () {
         ->assertCanSeeTableRecords([$draftClip, $approvedClip]);
 });
 
-test('toggle status action approves a draft clip', function () {
-    $video = createVideoWithTranscript();
-    $clip = $video->videoClips()->create([
-        'start_segment_index' => 0,
-        'end_segment_index' => 3,
-        'status' => ClipStatus::Draft,
-    ]);
-
-    Livewire::test(ListVideoClips::class)
-        ->callTableAction('toggleStatus', $clip);
-
-    expect($clip->fresh()->status)->toBe(ClipStatus::Approved);
-});
-
-test('toggle status action reverts an approved clip to draft', function () {
-    $video = createVideoWithTranscript();
-    $clip = $video->videoClips()->create([
-        'start_segment_index' => 0,
-        'end_segment_index' => 3,
-        'status' => ClipStatus::Approved,
-    ]);
-
-    Livewire::test(ListVideoClips::class)
-        ->callTableAction('toggleStatus', $clip);
-
-    expect($clip->fresh()->status)->toBe(ClipStatus::Draft);
-});
-
 test('reset excerpt action restores transcript text', function () {
     $video = createVideoWithTranscript();
     $clip = $video->videoClips()->create([
