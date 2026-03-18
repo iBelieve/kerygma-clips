@@ -1,8 +1,10 @@
 export default function calendarPage() {
     return {
         hoveredDate: null,
+        dragging: false,
 
         onDragStart(event, clipId) {
+            this.dragging = true;
             event.dataTransfer.effectAllowed = "move";
             event.dataTransfer.setData("text/plain", String(clipId));
             event.target.classList.add("opacity-50");
@@ -11,6 +13,12 @@ export default function calendarPage() {
         onDragEnd(event) {
             event.target.classList.remove("opacity-50");
             this.hoveredDate = null;
+            this.dragging = false;
+        },
+
+        onClipClick(event, clipId) {
+            if (this.dragging) return;
+            window.open(`/clips/${clipId}/edit`, "_blank");
         },
 
         onDragOver(event, date) {

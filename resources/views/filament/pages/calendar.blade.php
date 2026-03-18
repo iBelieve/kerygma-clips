@@ -14,6 +14,7 @@
                         <div draggable="true"
                              x-on:dragstart="onDragStart($event, {{ $clip->id }})"
                              x-on:dragend="onDragEnd($event)"
+                             x-on:click="onClipClick($event, {{ $clip->id }})"
                              class="cursor-grab rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white hover:dark:bg-amber-900/30 hover:dark:text-amber-200 hover:dark:border-amber-700">
                             <div class="font-medium truncate">
                                 {{ $clip->title ?: 'Untitled' }}
@@ -111,6 +112,7 @@
                                 <div draggable="true"
                                      x-on:dragstart="onDragStart($event, {{ $clip->id }})"
                                      x-on:dragend="onDragEnd($event)"
+                                     x-on:click="onClipClick($event, {{ $clip->id }})"
                                      @class([
                                          'group cursor-grab rounded px-1.5 py-0.5 text-xs border relative',
                                          'border-dashed border-2' => $clip->status === \App\Enums\ClipStatus::Draft,
@@ -118,7 +120,7 @@
                                          'bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700' => ! $day['isPast'],
                                      ])>
                                     <span class="line-clamp-3">{{ $clip->title ?: 'Untitled' }}</span>
-                                    <button x-on:click="unschedule({{ $clip->id }})"
+                                    <button x-on:click.stop="unschedule({{ $clip->id }})"
                                             @class([
                                                 'absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 shrink-0 hover:text-red-500 dark:hover:text-red-400 transition-opacity',
                                                 'text-blue-400 dark:text-blue-600' => $day['isPast'],
