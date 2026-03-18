@@ -108,6 +108,24 @@ class VideoClipsTable
                         return sprintf('Extraction completed in %dm %02ds', $minutes, $seconds);
                     }),
 
+                TextColumn::make('youtube_status')
+                    ->label('YouTube')
+                    ->badge()
+                    ->placeholder("\u{2014}")
+                    ->color(fn (JobStatus $state): string => match ($state) {
+                        JobStatus::Pending => 'warning',
+                        JobStatus::Processing => 'info',
+                        JobStatus::Completed => 'success',
+                        JobStatus::Failed, JobStatus::TimedOut => 'danger',
+                    })
+                    ->tooltip(function (VideoClip $record): ?string {
+                        if ($record->youtube_status === JobStatus::Failed) {
+                            return $record->youtube_error;
+                        }
+
+                        return $record->getYouTubeUrl();
+                    }),
+
                 TextColumn::make('created_at')
                     ->label('Created')
                     ->since()

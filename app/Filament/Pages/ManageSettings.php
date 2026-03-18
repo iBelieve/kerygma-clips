@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Settings;
+use App\Services\YouTubeService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
@@ -12,6 +13,8 @@ use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 
@@ -54,6 +57,7 @@ class ManageSettings extends Page
         return $schema
             ->components([
                 $this->getFormContentComponent(),
+                $this->getYouTubeSection(),
             ]);
     }
 
@@ -90,5 +94,65 @@ class ManageSettings extends Page
                 ->label('Save')
                 ->submit('save'),
         ];
+    }
+
+    public function disconnectYouTube(): void
+    {
+        Settings::instance()->clearYouTubeConnection();
+
+        Notification::make()
+            ->title('YouTube disconnected')
+            ->body('Your YouTube channel has been unlinked.')
+            ->success()
+            ->send();
+    }
+
+    protected function getYouTubeSection(): Section
+    {
+        $settings = Settings::instance();
+        $connected = $settings->hasYouTubeConnection();
+
+        if ($connected) {
+            return Section::make('YouTube')
+                ->icon('heroicon-o-video-camera')
+                ->schema([
+                    Text::make("Connected to **{$settings->youtube_channel_title}**"),
+                ])
+                ->footer([
+                    Actions::make([
+                        Action::make('disconnect_youtube')
+                            ->label('Disconnect')
+                            ->color('danger')
+                            ->requiresConfirmation()
+                            ->action(fn () => $this->disconnectYouTube()),
+                    ]),
+                ]);
+        }
+
+        $hasCredentials = config('services.google.client_id') && config('services.google.client_secret');
+
+        if (! $hasCredentials) {
+            return Section::make('YouTube')
+                ->icon('heroicon-o-video-camera')
+                ->schema([
+                    Text::make('Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in your `.env` file to enable YouTube integration.'),
+                ]);
+        }
+
+        $authUrl = app(YouTubeService::class)->getAuthUrl();
+
+        return Section::make('YouTube')
+            ->icon('heroicon-o-video-camera')
+            ->schema([
+                Text::make('Connect your YouTube channel to automatically upload scheduled clips as YouTube Shorts.'),
+            ])
+            ->footer([
+                Actions::make([
+                    Action::make('connect_youtube')
+                        ->label('Connect YouTube Channel')
+                        ->color('primary')
+                        ->url($authUrl),
+                ]),
+            ]);
     }
 }

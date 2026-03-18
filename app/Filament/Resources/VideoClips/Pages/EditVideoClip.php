@@ -7,6 +7,8 @@ use App\Enums\JobStatus;
 use App\Filament\Resources\VideoClips\VideoClipResource;
 use App\Jobs\ExtractVideoClipVerticalVideo;
 use App\Jobs\GenerateVideoClipTitle;
+use App\Jobs\UploadToYouTube;
+use App\Models\Settings;
 use App\Models\VideoClip;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -76,6 +78,32 @@ class EditVideoClip extends EditRecord
                             ->success()
                             ->send();
                     }),
+
+                Action::make('upload_youtube')
+                    ->label('Upload to YouTube')
+                    ->icon('heroicon-o-arrow-up-tray')
+                    ->visible(fn () => Settings::instance()->hasYouTubeConnection()
+                        && $this->getRecord()->scheduled_date !== null
+                        && $this->getRecord()->clip_video_status === JobStatus::Completed
+                        && $this->getRecord()->youtube_video_id === null
+                    )
+                    ->action(function () {
+                        $record = $this->getRecord();
+                        UploadToYouTube::dispatch($record, $record->scheduled_date->toDateString());
+
+                        Notification::make()
+                            ->title('YouTube upload queued')
+                            ->body('The clip will be uploaded to YouTube shortly.')
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('view_youtube')
+                    ->label('View on YouTube')
+                    ->icon('heroicon-o-play')
+                    ->url(fn () => $this->getRecord()->getYouTubeUrl())
+                    ->openUrlInNewTab()
+                    ->visible(fn () => $this->getRecord()->youtube_video_id !== null),
 
                 DeleteAction::make()
                     ->visible(fn () => $this->getRecord()->status === ClipStatus::Approved),

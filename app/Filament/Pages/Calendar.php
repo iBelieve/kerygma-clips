@@ -3,6 +3,11 @@
 namespace App\Filament\Pages;
 
 use App\Enums\ClipStatus;
+use App\Enums\JobStatus;
+use App\Jobs\DeleteFromYouTube;
+use App\Jobs\UpdateYouTubeSchedule;
+use App\Jobs\UploadToYouTube;
+use App\Models\Settings;
 use App\Models\VideoClip;
 use App\Services\LectionaryService;
 use BackedEnum;
@@ -60,12 +65,35 @@ class Calendar extends Page
 
     public function scheduleClip(int $clipId, string $date): void
     {
-        VideoClip::where('id', $clipId)->update(['scheduled_date' => $date]);
+        $clip = VideoClip::findOrFail($clipId);
+        $clip->update(['scheduled_date' => $date]);
+
+        if (Settings::instance()->hasYouTubeConnection() && $clip->clip_video_status === JobStatus::Completed) {
+            if ($clip->youtube_video_id) {
+                UpdateYouTubeSchedule::dispatch($clip, $date);
+            } else {
+                UploadToYouTube::dispatch($clip, $date);
+            }
+        }
     }
 
     public function unscheduleClip(int $clipId): void
     {
-        VideoClip::where('id', $clipId)->update(['scheduled_date' => null]);
+        $clip = VideoClip::findOrFail($clipId);
+
+        if ($clip->youtube_video_id) {
+            DeleteFromYouTube::dispatch($clip->youtube_video_id);
+            $clip->update([
+                'scheduled_date' => null,
+                'youtube_video_id' => null,
+                'youtube_status' => null,
+                'youtube_error' => null,
+                'youtube_published_at' => null,
+                'youtube_uploaded_at' => null,
+            ]);
+        } else {
+            $clip->update(['scheduled_date' => null]);
+        }
     }
 
     /**

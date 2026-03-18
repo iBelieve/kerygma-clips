@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ClipStatus;
 use App\Enums\JobStatus;
 use App\Enums\VideoType;
+use App\Jobs\DeleteFromYouTube;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -40,6 +41,11 @@ class VideoClip extends Model
         'clip_video_started_at',
         'clip_video_completed_at',
         'scheduled_date',
+        'youtube_video_id',
+        'youtube_status',
+        'youtube_error',
+        'youtube_published_at',
+        'youtube_uploaded_at',
     ];
 
     protected $casts = [
@@ -58,6 +64,9 @@ class VideoClip extends Model
         'clip_video_completed_at' => 'immutable_datetime',
         'clip_video_duration' => 'integer',
         'scheduled_date' => 'immutable_date',
+        'youtube_status' => JobStatus::class,
+        'youtube_published_at' => 'immutable_datetime',
+        'youtube_uploaded_at' => 'immutable_datetime',
     ];
 
     /**
@@ -160,6 +169,15 @@ class VideoClip extends Model
             ->join(' ');
     }
 
+    public function getYouTubeUrl(): ?string
+    {
+        if ($this->youtube_video_id === null) {
+            return null;
+        }
+
+        return "https://youtube.com/shorts/{$this->youtube_video_id}";
+    }
+
     public function buildClipVideoPath(): string
     {
         $videoDate = $this->video->date->timezone('America/Chicago');
@@ -226,6 +244,10 @@ class VideoClip extends Model
         });
 
         static::deleting(function (VideoClip $clip): void {
+            if ($clip->youtube_video_id) {
+                DeleteFromYouTube::dispatch($clip->youtube_video_id);
+            }
+
             if ($clip->clip_video_path) {
                 Storage::disk('public')->delete($clip->clip_video_path);
             }
