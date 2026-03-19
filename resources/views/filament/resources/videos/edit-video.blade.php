@@ -5,6 +5,8 @@
         <div
             x-data="viewTranscript(@js($this->transcriptData))"
             x-on:mouseup.window="endDrag()"
+            x-on:touchend.window="endDrag()"
+            x-on:touchmove.window="handleTouchMove($event)"
             x-on:mouseleave="!dragging && clearHighlight()"
             x-bind:class="{ 'select-none': dragging }"
             dusk="transcript-table"
@@ -35,6 +37,9 @@
                                             : setHighlight(row.segmentIndex)))
                                 "
                                 x-on:mousedown="
+                                    row.type === 'segment' && startDragFromRow(row.segmentIndex, $event)
+                                "
+                                x-on:touchstart="
                                     row.type === 'segment' && startDragFromRow(row.segmentIndex, $event)
                                 "
                                 x-on:click="

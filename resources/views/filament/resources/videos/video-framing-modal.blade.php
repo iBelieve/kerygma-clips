@@ -1,7 +1,9 @@
 <div
     x-data="videoFraming({ cropCenter: @js($record->vertical_video_crop_center) })"
     x-on:mousemove.window="onDrag($event)"
+    x-on:touchmove.window="onDrag($event)"
     x-on:mouseup.window="endDrag()"
+    x-on:touchend.window="endDrag()"
     x-bind:class="{ 'select-none': dragging }"
     class="flex flex-col gap-4"
 >
@@ -35,6 +37,7 @@
             class="absolute inset-y-0 cursor-ew-resize border-x-2 border-white/80 transition-all"
             x-bind:style="`left: ${boxLeftPct}%; width: ${boxWidthPct}%`"
             x-on:mousedown="startDrag($event)"
+            x-on:touchstart="startDrag($event)"
         >
             {{-- Left edge indicator --}}
             <div class="absolute inset-y-0 left-0 w-1 bg-white/40"></div>

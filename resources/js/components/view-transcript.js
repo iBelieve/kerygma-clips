@@ -225,6 +225,30 @@ export default function viewTranscript({ segments, clips, diarize }) {
             }
         },
 
+        handleTouchMove(event) {
+            if (!this.dragging) return;
+            event.preventDefault();
+
+            const touch = event.touches[0];
+            const el = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (!el) return;
+
+            const row = el.closest("tr");
+            if (!row) return;
+
+            // Find the row's segment index from Alpine's data
+            const allRows = Array.from(
+                row.closest("tbody").querySelectorAll("tr"),
+            );
+            const rowIndex = allRows.indexOf(row);
+            if (rowIndex === -1 || rowIndex >= this.rows.length) return;
+
+            const rowData = this.rows[rowIndex];
+            if (rowData.type === "segment") {
+                this.handleDragOver(rowData.segmentIndex);
+            }
+        },
+
         startDrag(segmentIndex, edge) {
             const clipIndex = this.clipIndexOfSegment(segmentIndex);
             if (clipIndex === -1) return;
