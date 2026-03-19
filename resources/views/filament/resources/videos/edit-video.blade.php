@@ -41,7 +41,7 @@
                                     !dragging && row.type === 'segment' && !inClip(row.segmentIndex)
                                         && createClip(row.segmentIndex, highlightEnds[row.segmentIndex])
                                 "
-                                class="relative transition duration-75"
+                                class="transition duration-75"
                             >
                                 {{-- Gap row content --}}
                                 <td
@@ -92,7 +92,7 @@
 
                                 <td
                                     x-show="row.type === 'segment'"
-                                    class="w-full py-1 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white"
+                                    class="relative w-full py-1 pe-4 align-baseline text-sm text-gray-950 sm:pe-6 dark:text-white"
                                 >
                                     <div class="flex items-baseline gap-2">
                                         <span class="flex-1" x-text="row.text"></span>
