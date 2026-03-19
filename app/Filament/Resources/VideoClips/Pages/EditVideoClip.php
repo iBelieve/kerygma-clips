@@ -46,8 +46,7 @@ class EditVideoClip extends EditRecord
                     ]);
                 }),
 
-            DeleteAction::make()
-                ->visible(fn () => $this->getRecord()->status === ClipStatus::Draft),
+            DeleteAction::make(),
 
             ActionGroup::make([
                 Action::make('generate_title')
@@ -76,9 +75,6 @@ class EditVideoClip extends EditRecord
                             ->success()
                             ->send();
                     }),
-
-                DeleteAction::make()
-                    ->visible(fn () => $this->getRecord()->status === ClipStatus::Approved),
             ])
                 ->icon('heroicon-o-cog-6-tooth')
                 ->label('')
