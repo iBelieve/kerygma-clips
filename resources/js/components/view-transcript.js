@@ -225,6 +225,25 @@ export default function viewTranscript({ segments, clips, diarize }) {
             }
         },
 
+        handleTouchMove(event) {
+            if (!this.dragging) return;
+            event.preventDefault();
+
+            const touch = event.touches[0];
+            const el = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (!el) return;
+
+            // Find the closest row element with a dusk attribute
+            const row = el.closest("[dusk^='segment-row-']");
+            if (!row) return;
+
+            const dusk = row.getAttribute("dusk");
+            const segmentIndex = parseInt(dusk.replace("segment-row-", ""), 10);
+            if (!isNaN(segmentIndex)) {
+                this.handleDragOver(segmentIndex);
+            }
+        },
+
         startDrag(segmentIndex, edge) {
             const clipIndex = this.clipIndexOfSegment(segmentIndex);
             if (clipIndex === -1) return;

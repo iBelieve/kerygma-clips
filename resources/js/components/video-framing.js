@@ -46,14 +46,15 @@ export default function videoFraming({ cropCenter }) {
         startDrag(e) {
             e.preventDefault();
             this.dragging = true;
-            this.dragStartX = e.clientX;
+            this.dragStartX = e.touches ? e.touches[0].clientX : e.clientX;
             this.dragStartCenter = this.cropCenter;
         },
 
         onDrag(e) {
             if (!this.dragging) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const container = this.$refs.container;
-            const dx = e.clientX - this.dragStartX;
+            const dx = clientX - this.dragStartX;
             const dPct = (dx / container.offsetWidth) * 100;
             const halfBox = this.boxWidthPct / 2;
             this.cropCenter = Math.round(
