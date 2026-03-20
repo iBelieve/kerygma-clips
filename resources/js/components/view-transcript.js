@@ -233,19 +233,14 @@ export default function viewTranscript({ segments, clips, diarize }) {
             const el = document.elementFromPoint(touch.clientX, touch.clientY);
             if (!el) return;
 
-            const row = el.closest("tr");
+            // Find the closest row element with a dusk attribute
+            const row = el.closest("[dusk^='segment-row-']");
             if (!row) return;
 
-            // Find the row's segment index from Alpine's data
-            const allRows = Array.from(
-                row.closest("tbody").querySelectorAll("tr"),
-            );
-            const rowIndex = allRows.indexOf(row);
-            if (rowIndex === -1 || rowIndex >= this.rows.length) return;
-
-            const rowData = this.rows[rowIndex];
-            if (rowData.type === "segment") {
-                this.handleDragOver(rowData.segmentIndex);
+            const dusk = row.getAttribute("dusk");
+            const segmentIndex = parseInt(dusk.replace("segment-row-", ""), 10);
+            if (!isNaN(segmentIndex)) {
+                this.handleDragOver(segmentIndex);
             }
         },
 
