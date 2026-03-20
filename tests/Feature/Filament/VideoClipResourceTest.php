@@ -277,6 +277,38 @@ test('toggle status action updates label after approving', function () {
         ->assertActionHasLabel('toggle_status', 'Revert to Draft');
 });
 
+test('draft clip can be deleted from edit page', function () {
+    $video = createVideoWithTranscript();
+    $clip = $video->videoClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+        'status' => ClipStatus::Draft,
+    ]);
+
+    Livewire::test(EditVideoClip::class, ['record' => $clip->id])
+        ->callAction('delete')
+        ->assertHasNoActionErrors()
+        ->assertRedirect(VideoClipResource::getUrl('index'));
+
+    expect($clip->fresh())->toBeNull();
+});
+
+test('approved clip can be deleted from edit page', function () {
+    $video = createVideoWithTranscript();
+    $clip = $video->videoClips()->create([
+        'start_segment_index' => 0,
+        'end_segment_index' => 3,
+        'status' => ClipStatus::Approved,
+    ]);
+
+    Livewire::test(EditVideoClip::class, ['record' => $clip->id])
+        ->callAction('delete')
+        ->assertHasNoActionErrors()
+        ->assertRedirect(VideoClipResource::getUrl('index'));
+
+    expect($clip->fresh())->toBeNull();
+});
+
 test('reset excerpt action restores transcript text', function () {
     $video = createVideoWithTranscript();
     $clip = $video->videoClips()->create([
