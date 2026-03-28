@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class ClipsPerWeekChart extends BaseWidget
 {
+    protected static ?int $sort = 1;
     protected function getStats(): array
     {
         $weeks = 12;
