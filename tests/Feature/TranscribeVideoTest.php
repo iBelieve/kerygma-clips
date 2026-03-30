@@ -19,7 +19,9 @@ function createTranscriptOutputFile(Video $video, array $content): void
     if (! is_dir($outputDir)) {
         mkdir($outputDir, 0755, true);
     }
-    $inputFilename = pathinfo($video->raw_video_path, PATHINFO_FILENAME);
+    // The job pads the audio before transcribing, so the WhisperX output file
+    // is named after the padded file (e.g. "padded_video.json").
+    $inputFilename = 'padded_'.pathinfo($video->raw_video_path, PATHINFO_FILENAME);
     file_put_contents($outputDir.'/'.$inputFilename.'.json', json_encode($content));
 }
 
