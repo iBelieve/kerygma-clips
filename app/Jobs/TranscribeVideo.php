@@ -74,6 +74,15 @@ class TranscribeVideo implements ShouldBeUnique, ShouldQueue
                 // float32/float16, which require a GPU to run efficiently.
                 '--compute_type',
                 'int8',
+                // Reduce chunk_size from the default 30s to avoid WhisperX's VAD
+                // dropping the last segment of shorter videos. Lower vad_onset/offset
+                // thresholds make speech detection more sensitive at segment boundaries.
+                '--chunk_size',
+                '15',
+                '--vad_onset',
+                '0.3',
+                '--vad_offset',
+                '0.3',
             ];
 
             if ($this->video->diarize) {
