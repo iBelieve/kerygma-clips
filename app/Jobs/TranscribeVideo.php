@@ -57,10 +57,27 @@ class TranscribeVideo implements ShouldBeUnique, ShouldQueue
             mkdir($outputDir, 0755, true);
         }
 
+        $paddedPath = $outputDir.'/padded_'.pathinfo($absolutePath, PATHINFO_BASENAME);
+
         try {
+            // Pad the audio with 1 second of silence so WhisperX's VAD doesn't
+            // cut off the final speech segment at the end of the file.
+            $padResult = Process::path(base_path())
+                ->timeout(120)
+                ->run([
+                    'ffmpeg', '-y',
+                    '-i', $absolutePath,
+                    '-af', 'apad=pad_dur=1',
+                    '-c:v', 'copy',
+                    $paddedPath,
+                ]);
+
+            // Fall back to the original file if padding fails.
+            $transcribePath = $padResult->successful() ? $paddedPath : $absolutePath;
+
             $command = [
                 'whisperx',
-                $absolutePath,
+                $transcribePath,
                 '--model',
                 'large-v3',
                 '--output_format',
@@ -106,7 +123,7 @@ class TranscribeVideo implements ShouldBeUnique, ShouldQueue
                 throw new \RuntimeException($result->errorOutput() ?: $result->output());
             }
 
-            $inputFilename = pathinfo($this->video->raw_video_path, PATHINFO_FILENAME);
+            $inputFilename = pathinfo($transcribePath, PATHINFO_FILENAME);
             $jsonPath = $outputDir.'/'.$inputFilename.'.json';
 
             if (! file_exists($jsonPath)) {
